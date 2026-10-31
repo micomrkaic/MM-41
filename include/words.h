@@ -52,8 +52,30 @@ typedef struct {
   char   *body;         /* normalised source text, for listwords/savewords/usage */
   WInstr *code;
   int     ncode;
-  bool    is_macro;     /* came from predefined_macros.txt */
+  bool    is_macro;     /* belongs to a word module (see below) */
+  char    module[MAX_WORD_NAME]; /* owning word module, "" for user words */
 } user_word;
+
+/* Word modules: files of definitions (name body, or : name body ;) plugged
+   in like HP-41 ROMs. Every *.mm in the modules/ directory of the config
+   directory is loaded at startup; "name" use loads one by name or path,
+   "name" unuse removes it. Their words live in the macro table, tagged
+   with the module name, so clrwords leaves them alone. */
+#define MAX_WORD_MODULES 64
+typedef struct {
+  char  name[MAX_WORD_NAME];
+  char  version[16];
+  char *summary;
+  char *path;
+  int   nwords;
+} WordModule;
+extern WordModule word_modules[];
+extern int        word_module_count;
+
+int  use_word_module(const char *name_or_path);   /* 0 on success */
+int  unuse_word_module(const char *name);
+int  autoload_word_modules(void);                 /* at startup */
+void list_word_modules(void);                     /* part of `modules` */
 
 extern user_word *words;
 extern int word_count;
@@ -76,6 +98,5 @@ void free_words(void);
 int  save_words_to_file(void);
 int  load_words_from_file(void);
 int  autoload_words(void);                     /* at startup: silent when there is no file */
-int  load_macros_from_file(void);
 
 #endif // WORDS_H

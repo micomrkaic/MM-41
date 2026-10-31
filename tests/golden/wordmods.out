@@ -1,0 +1,13 @@
+[geo 0.1]
+              circ: 2 * pi *
+            sphere: dup * 4 * pi *
+Error: Unknown word: circ
+Error: unuse: no word module 'geo' is loaded
+Error: use: no word module 'nope' (not a file, and no modules/nope.mm in the config directory)
+
+[0] ℝ : 12.566371
+[1] ℝ : 12.566371
+[2] ℝ : 2.000000
+[3] 𝒮 : "geo"
+[4] 𝒮 : "nope"
+[exit 1]

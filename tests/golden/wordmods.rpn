@@ -1,0 +1,9 @@
+# word modules: use a file by path, list, unuse
+"tests/golden/geo.mm" use
+2 circ
+1 sphere
+listmacros
+"geo" unuse
+2 circ
+"geo" unuse
+"nope" use

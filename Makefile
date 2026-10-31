@@ -21,8 +21,9 @@ MKDIR_P    ?= mkdir -p
 
 # Config files live in data/
 DATA_DIR := data
-CONFIG_FILES := config.txt predefined_macros.txt
+CONFIG_FILES := config.txt
 CONFIG_SRC  := $(addprefix $(DATA_DIR)/,$(CONFIG_FILES))
+WORD_MODULES := $(wildcard $(DATA_DIR)/modules/*.mm)
 
 # Compiler and base flags
 CC       ?= gcc
@@ -213,16 +214,22 @@ install: $(TARGET)
 	$(INSTALL) -d "$(APP_CONF_DIR)"
 	@for f in $(CONFIG_SRC); do \
 	  base=$$(basename "$$f"); \
-	  if [ "$$base" = predefined_macros.txt ]; then \
-	    echo "  -> $$base (replaced: the macros ship with the program)"; \
-	    $(INSTALL) -m 644 "$$f" "$(APP_CONF_DIR)/$$base"; \
-	  elif [ ! -f "$(APP_CONF_DIR)/$$base" ]; then \
+	  if [ ! -f "$(APP_CONF_DIR)/$$base" ]; then \
 	    echo "  -> $$base (new)"; \
 	    $(INSTALL) -m 644 "$$f" "$(APP_CONF_DIR)/$$base"; \
 	  else \
 	    echo "  -> $$base exists; keeping user's copy"; \
 	  fi; \
 	done
+	@echo "Installing word modules to $(APP_CONF_DIR)/modules (shipped modules are replaced)"
+	$(INSTALL) -d "$(APP_CONF_DIR)/modules"
+	@for f in $(WORD_MODULES); do \
+	  echo "  -> modules/$$(basename "$$f")"; \
+	  $(INSTALL) -m 644 "$$f" "$(APP_CONF_DIR)/modules/"; \
+	done
+	@if [ -f "$(APP_CONF_DIR)/predefined_macros.txt" ]; then \
+	  echo "  note: $(APP_CONF_DIR)/predefined_macros.txt is no longer read; its words are now modules/std.mm"; \
+	fi
 
 # --- System-wide install (optional): `make install-system` ---
 install-system: PREFIX=/usr/local

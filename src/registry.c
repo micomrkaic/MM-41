@@ -11,6 +11,7 @@
 
 #include "errors.h"
 #include "module.h"
+#include "words.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -104,4 +105,5 @@ void list_modules(void) {
   for (int i = 0; i < n_modules; i++)
     printf("%-12s %-8s %5d  %s\n", registry[i]->name, registry[i]->version,
            registry[i]->n_ops, registry[i]->summary ? registry[i]->summary : "");
+  list_word_modules();
 }

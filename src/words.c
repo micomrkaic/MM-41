@@ -18,6 +18,8 @@
 
 #define _POSIX_C_SOURCE 200809L
 #include "errors.h"
+#include <dirent.h>
+#include <unistd.h>
 #include <ctype.h>
 #include <errno.h>
 #include <math.h>
@@ -234,6 +236,7 @@ int define_word(const char *name, const char *body, bool is_macro) {
     snprintf(w->name, sizeof w->name, "%s", name);
   }
   w->body = norm; w->code = code; w->ncode = ncode; w->is_macro = is_macro;
+  w->module[0] = '\0';
   if (!is_macro && (!batch_mode || verbose_mode)) printf("New word %s <- %s\n", w->name, w->body);
   return 0;
 }
@@ -338,7 +341,16 @@ static void list_table(user_word *tab, int n, const char *what) {
 }
 
 void list_words(void)  { list_table(words, word_count, "words"); }
-void list_macros(void) { list_table(macros, macro_count, "macros"); }
+
+void list_macros(void) {
+  if (macro_count == 0) { printf("  (no word modules loaded)\n"); return; }
+  for (int m = 0; m < word_module_count; m++) {
+    printf("[%s %s]\n", word_modules[m].name, word_modules[m].version);
+    for (int i = 0; i < macro_count; i++)
+      if (strcmp(macros[i].module, word_modules[m].name) == 0)
+        printf("  %16s: %s\n", macros[i].name, macros[i].body);
+  }
+}
 
 void delete_word(Stack *stack) {
   if (word_depth > 0) { mm_error("delword cannot run inside a word"); return; }
@@ -464,4 +476,218 @@ static int load_table(const char *path, bool is_macro, bool quiet_if_missing) {
 
 int load_words_from_file(void)  { return load_table(WORDS_PATH, false, false); }
 int autoload_words(void)        { return load_table(WORDS_PATH, false, true); }
-int load_macros_from_file(void) { return load_table(MACROS_PATH, true, true); }
+
+/* ======================= word modules ======================= */
+
+WordModule word_modules[MAX_WORD_MODULES];
+int        word_module_count = 0;
+
+static WordModule *find_word_module(const char *name) {
+  for (int i = 0; i < word_module_count; i++)
+    if (strcmp(word_modules[i].name, name) == 0) return &word_modules[i];
+  return NULL;
+}
+
+static void remove_macros_of(const char *module) {
+  int k = 0;
+  for (int i = 0; i < macro_count; i++) {
+    if (strcmp(macros[i].module, module) == 0) free_word(&macros[i]);
+    else macros[k++] = macros[i];
+  }
+  macro_count = k;
+}
+
+/* The module name is the file's base name without .mm; a header line
+   "\ module NAME VERSION SUMMARY..." may override the name and add the rest. */
+static void module_name_from_path(const char *path, char *out, size_t n) {
+  const char *b = strrchr(path, '/');
+  b = b ? b + 1 : path;
+  snprintf(out, n, "%s", b);
+  size_t l = strlen(out);
+  if (l > 3 && strcmp(out + l - 3, ".mm") == 0) out[l - 3] = '\0';
+}
+
+static int load_word_module(const char *path, const char *fallback_name) {
+  if (word_depth > 0) return mm_error("Cannot load a module while a word is running");
+  FILE *f = fopen(path, "r");
+  if (!f) return mm_perror(path);
+
+  WordModule wm;
+  memset(&wm, 0, sizeof wm);
+  if (fallback_name) snprintf(wm.name, sizeof wm.name, "%s", fallback_name);
+  else module_name_from_path(path, wm.name, sizeof wm.name);
+  snprintf(wm.version, sizeof wm.version, "1.0");
+
+  struct { char *name, *body; int line; } *ent = NULL;
+  int nent = 0, ecap = 0, lineno = 0, rc = 0;
+  char *line = NULL; size_t lcap = 0; ssize_t n;
+  while ((n = getline(&line, &lcap, f)) != -1) {
+    lineno++;
+    char *p = line;
+    while (isspace((unsigned char)*p)) p++;
+    char *e = p + strlen(p);
+    while (e > p && isspace((unsigned char)e[-1])) e--;
+    *e = '\0';
+    if (!*p) continue;
+    if (*p == '\\' || *p == '#') {
+      /* header: \ module name version summary */
+      char *q = p + 1;
+      while (isspace((unsigned char)*q)) q++;
+      if (strncmp(q, "module", 6) == 0 && isspace((unsigned char)q[6])) {
+        char name[MAX_WORD_NAME] = "", ver[16] = "";
+        int used = 0;
+        if (sscanf(q + 6, "%31s %15s%n", name, ver, &used) >= 1) {
+          snprintf(wm.name, sizeof wm.name, "%s", name);
+          if (ver[0]) snprintf(wm.version, sizeof wm.version, "%s", ver);
+          char *sm = q + 6 + used;
+          while (*sm && isspace((unsigned char)*sm)) sm++;
+          free(wm.summary);
+          wm.summary = *sm ? strdup(sm) : NULL;
+        }
+      }
+      continue;
+    }
+    char *name, *body;
+    if (*p == ':') {                        /* : name body ; */
+      char *q = p + 1;
+      while (isspace((unsigned char)*q)) q++;
+      char *ns = q;
+      while (*q && !isspace((unsigned char)*q)) q++;
+      name = strndup(ns, (size_t)(q - ns));
+      while (isspace((unsigned char)*q)) q++;
+      char *end = q + strlen(q);
+      if (end > q && end[-1] == ';') { end--; while (end > q && isspace((unsigned char)end[-1])) end--; }
+      else { mm_error("%s, line %d: definition does not end with ';'", path, lineno); free(name); rc = -1; continue; }
+      body = strndup(q, (size_t)(end - q));
+    } else {                                /* name body */
+      char *ns = p;
+      while (*p && !isspace((unsigned char)*p)) p++;
+      name = strndup(ns, (size_t)(p - ns));
+      while (isspace((unsigned char)*p)) p++;
+      body = strdup(p);
+    }
+    if (!name || !body) { free(name); free(body); rc = mm_error("Out of memory"); break; }
+    if (validate_name(name) != 0) {
+      fprintf(stderr, "  (%s, line %d)\n", path, lineno);
+      free(name); free(body); rc = -1; continue;
+    }
+    user_word *other = find_in(macros, macro_count, name);
+    if (other && strcmp(other->module, wm.name) != 0) {
+      mm_error("%s, line %d: '%s' is already defined by module %s", path, lineno, name, other->module);
+      free(name); free(body); rc = -1; continue;
+    }
+    if (nent == ecap) {
+      ecap = ecap ? 2 * ecap : 32;
+      void *nn = realloc(ent, (size_t)ecap * sizeof *ent);
+      if (!nn) { free(name); free(body); rc = mm_error("Out of memory"); break; }
+      ent = nn;
+    }
+    ent[nent].name = name; ent[nent].body = body; ent[nent].line = lineno; nent++;
+  }
+  free(line);
+  fclose(f);
+
+  /* (re)loading replaces the module's previous words */
+  WordModule *slot = find_word_module(wm.name);
+  if (slot) {
+    remove_macros_of(wm.name);
+    free(slot->summary); free(slot->path);
+  } else {
+    if (word_module_count >= MAX_WORD_MODULES) {
+      for (int k = 0; k < nent; k++) { free(ent[k].name); free(ent[k].body); }
+      free(ent); free(wm.summary);
+      return mm_error("too many word modules (max %d)", MAX_WORD_MODULES);
+    }
+    slot = &word_modules[word_module_count++];
+  }
+  *slot = wm;
+  slot->path = strdup(path);
+  slot->nwords = 0;
+
+  /* pass 1: names, so forward references resolve */
+  for (int k = 0; k < nent; k++) {
+    if (grow(&macros, &macro_cap, macro_count) != 0) continue;
+    if (!find_in(macros, macro_count, ent[k].name)) {
+      user_word *w = &macros[macro_count++];
+      memset(w, 0, sizeof *w);
+      snprintf(w->name, sizeof w->name, "%s", ent[k].name);
+      snprintf(w->module, sizeof w->module, "%s", wm.name);
+      w->body = strdup("");
+      w->is_macro = true;
+    }
+  }
+  /* pass 2: compile; drop what fails */
+  for (int k = 0; k < nent; k++) {
+    user_word *w = find_in(macros, macro_count, ent[k].name);
+    WInstr *code; int ncode;
+    if (w && compile(ent[k].name, ent[k].body, &code, &ncode) == 0) {
+      free(w->body); free(w->code);
+      w->body = normalise(ent[k].body); w->code = code; w->ncode = ncode;
+      slot->nwords++;
+    } else if (w) {
+      fprintf(stderr, "  (%s, line %d)\n", path, ent[k].line);
+      rc = -1;
+      int idx = (int)(w - macros);
+      free_word(w);
+      memmove(&macros[idx], &macros[idx + 1], (size_t)(macro_count - idx - 1) * sizeof *macros);
+      macro_count--;
+    }
+    free(ent[k].name); free(ent[k].body);
+  }
+  free(ent);
+  return rc;
+}
+
+int use_word_module(const char *name_or_path) {
+  if (strchr(name_or_path, '/') || access(name_or_path, R_OK) == 0)
+    return load_word_module(name_or_path, NULL);
+  char rel[MAX_WORD_NAME + 16];
+  snprintf(rel, sizeof rel, "modules/%.31s.mm", name_or_path);
+  const char *p = app_path(rel);
+  if (access(p, R_OK) != 0)
+    return mm_error("use: no word module '%s' (not a file, and no modules/%s.mm in the config directory)", name_or_path, name_or_path);
+  return load_word_module(p, name_or_path);
+}
+
+int unuse_word_module(const char *name) {
+  if (word_depth > 0) return mm_error("Cannot unload a module while a word is running");
+  WordModule *m = find_word_module(name);
+  if (!m) return mm_error("unuse: no word module '%s' is loaded", name);
+  remove_macros_of(name);
+  free(m->summary); free(m->path);
+  int idx = (int)(m - word_modules);
+  memmove(&word_modules[idx], &word_modules[idx + 1], (size_t)(word_module_count - idx - 1) * sizeof *word_modules);
+  word_module_count--;
+  return 0;
+}
+
+static int cmp_str(const void *a, const void *b) { return strcmp(*(char *const *)a, *(char *const *)b); }
+
+/* Load every *.mm in the config directory's modules/ folder, in name order. */
+int autoload_word_modules(void) {
+  const char *dir = app_path("modules");
+  DIR *d = opendir(dir);
+  if (!d) return 0;                                   /* no slots: nothing plugged in */
+  char *names[MAX_WORD_MODULES]; int n = 0;
+  struct dirent *e;
+  while ((e = readdir(d)) != NULL && n < MAX_WORD_MODULES) {
+    size_t l = strlen(e->d_name);
+    if (l > 3 && strcmp(e->d_name + l - 3, ".mm") == 0) names[n++] = strdup(e->d_name);
+  }
+  closedir(d);
+  qsort(names, (size_t)n, sizeof names[0], cmp_str);
+  int rc = 0;
+  for (int i = 0; i < n; i++) {
+    char rel[512];
+    snprintf(rel, sizeof rel, "modules/%s", names[i]);
+    if (load_word_module(app_path(rel), NULL) != 0) rc = -1;
+    free(names[i]);
+  }
+  return rc;
+}
+
+void list_word_modules(void) {
+  for (int i = 0; i < word_module_count; i++)
+    printf("%-12s %-8s %5d  %s\n", word_modules[i].name, word_modules[i].version,
+           word_modules[i].nwords, word_modules[i].summary ? word_modules[i].summary : "(word module)");
+}

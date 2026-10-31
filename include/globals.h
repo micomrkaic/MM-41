@@ -30,7 +30,6 @@
 #define WORDS_FILE  "user_words.txt"
 #define REGISTERS_FILE "registers.txt"
 #define CONFIG_FILE "config.txt"
-#define MACROS_FILE "predefined_macros.txt"
 #define STACK_FILE "stack_backup.dat"
 
 /* Per-user file paths, resolved at run time from $XDG_CONFIG_HOME or $HOME
@@ -43,7 +42,6 @@ const char *app_path(const char *file);
 #define WORDS_PATH       app_path(WORDS_FILE)
 #define REGISTERS_PATH   app_path(REGISTERS_FILE)
 #define HISTORY_PATH     app_path(HISTORY_FILE)
-#define MACROS_PATH      app_path(MACROS_FILE)
 #define STACK_PATH       app_path(STACK_FILE)
 
 extern gsl_rng * global_rng;

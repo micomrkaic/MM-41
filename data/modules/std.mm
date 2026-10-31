@@ -1,3 +1,4 @@
+\ module std 1.0 standard word module: powers, norms, finance, storage arithmetic, locations
 sq dup *
 qu sq sq
 cube 3 ^

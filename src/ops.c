@@ -80,6 +80,14 @@ static int op_batch(Stack *stack) {
 
 static int op_modules(Stack *stack) { (void)stack; list_modules(); skip_stack_printing = true; return 0; }
 static int op_pm(Stack *stack) { print_matrix(stack); skip_stack_printing = true; return 0; }
+static int op_use(Stack *stack) {
+  char *s; if (pop_string_arg(stack, "use", &s) != 0) return 0;
+  use_word_module(s); free(s); return 0;
+}
+static int op_unuse(Stack *stack) {
+  char *s; if (pop_string_arg(stack, "unuse", &s) != 0) return 0;
+  unuse_word_module(s); free(s); return 0;
+}
 
 /* ---- small operations that live here ---- */
 
@@ -310,11 +318,13 @@ static const Op core_table[] = {
   { "sfs", 0, op_sfs, "Display", "--", "toggle between fixed-point and scientific display", "sfs" },
   /* ---- Words ---- */
   { "listwords", 0, op_listwords, "Words", "--", "list the user-defined words", "listwords" },
-  { "listmacros", 0, op_listmacros, "Words", "--", "list the macros loaded from predefined_macros.txt", "listmacros" },
+  { "listmacros", 0, op_listmacros, "Words", "--", "list the words of the loaded word modules", "listmacros" },
   { "loadwords", 0, op_loadwords, "Words", "--", "load the words saved in user_words.txt (also done at startup)", "loadwords" },
   { "savewords", 0, op_savewords, "Words", "--", "save all user-defined words to user_words.txt in the config directory", "savewords" },
   { "delword", 1, op_delword, "Words", "\"name\" --", "delete a user-defined word", "\"sq\" delword" },
   { "clrwords", 0, op_clrwords, "Words", "--", "delete all user-defined words", "clrwords" },
+  { "use", 1, op_use, "Words", "\"name\" --", "load a word module: modules/name.mm in the config directory, or a path", "\"finance\" use" },
+  { "unuse", 1, op_unuse, "Words", "\"name\" --", "unload a word module and its words", "\"finance\" unuse" },
   /* ---- Session ---- */
   { "eval", 1, op_eval, "Session", "s --", "evaluate the string s as a line of input", "\"1 2 +\" eval" },
   { "batch", 1, op_batch, "Session", "s --", "run the lines of file s as input", "\"calc.txt\" batch" },
