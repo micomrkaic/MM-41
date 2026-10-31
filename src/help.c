@@ -31,7 +31,7 @@ void whose_place(void) {
 
 void help_menu(void) {
   printf("\n");
-  title("MM-15 " MM15_VERSION " -- RPN calculator for real and complex scalars, strings and matrices");
+  title("MM-41 " MM41_VERSION " -- RPN calculator for real and complex scalars, strings and matrices");
   subtitle("Entering data");
   printf("    Numbers 3  -1.2e-4   complex (1,2)   strings \"text\"   all input is case sensitive\n");
   printf("    Matrices [rows cols $ a11 a12 ...]  e.g. [2 2 $ 1 2 3 4];  from a file [2, 2, \"m.txt\"]\n");
@@ -60,7 +60,7 @@ void help_menu(void) {
   subtitle("More help");
   printf("    listfcns            every command by category, with stack pictures\n");
   printf("    \"name\" usage        one command in detail, or a word's definition\n");
-  printf("    man mm_15, and the manual in the share/doc directory\n");
+  printf("    man mm41, and the manual in the share/doc directory\n");
   printf("\n");
   skip_stack_printing = true;
 }

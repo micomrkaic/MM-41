@@ -1,19 +1,19 @@
 /*
- * This file is part of Mico's MM-15 Calculator
+ * This file is part of MM-41
  *
- * Mico's MM-15 Calculator is free software: 
+ * MM-41 is free software: 
  * you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Mico's MM-15 Calculator is distributed in the hope that it will be useful,
+ * MM-41 is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Mico's MM-15 Calculator. If not, see <https://www.gnu.org/licenses/>.
+ * along with MM-41. If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef GLOBALS_H
@@ -23,7 +23,7 @@
 #include <gsl/gsl_rng.h>
 #include "stack.h"
 
-#define MM15_VERSION "2.1"
+#define MM41_VERSION "1.0"
 #define MAX_PATH 2048
 
 #define HISTORY_FILE ".rpn_history"

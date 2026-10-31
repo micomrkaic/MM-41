@@ -1,19 +1,19 @@
 /*
- * This file is part of Mico's MM-15 Calculator
+ * This file is part of MM-41
  *
- * Mico's MM-15 Calculator is free software:
+ * MM-41 is free software:
  * you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Mico's MM-15 Calculator is distributed in the hope that it will be useful,
+ * MM-41 is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Mico's MM-15 Calculator. If not, see
+ * along with MM-41. If not, see
  * <https://www.gnu.org/licenses/>.
  */
 
@@ -193,7 +193,7 @@ int repl(void) {
   rl_attempted_completion_function = function_name_completion;
 
   while (1) {
-    char *line = readline("MM_RPN>> ");
+    char *line = readline("MM-41>> ");
     if (!line) { putchar('\n'); break; }
     if (*line) add_history(line);
     bool go_on = handle_line(&stack, &old_stack, line);
@@ -231,8 +231,8 @@ static int run_lines_from(Stack *stack, Stack *old_stack, FILE *f) {
 
 static void usage_text(FILE *f) {
   fprintf(f,
-    "usage: mm_15 [-n] [-e EXPR]... [-f FILE]...\n"
-    "       mm_15 --commands | --commands-tex | --version | -h\n"
+    "usage: mm41 [-n] [-e EXPR]... [-f FILE]...\n"
+    "       mm41 --commands | --commands-tex | --version | -h\n"
     "\n"
     "  (no args)   interactive calculator (reads stdin when it is not a terminal)\n"
     "  -e EXPR     evaluate EXPR as one line; may be repeated\n"
@@ -253,7 +253,7 @@ int main(int argc, char **argv) {
     if (!strcmp(a, "-h") || !strcmp(a, "--help")) { usage_text(stdout); return 0; }
     if (!strcmp(a, "--commands")) { print_ops_markdown(); return 0; }
     if (!strcmp(a, "--commands-tex")) { print_ops_latex(); return 0; }
-    if (!strcmp(a, "--version")) { printf("MM-15 %s (%s)\n", MM15_VERSION, VERSION); return 0; }
+    if (!strcmp(a, "--version")) { printf("MM-41 %s (%s)\n", MM41_VERSION, VERSION); return 0; }
     if (!strcmp(a, "-n")) { autoload = false; continue; }
     if ((!strcmp(a, "-e") || !strcmp(a, "-f")) && i + 1 < argc && njobs < MAXJOBS) {
       jobs[njobs].kind = a[1];

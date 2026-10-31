@@ -1,19 +1,19 @@
 /*
- * This file is part of Mico's MM-15 Calculator
+ * This file is part of MM-41
  *
- * Mico's MM-15 Calculator is free software: 
+ * MM-41 is free software: 
  * you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Mico's MM-15 Calculator is distributed in the hope that it will be useful,
+ * MM-41 is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Mico's MM-15 Calculator. If not, see <https://www.gnu.org/licenses/>.
+ * along with MM-41. If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -376,7 +376,7 @@ int save_words_to_file(void) {
   const char *path = WORDS_PATH;
   FILE *f = fopen(path, "w");
   if (!f) return mm_perror(path);
-  fprintf(f, "# MM-15 user words: name followed by the body\n");
+  fprintf(f, "# MM-41 user words: name followed by the body\n");
   for (int i = 0; i < word_count; i++) fprintf(f, "%s %s\n", words[i].name, words[i].body);
   if (fclose(f) != 0) return mm_perror(path);
   printf("%d word%s saved\n", word_count, word_count == 1 ? "" : "s");

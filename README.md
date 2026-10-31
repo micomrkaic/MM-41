@@ -1,6 +1,6 @@
-# MM-15 — Mico's RPN calculator
+# MM-41 — Mico's RPN calculator
 
-MM-15 is a programmable, stack-based RPN calculator for the terminal, written in
+MM-41 is a programmable, stack-based RPN calculator for the terminal, written in
 C17 on top of the GNU Scientific Library and GNU Readline. It handles **real and
 complex scalars, strings, and real and complex matrices**, and it is programmable
 in the spirit of the HP-41C and FORTH: user-defined words with conditionals and
@@ -8,7 +8,7 @@ loops, numerical methods that take any word as the function, and HP-41 style
 programs with labels and jumps.
 
 ```text
-$ mm_15
+$ mm41
 MM_RPN>> 2 3 + 4 *
 [0] ℝ : 20.000000
 MM_RPN>> (1,2) (3,-1) *
@@ -21,8 +21,8 @@ MM_RPN>> 0 3 @f fzero
 [3] ℝ : 1.414214
 ```
 
-The **[user manual](doc/mm_15-manual.pdf)** (PDF, 27 pages) covers everything
-below in detail, with a complete command reference. `man mm_15` and
+The **[user manual](doc/mm41-manual.pdf)** (PDF, 27 pages) covers everything
+below in detail, with a complete command reference. `man mm41` and
 [COMMANDS.md](COMMANDS.md) are the short forms; inside the calculator,
 `help`, `listfcns` and `"name" usage`.
 
@@ -78,8 +78,8 @@ today 100 dateplus durham dawn           \ location macros carry their zone
 ```
 
 ```sh
-mm_15 -e "2 10 ^"                        # batch: prints the final stack, exits 1 on error
-echo "[2 2 $ 1 2 3 4] det" | mm_15 -n    # -n: ignore saved words and config
+mm41 -e "2 10 ^"                        # batch: prints the final stack, exits 1 on error
+echo "[2 2 $ 1 2 3 4] det" | mm41 -n    # -n: ignore saved words and config
 ```
 
 ## Input in one paragraph
@@ -100,15 +100,15 @@ Requires a C17 compiler, GNU make, GNU Readline and GSL
 ```sh
 make                 # release build in bin/release/
 make test            # .t cases + golden files, under AddressSanitizer
-make install         # ~/.local: bin/mm_15, man page, manual, docs; macros into ~/.config/mm_15
+make install         # ~/.local: bin/mm41, man page, manual, docs; macros into ~/.config/mm41
 make uninstall
 make MODE=asan       # or ubsan, harden
 make docs            # regenerate COMMANDS.md and doc/commands.tex from the dispatch table
-make manual          # rebuild doc/mm_15-manual.pdf (needs LuaLaTeX; LATEX=xelatex also works)
+make manual          # rebuild doc/mm41-manual.pdf (needs LuaLaTeX; LATEX=xelatex also works)
 ```
 
 `PREFIX=/usr/local make install` installs system-wide. Configuration, saved words,
-macros and registers live in `$XDG_CONFIG_HOME/mm_15` (default `~/.config/mm_15`).
+macros and registers live in `$XDG_CONFIG_HOME/mm41` (default `~/.config/mm41`).
 
 ## Files
 
@@ -116,8 +116,8 @@ macros and registers live in `$XDG_CONFIG_HOME/mm_15` (default `~/.config/mm_15`
 |---|---|
 | `src/`, `include/` | the calculator; `src/ops.c` is the dispatch table |
 | `data/` | default `config.txt`, `predefined_macros.txt`, sample programs |
-| `doc/manual.tex` → `doc/mm_15-manual.pdf` | the user manual |
-| `mm_15.1`, `MANUAL.md`, `COMMANDS.md`, `CHANGES.md` | man page, quick reference, generated command list, changelog |
+| `doc/manual.tex` → `doc/mm41-manual.pdf` | the user manual |
+| `mm41.1`, `MANUAL.md`, `COMMANDS.md`, `CHANGES.md` | man page, quick reference, generated command list, changelog |
 | `tests/` | unit cases and golden files |
 
-MM-15 is free software under the GNU GPL, version 3 or later.
+MM-41 is free software under the GNU GPL, version 3 or later.

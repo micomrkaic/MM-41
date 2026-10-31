@@ -1,6 +1,6 @@
 # --- portability knobs (Linux + macOS) ---
 SHELL      := /bin/sh
-APP        ?= mm_15
+APP        ?= mm41
 
 # Build mode: release | asan | ubsan | harden
 MODE       ?= release
@@ -9,8 +9,8 @@ MODE       ?= release
 PREFIX     ?= $(HOME)/.local
 BINDIR     ?= $(PREFIX)/bin
 MANDIR     ?= $(PREFIX)/share/man/man1
-DOCDIR     ?= $(PREFIX)/share/doc/mm_15
-DOCS        = README.md MANUAL.md COMMANDS.md CHANGES.md LICENSE doc/mm_15-manual.pdf
+DOCDIR     ?= $(PREFIX)/share/doc/mm41
+DOCS        = README.md MANUAL.md COMMANDS.md CHANGES.md LICENSE doc/mm41-manual.pdf
 
 # Respect XDG on Linux; fall back to ~/.config on macOS/Linux
 CONFIG_HOME  ?= $(if $(XDG_CONFIG_HOME),$(XDG_CONFIG_HOME),$(HOME)/.config)
@@ -125,7 +125,7 @@ test-asan: asan
 .PHONY: test
 test: asan
 	@bash tests/run_tests.sh
-	@ASAN_OPTIONS=detect_leaks=0 sh tests/run_golden.sh bin/asan/mm_15
+	@ASAN_OPTIONS=detect_leaks=0 sh tests/run_golden.sh bin/asan/mm41
 
 golden: all
 	@sh tests/run_golden.sh $(TARGET)
@@ -173,7 +173,7 @@ install: $(TARGET)
 	@echo "Installing $(APP) ($(MODE)) binary to $(DESTDIR)$(BINDIR)"
 	$(INSTALL) -d "$(DESTDIR)$(BINDIR)" "$(DESTDIR)$(MANDIR)" "$(DESTDIR)$(DOCDIR)"
 	$(INSTALL) -m 755 "$(TARGET)" "$(DESTDIR)$(BINDIR)/$(APP)"
-	$(INSTALL) -m 644 mm_15.1 "$(DESTDIR)$(MANDIR)/mm_15.1"
+	$(INSTALL) -m 644 mm41.1 "$(DESTDIR)$(MANDIR)/mm41.1"
 	$(INSTALL) -m 644 $(DOCS) "$(DESTDIR)$(DOCDIR)/"
 	@case ":$$PATH:" in *":$(BINDIR):"*) ;; *) echo "note: $(BINDIR) is not in your PATH" ;; esac
 
@@ -199,7 +199,7 @@ install-system: install
 
 uninstall:
 	@echo "Removing $(DESTDIR)$(BINDIR)/$(APP), the man page and $(DESTDIR)$(DOCDIR)"
-	@rm -f "$(DESTDIR)$(BINDIR)/$(APP)" "$(DESTDIR)$(MANDIR)/mm_15.1"
+	@rm -f "$(DESTDIR)$(BINDIR)/$(APP)" "$(DESTDIR)$(MANDIR)/mm41.1"
 	@rm -rf "$(DESTDIR)$(DOCDIR)"
 	@echo "Left $(APP_CONF_DIR) in place (user data)."
 
@@ -208,12 +208,12 @@ docs: $(TARGET)
 	./$(TARGET) --commands > COMMANDS.md
 	./$(TARGET) --commands-tex > doc/commands.tex
 
-# The user manual: doc/manual.tex + the generated command tables -> doc/mm_15-manual.pdf.
+# The user manual: doc/manual.tex + the generated command tables -> doc/mm41-manual.pdf.
 # Needs LuaLaTeX (or XeLaTeX: LATEX=xelatex) with fontspec, booktabs, longtable, tcolorbox.
 LATEX ?= lualatex
 manual: docs
 	cd doc && latexmk -$(LATEX) -interaction=nonstopmode -halt-on-error manual.tex
-	cp doc/manual.pdf doc/mm_15-manual.pdf
+	cp doc/manual.pdf doc/mm41-manual.pdf
 	cd doc && latexmk -c manual.tex >/dev/null 2>&1 || true
 
 clean:

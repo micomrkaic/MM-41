@@ -1,7 +1,7 @@
-# MM-15 quick reference
+# MM-41 quick reference
 
-The full manual is [doc/mm_15-manual.pdf](doc/mm_15-manual.pdf) (also installed
-under `share/doc/mm_15`). This page is the one-screen version; the complete
+The full manual is [doc/mm41-manual.pdf](doc/mm41-manual.pdf) (also installed
+under `share/doc/mm41`). This page is the one-screen version; the complete
 command list with stack pictures is [COMMANDS.md](COMMANDS.md).
 
 ## Input
@@ -80,11 +80,11 @@ Control words inside definitions: `flag if ... else ... then` ·
 `GOSUB name`, `RTN`, `END`, and tests (`top_gt?`, `top_eq0?`, ...) that skip
 the next line when false. `"file" batch` runs ordinary lines.
 
-`mm_15 -e EXPR` · `-f FILE` · stdin · `-n` (no saved state) · `--commands` ·
+`mm41 -e EXPR` · `-f FILE` · stdin · `-n` (no saved state) · `--commands` ·
 `--version`. Exit status 1 if any error occurred.
 
 ## Files
 
-`$XDG_CONFIG_HOME/mm_15/` (default `~/.config/mm_15/`): `config.txt`,
+`$XDG_CONFIG_HOME/mm41/` (default `~/.config/mm41/`): `config.txt`,
 `predefined_macros.txt`, `user_words.txt`, `registers.txt`,
 `stack_backup.dat`, `.rpn_history`.

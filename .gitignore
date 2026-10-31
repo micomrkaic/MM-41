@@ -27,8 +27,8 @@ token
 
 # binaries from this project
 mm_*
-!mm_15.1
-!doc/mm_15-manual.pdf
+!mm41.1
+!doc/mm41-manual.pdf
 # build outputs
 build/
 bin/
@@ -45,7 +45,7 @@ doc/*.toc
 .projectile
 .dir-locals.el
 .rpn_history
-# manual build intermediates (doc/mm_15-manual.pdf is kept)
+# manual build intermediates (doc/mm41-manual.pdf is kept)
 doc/*.fls
 doc/*.fdb_latexmk
 doc/*.xdv

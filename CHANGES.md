@@ -1,10 +1,10 @@
-# MM-15 changes
+# MM-41 changes
 
 ## 2.1
 
-- **User manual.** `doc/manual.tex` builds `doc/mm_15-manual.pdf` (`make
+- **User manual.** `doc/manual.tex` builds `doc/mm41-manual.pdf` (`make
   manual`, LuaLaTeX or XeLaTeX); the command reference appendix is generated
-  from the dispatch table by `mm_15 --commands-tex`. The PDF is in the
+  from the dispatch table by `mm41 --commands-tex`. The PDF is in the
   repository and is installed with the docs. README and MANUAL.md rewritten;
   the help screen (`help`) rewritten; every command's help text revised so
   that stack pictures and descriptions match what the command does.
@@ -31,7 +31,7 @@
   mode, and the never-settable `ctr_*?` tests are gone.
 - Word definitions are not echoed in batch mode (unless `verbose_mode = 1`).
 - `npv` macro simplified to `cashflows rate npv`. `make install` now
-  replaces `~/.config/mm_15/predefined_macros.txt` with the shipped file, so
+  replaces `~/.config/mm41/predefined_macros.txt` with the shipped file, so
   the macros always match the program; `config.txt` and `user_words.txt` are
   still left alone. Keep your own macros in `user_words.txt` (or in a file you
   `loadwords`), not in the macro file.
@@ -121,9 +121,9 @@ exact), `romberg`, `fzero` (Brent), `solve` (one guess), `minimize`
 - Tests: `tests/run_golden.sh` with `tests/golden/*.rpn` (full stdout +
   stderr + exit status) next to the existing `.t` cases; both run under
   ASan in `make test`. `make golden` regenerates the `.out` files.
-- Repo: `README.html`, `README_MM-15.html`, `camel_2_snake.py`,
+- Repo: `README.html`, `README_MM-41.html`, `camel_2_snake.py`,
   `data/bbb`, LaTeX aux files, `.rpn_history` and editor files removed;
-  `MANUAL.md` points at the generated `COMMANDS.md`; man page `mm_15.1`;
+  `MANUAL.md` points at the generated `COMMANDS.md`; man page `mm41.1`;
   `make install` installs the man page and docs, `make uninstall` removes
   them.
 

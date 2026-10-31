@@ -1,4 +1,4 @@
-# MM-15 test harness
+# MM-41 test harness
 
 Run it:
 
@@ -15,7 +15,7 @@ answer *or* a leak fails the relevant case.
 To run against a different build:
 
 ```
-make MODE=ubsan all && BIN=bin/ubsan/mm_15 bash tests/run_tests.sh
+make MODE=ubsan all && BIN=bin/ubsan/mm41 bash tests/run_tests.sh
 ```
 
 ## Why it works the way it does
@@ -30,7 +30,7 @@ a floating-point tolerance. This isolates "is the math right" from
 cosmetic output noise.
 
 Tests run with `HOME` redirected to a throwaway sandbox, so they never
-read or write your real `~/.config/mm_15` and never load your personal
+read or write your real `~/.config/mm41` and never load your personal
 macros/words (which would make results machine-dependent).
 
 ## Writing a test case

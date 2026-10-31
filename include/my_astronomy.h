@@ -4,7 +4,7 @@
 #include "stack.h"
 
 /*
- * Stack interface for sunrise/sunset in mm_15.
+ * Stack interface for sunrise/sunset in mm41.
  *
  * Stack contract (top-first, RPN style):
  *

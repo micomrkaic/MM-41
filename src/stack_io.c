@@ -1,19 +1,19 @@
 /*
- * This file is part of Mico's MM-15 Calculator
+ * This file is part of MM-41
  *
- * Mico's MM-15 Calculator is free software: 
+ * MM-41 is free software: 
  * you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Mico's MM-15 Calculator is distributed in the hope that it will be useful,
+ * MM-41 is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Mico's MM-15 Calculator. If not, see <https://www.gnu.org/licenses/>.
+ * along with MM-41. If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -377,7 +377,7 @@ int load_stack_from_file(Stack *stack, const char *filename) {
   unsigned char magic[MM15_STK_MAGIC_LEN];
   if (read_exact(file, magic, MM15_STK_MAGIC_LEN, "read magic") != 0) goto done;
   if (memcmp(magic, MM15_STK_MAGIC, MM15_STK_MAGIC_LEN) != 0) {
-    mm_error("load_stack_from_file: not an MM-15 stack file (bad magic)\n");
+    mm_error("load_stack_from_file: not an MM-41 stack file (bad magic)\n");
     goto done;
   }
 

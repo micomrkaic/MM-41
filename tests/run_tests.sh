@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# MM-15 test harness
+# MM-41 test harness
 # ------------------
 # Runs every *.t case in tests/cases/ against the calculator binary and
 # checks the final printed scalar against an expected value.
@@ -34,7 +34,7 @@ CASES_DIR="$HERE/cases"
 # as part of the normal test run (this is the whole point — every bug we
 # fixed would have been caught here). Override with BIN=... make test.
 MODE="${MODE:-asan}"
-BIN="${BIN:-$REPO/bin/$MODE/mm_15}"
+BIN="${BIN:-$REPO/bin/$MODE/mm41}"
 
 if [[ ! -x "$BIN" ]]; then
   echo "ERROR: binary not found or not executable: $BIN" >&2
@@ -42,15 +42,15 @@ if [[ ! -x "$BIN" ]]; then
   exit 2
 fi
 
-# Isolate config/history so tests never touch the user's real ~/.config/mm_15
+# Isolate config/history so tests never touch the user's real ~/.config/mm41
 # and never load the user's macros/words (which would make tests
 # machine-dependent). HOME is redirected to a throwaway dir.
 SANDBOX="$(mktemp -d)"
 trap 'rm -rf "$SANDBOX"' EXIT
-mkdir -p "$SANDBOX/.config/mm_15"
+mkdir -p "$SANDBOX/.config/mm41"
 # Empty macro/word files so the binary's startup load finds nothing.
-: > "$SANDBOX/.config/mm_15/predefined_macros.txt"
-: > "$SANDBOX/.config/mm_15/user_words.txt"
+: > "$SANDBOX/.config/mm41/predefined_macros.txt"
+: > "$SANDBOX/.config/mm41/user_words.txt"
 
 # LeakSanitizer (detect_leaks) is Linux-only. On macOS, detect_leaks=1
 # makes ASan abort before the program runs ("detect_leaks is not supported
@@ -110,7 +110,7 @@ if (( ${#cases[@]} == 0 )); then
   exit 2
 fi
 
-echo "MM-15 test harness"
+echo "MM-41 test harness"
 echo "binary : $BIN"
 echo "cases  : ${#cases[@]}"
 echo "leaks  : ${LEAK_DETECTION}"

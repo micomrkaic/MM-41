@@ -4,7 +4,7 @@
 # with tests/golden/NAME.out.
 #   tests/run_golden.sh BIN            run
 #   UPDATE=1 tests/run_golden.sh BIN   regenerate the .out files (review the diff!)
-BIN=${1:-./bin/release/mm_15}
+BIN=${1:-./bin/release/mm41}
 DIR=$(cd "$(dirname "$0")" && pwd)/golden
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT INT TERM

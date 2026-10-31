@@ -1,18 +1,18 @@
-.TH MM_15 1 "November 2026" "MM-15 2.1" "User Commands"
+.TH MM41 1 "November 2026" "MM-41 1.0" "User Commands"
 .SH NAME
-mm_15 \- programmable RPN calculator for real and complex scalars, strings and matrices
+mm41 \- programmable RPN calculator for real and complex scalars, strings and matrices
 .SH SYNOPSIS
-.B mm_15
+.B mm41
 .RB [ \-n ]
 .RB [ \-e
 .IR EXPR ]...
 .RB [ \-f
 .IR FILE ]...
 .br
-.B mm_15
+.B mm41
 .BR \-\-commands " | " \-\-commands\-tex " | " \-\-version " | " \-h
 .SH DESCRIPTION
-.B mm_15
+.B mm41
 is a stack-based reverse Polish notation calculator in the spirit of the
 HP-41C and FORTH. The stack holds real and complex scalars, strings, and
 real and complex matrices (GNU Scientific Library). It has 64 storage
@@ -113,7 +113,7 @@ The full list, with stack pictures, descriptions and examples, is printed
 by
 .B listfcns
 (grouped by category) and by
-.BR "mm_15 \-\-commands" ;
+.BR "mm41 \-\-commands" ;
 .B \(dqname\(dq usage
 describes one command or shows a word's definition. The categories are
 Arithmetic, Exp/Log, Trigonometry, Complex, Special functions, Constants,
@@ -209,9 +209,9 @@ A line starting with
 runs the rest as a shell command and pushes its output as a string.
 .SH FILES
 All in
-.IR $XDG_CONFIG_HOME/mm_15/ ,
+.IR $XDG_CONFIG_HOME/mm41/ ,
 which defaults to
-.IR ~/.config/mm_15/ :
+.IR ~/.config/mm41/ :
 .TP
 .I config.txt
 print precision, fixed/scientific, tolerance; written at exit.
@@ -236,18 +236,18 @@ registers, saved stack and readline history.
 error.
 .SH EXAMPLES
 .nf
-$ mm_15 \-e \(dq2 3 + 4 *\(dq
+$ mm41 \-e \(dq2 3 + 4 *\(dq
 [0] ℝ : 20.000000
-$ mm_15 \-n \-e \(dq[2 2 $ 4 7 2 6] minv pm\(dq
-$ mm_15 \-n \-e \(dq: f dup * 2 \- ;\(dq \-e \(dq0 3 @f fzero\(dq
+$ mm41 \-n \-e \(dq[2 2 $ 4 7 2 6] minv pm\(dq
+$ mm41 \-n \-e \(dq: f dup * 2 \- ;\(dq \-e \(dq0 3 @f fzero\(dq
 [0] ℝ : 1.414214
-$ echo \(dq(1,2) (3,4) *\(dq | mm_15 \-n
+$ echo \(dq(1,2) (3,4) *\(dq | mm41 \-n
 .fi
 .SH SEE ALSO
 The user manual,
-.IR mm_15\-manual.pdf ,
+.IR mm41\-manual.pdf ,
 with COMMANDS.md, MANUAL.md and CHANGES.md, is installed in
-.IR PREFIX/share/doc/mm_15 .
+.IR PREFIX/share/doc/mm41 .
 .BR readline (3),
 the GNU Scientific Library manual.
 .SH AUTHOR
