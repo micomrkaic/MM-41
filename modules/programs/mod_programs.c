@@ -38,5 +38,5 @@ static const Op table[] = {
 
 const Module mm41_mod_programs = {
   "programs", "1.0", "HP-41 style programs with labels, jumps and subroutines",
-  table, (int)(sizeof table / sizeof table[0]), NULL, NULL
+  table, (int)(sizeof table / sizeof table[0]), NULL, NULL, 0
 };

@@ -50,3 +50,4 @@ doc/*.fls
 doc/*.fdb_latexmk
 doc/*.xdv
 doc/manual.pdf
+*.so

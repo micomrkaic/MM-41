@@ -33,5 +33,5 @@ static const Op table[] = {
 
 const Module mm41_mod_special = {
   "special", "1.0", "gamma, beta and the standard normal distribution",
-  table, (int)(sizeof table / sizeof table[0]), NULL, NULL
+  table, (int)(sizeof table / sizeof table[0]), NULL, NULL, 0
 };

@@ -1,0 +1,6 @@
+# a compiled module loaded at run time (built by `make shared-module DIR=examples/modules/hello`)
+"examples/modules/hello/hello.so" load
+3 cube 3 4 hyp
+"cube" usage
+"examples/modules/hello/hello.so" load
+"/nonexistent.so" load

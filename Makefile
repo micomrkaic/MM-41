@@ -28,8 +28,8 @@ WORD_MODULES := $(wildcard $(DATA_DIR)/modules/*.mm)
 # Compiler and base flags
 CC       ?= gcc
 CFLAGS   ?= -g -std=c17 -Wall -Wextra -Werror -Wpedantic -Iinclude -fno-common
-LDFLAGS  ?=
-LDLIBS   ?= -lgsl -lgslcblas -lreadline -lm
+LDFLAGS  ?= -rdynamic   # export symbols to shared-object modules
+LDLIBS   ?= -lgsl -lgslcblas -lreadline -lm -ldl
 
 # Auto-deps: generate .d files per source (write alongside .o)
 DEPFLAGS = -MMD -MP -MF $(@:.o=.d) -MT $@
@@ -135,12 +135,15 @@ test-asan: asan
 # so every functional test also gets leak/UB checking for free. Exit status
 # is nonzero if any case fails, so this is CI-usable.
 .PHONY: test
-test: asan
+test: asan examples/modules/hello/hello.so
 	@bash tests/run_tests.sh
 	@ASAN_OPTIONS=detect_leaks=0 sh tests/run_golden.sh bin/asan/mm41
 
-golden: all
+golden: all examples/modules/hello/hello.so
 	@sh tests/run_golden.sh $(TARGET)
+
+examples/modules/hello/hello.so: examples/modules/hello/hello.c include/module.h include/ops.h
+	$(MAKE) --no-print-directory shared-module DIR=examples/modules/hello
 
 # -------- Rules --------
 .PHONY: all install install-system uninstall clean doc docs manual
@@ -246,6 +249,14 @@ uninstall:
 docs: $(TARGET)
 	./$(TARGET) --commands > COMMANDS.md
 	./$(TARGET) --commands-tex > doc/commands.tex
+
+# Build a compiled module as a shared object: make shared-module DIR=path/to/module
+# (all .c files in DIR -> DIR/<basename>.so). Load it with "<path>.so" load, or
+# drop it into $(APP_CONF_DIR)/modules/ to have it loaded at startup.
+.PHONY: shared-module
+shared-module:
+	@test -n "$(DIR)" || { echo "usage: make shared-module DIR=path/to/module"; exit 2; }
+	$(CC) -std=c17 -Wall -Wextra -O2 -fPIC -shared -Iinclude -o "$(DIR)/$$(basename "$(DIR)").so" $(DIR)/*.c -lm
 
 # The user manual: doc/manual.tex + the generated command tables -> doc/mm41-manual.pdf.
 # Needs LuaLaTeX (or XeLaTeX: LATEX=xelatex) with fontspec, booktabs, longtable, tcolorbox.

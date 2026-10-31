@@ -1,5 +1,5 @@
 module       version  words  summary
-core         1.0         84  arithmetic, functions, logic, the stack, words and the session
+core         1.0         85  arithmetic, functions, logic, the stack, words and the session
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
 special      1.0          7  gamma, beta and the standard normal distribution
 matrices     1.0         38  linear algebra, matrix construction and reduction, polynomials

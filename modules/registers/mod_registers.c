@@ -36,5 +36,5 @@ static const Op table[] = {
 
 const Module mm41_mod_registers = {
   "registers", "1.0", "64 storage registers of any type",
-  table, (int)(sizeof table / sizeof table[0]), registers_init, registers_shutdown
+  table, (int)(sizeof table / sizeof table[0]), registers_init, registers_shutdown, 0
 };

@@ -49,5 +49,5 @@ static const Op table[] = {
 
 const Module mm41_mod_complex = {
   "complex", "1.0", "complex numbers: parts, argument, conjugate, construction",
-  table, (int)(sizeof table / sizeof table[0]), NULL, NULL
+  table, (int)(sizeof table / sizeof table[0]), NULL, NULL, 0
 };

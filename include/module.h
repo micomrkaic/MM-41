@@ -40,11 +40,14 @@ typedef struct Module {
   int         n_ops;
   int  (*init)(void);     /* optional; nonzero return aborts startup */
   void (*shutdown)(void); /* optional */
+  int         api;        /* MM41_MODULE_API for a shared-object module; 0 for built-ins */
 } Module;
 
 /* The registry. */
 int           modules_register(const Module *m);   /* 0 on success */
-int           modules_init_all(void);              /* call every init, build the flat table */
+int           modules_init_all(void);              /* build the flat table, init modules not yet initialised */
+int           load_shared_module(const char *path);/* dlopen + register + init; 0 on success */
+int           autoload_shared_modules(void);       /* modules/x.so files in the config directory */
 void          modules_shutdown_all(void);
 int           modules_count(void);
 const Module *module_at(int i);

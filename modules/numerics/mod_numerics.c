@@ -62,5 +62,5 @@ static const Op table[] = {
 
 const Module mm41_mod_numerics = {
   "numerics", "1.0", "integration, roots, minima, derivatives and sums over any word",
-  table, (int)(sizeof table / sizeof table[0]), NULL, NULL
+  table, (int)(sizeof table / sizeof table[0]), NULL, NULL, 0
 };

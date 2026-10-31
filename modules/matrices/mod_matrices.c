@@ -99,5 +99,5 @@ static const Op table[] = {
 
 const Module mm41_mod_matrices = {
   "matrices", "1.0", "linear algebra, matrix construction and reduction, polynomials",
-  table, (int)(sizeof table / sizeof table[0]), NULL, NULL
+  table, (int)(sizeof table / sizeof table[0]), NULL, NULL, 0
 };

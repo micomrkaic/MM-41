@@ -84,6 +84,10 @@ static int op_use(Stack *stack) {
   char *s; if (pop_string_arg(stack, "use", &s) != 0) return 0;
   use_word_module(s); free(s); return 0;
 }
+static int op_load(Stack *stack) {
+  char *s; if (pop_string_arg(stack, "load", &s) != 0) return 0;
+  load_shared_module(s); free(s); return 0;
+}
 static int op_unuse(Stack *stack) {
   char *s; if (pop_string_arg(stack, "unuse", &s) != 0) return 0;
   unuse_word_module(s); free(s); return 0;
@@ -325,6 +329,7 @@ static const Op core_table[] = {
   { "clrwords", 0, op_clrwords, "Words", "--", "delete all user-defined words", "clrwords" },
   { "use", 1, op_use, "Words", "\"name\" --", "load a word module: modules/name.mm in the config directory, or a path", "\"finance\" use" },
   { "unuse", 1, op_unuse, "Words", "\"name\" --", "unload a word module and its words", "\"finance\" unuse" },
+  { "load", 1, op_load, "Session", "\"file.so\" --", "load a compiled module (a shared object exporting mm41_module); stays loaded", "\"hello.so\" load" },
   /* ---- Session ---- */
   { "eval", 1, op_eval, "Session", "s --", "evaluate the string s as a line of input", "\"1 2 +\" eval" },
   { "batch", 1, op_batch, "Session", "s --", "run the lines of file s as input", "\"calc.txt\" batch" },
@@ -338,7 +343,7 @@ static const Op core_table[] = {
 
 const Module mm41_mod_core = {
   "core", MM41_VERSION, "arithmetic, functions, logic, the stack, words and the session",
-  core_table, (int)(sizeof core_table / sizeof core_table[0]), NULL, NULL
+  core_table, (int)(sizeof core_table / sizeof core_table[0]), NULL, NULL, 0
 };
 
 int find_op(const char *name) {

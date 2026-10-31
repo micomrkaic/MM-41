@@ -33,5 +33,5 @@ static const Op table[] = {
 
 const Module mm41_mod_strings = {
   "strings", "1.0", "string construction and manipulation",
-  table, (int)(sizeof table / sizeof table[0]), NULL, NULL
+  table, (int)(sizeof table / sizeof table[0]), NULL, NULL, 0
 };

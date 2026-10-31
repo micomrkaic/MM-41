@@ -9,18 +9,21 @@
 
 /* The module registry and the flat dispatch table it builds. */
 
+#define _POSIX_C_SOURCE 200809L
 #include "errors.h"
 #include "module.h"
 #include "words.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #define MAX_MODULES 64
 
 static const Module *registry[MAX_MODULES];
 static int           first_op[MAX_MODULES];   /* index in ops[] of each module's first command */
 static int           n_modules = 0;
+static int           n_initialised = 0;       /* registry[0..n_initialised) have had init() */
 
 static Op *flat_table = NULL;   /* what ops points at */
 const Op *ops   = NULL;
@@ -64,15 +67,18 @@ static int rebuild_table(void) {
 
 int modules_init_all(void) {
   if (rebuild_table() != 0) return -1;
-  for (int i = 0; i < n_modules; i++)
-    if (registry[i]->init && registry[i]->init() != 0)
-      return mm_error("module %s: initialisation failed", registry[i]->name);
+  for (; n_initialised < n_modules; n_initialised++) {
+    const Module *m = registry[n_initialised];
+    if (m->init && m->init() != 0)
+      return mm_error("module %s: initialisation failed", m->name);
+  }
   return 0;
 }
 
 void modules_shutdown_all(void) {
-  for (int i = n_modules - 1; i >= 0; i--)
+  for (int i = n_initialised - 1; i >= 0; i--)
     if (registry[i]->shutdown) registry[i]->shutdown();
+  n_initialised = 0;
   free(flat_table);
   flat_table = NULL;
   ops = NULL;
@@ -103,7 +109,57 @@ int module_first_op(const Module *m) {
 void list_modules(void) {
   printf("%-12s %-8s %5s  %s\n", "module", "version", "words", "summary");
   for (int i = 0; i < n_modules; i++)
-    printf("%-12s %-8s %5d  %s\n", registry[i]->name, registry[i]->version,
-           registry[i]->n_ops, registry[i]->summary ? registry[i]->summary : "");
+    printf("%-12s %-8s %5d  %s%s\n", registry[i]->name, registry[i]->version,
+           registry[i]->n_ops, registry[i]->summary ? registry[i]->summary : "",
+           registry[i]->api ? "  [shared object]" : "");
   list_word_modules();
+}
+
+/* ======================= shared-object modules ======================= */
+
+#include <dirent.h>
+#include <dlfcn.h>
+#include <unistd.h>
+#include "globals.h"
+
+int load_shared_module(const char *path) {
+  void *h = dlopen(path, RTLD_NOW | RTLD_LOCAL);
+  if (!h) return mm_error("load: %s", dlerror());
+  const Module *(*entry)(void) = (const Module *(*)(void))(uintptr_t)dlsym(h, "mm41_module");
+  if (!entry) { dlclose(h); return mm_error("load: %s does not export mm41_module()", path); }
+  const Module *m = entry();
+  if (!m || m->api != MM41_MODULE_API) {
+    dlclose(h);
+    return mm_error("load: %s was built for module API %d, this calculator has %d",
+                    path, m ? m->api : 0, MM41_MODULE_API);
+  }
+  if (modules_register(m) != 0) { dlclose(h); return -1; }
+  if (modules_init_all() != 0) return -1;
+  /* the handle is kept for the life of the process: a module's code must
+     stay mapped while its commands are in the table */
+  return 0;
+}
+
+static int cmp_str(const void *a, const void *b) { return strcmp(*(char *const *)a, *(char *const *)b); }
+
+int autoload_shared_modules(void) {
+  const char *dir = app_path("modules");
+  DIR *d = opendir(dir);
+  if (!d) return 0;
+  char *names[MAX_MODULES]; int n = 0;
+  struct dirent *e;
+  while ((e = readdir(d)) != NULL && n < MAX_MODULES) {
+    size_t l = strlen(e->d_name);
+    if (l > 3 && strcmp(e->d_name + l - 3, ".so") == 0) names[n++] = strdup(e->d_name);
+  }
+  closedir(d);
+  qsort(names, (size_t)n, sizeof names[0], cmp_str);
+  int rc = 0;
+  for (int i = 0; i < n; i++) {
+    char rel[512];
+    snprintf(rel, sizeof rel, "modules/%s", names[i]);
+    if (load_shared_module(app_path(rel)) != 0) rc = -1;
+    free(names[i]);
+  }
+  return rc;
 }

@@ -145,6 +145,7 @@ static void startup(Stack *stack, Stack *old_stack) {
   init_stack(old_stack);
   load_modules();
   if (autoload) {
+    autoload_shared_modules();
     autoload_word_modules();
     autoload_words();
     load_config(CONFIG_PATH);
