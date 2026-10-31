@@ -79,6 +79,7 @@ int set_print_precision(Stack* stack) {
     return 1;
   }
 
+  stack_coerce_real(stack, 0);
   const stack_element *elem = &stack->items[stack->top];
   if (elem->type != TYPE_REAL) {
     mm_error("setprec: expected a real number");

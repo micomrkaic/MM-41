@@ -99,6 +99,7 @@ int select_matrix_element(Stack *s) {
   }
 
   // Row and column indices, matrix below them
+  stack_coerce_real(s, 0); stack_coerce_real(s, 1);
   stack_element *col_elem = &s->items[s->top];
   stack_element *row_elem = &s->items[s->top - 1];
 
@@ -164,6 +165,7 @@ int set_matrix_element(Stack *s) {
 
   /* A i j x -- A : the matrix is deepest, like get_aij */
   stack_element *val_elem    = &s->items[s->top];
+  stack_coerce_real(s, 1); stack_coerce_real(s, 2);
   stack_element *col_elem    = &s->items[s->top - 1];
   stack_element *row_elem    = &s->items[s->top - 2];
   stack_element *matrix_elem = &s->items[s->top - 3];
@@ -272,6 +274,7 @@ int make_unit_matrix(Stack* stack) {
     return 1;
   }
 
+  stack_coerce_real(stack, 0);
   value_type top_type=stack_top_type(stack);
 
   if (top_type != TYPE_REAL) {
@@ -306,6 +309,7 @@ int make_row_range(Stack* stack) {
     mm_error("rrange: need start step end");
     return 1;
   }
+  stack_coerce_real(stack, 0); stack_coerce_real(stack, 1); stack_coerce_real(stack, 2);
   const stack_element *e_end   = &stack->items[stack->top];
   const stack_element *e_step  = &stack->items[stack->top - 1];
   const stack_element *e_start = &stack->items[stack->top - 2];
@@ -346,6 +350,7 @@ int make_matrix_of_ones(Stack* stack) {
     return 1;
   }
 
+  stack_coerce_real(stack, 0); stack_coerce_real(stack, 1);
   value_type cols_top_type = stack_top_type(stack);
   value_type rows_top_type = stack_next2_top_type(stack);
     
@@ -388,6 +393,7 @@ int make_matrix_of_zeroes(Stack* stack) {
     return 1;
   }
 
+  stack_coerce_real(stack, 0); stack_coerce_real(stack, 1);
   value_type cols_top_type = stack_top_type(stack);
   value_type rows_top_type = stack_next2_top_type(stack);
     
@@ -428,6 +434,7 @@ int make_random_matrix(Stack* stack) {
     return 1;
   }
 
+  stack_coerce_real(stack, 0); stack_coerce_real(stack, 1);
   value_type cols_top_type = stack_top_type(stack);
   value_type rows_top_type = stack_next2_top_type(stack);
 
@@ -471,6 +478,7 @@ int make_gaussian_random_matrix(Stack* stack) {
     return 1;
   }
 
+  stack_coerce_real(stack, 0); stack_coerce_real(stack, 1);
   value_type cols_top_type = stack_top_type(stack);
   value_type rows_top_type = stack_next2_top_type(stack);
 
@@ -547,6 +555,7 @@ int reshape_matrix(Stack* stack) {
     }
 
     // Get new cols and rows (top two elements)
+    stack_coerce_real(stack, 0); stack_coerce_real(stack, 1);
     stack_element cols_elem = stack->items[stack->top--];
     stack_element rows_elem = stack->items[stack->top--];
 

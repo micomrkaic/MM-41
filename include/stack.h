@@ -87,6 +87,10 @@ stack_element* view_top(Stack* stack);
 void free_stack(Stack* stack);
 gsl_matrix* load_matrix_from_file(int rows, int cols, const char* filename);
 value_type stack_top_type(const Stack* stack);
+/* Convert a decimal at depth (0 = top) to a real in place. For commands
+   that take an index, count, dimension, precision or flag, where nothing is
+   lost; the arithmetic keeps its decimals. Items of other types are left alone. */
+void stack_coerce_real(Stack* stack, int depth);
 value_type stack_next2_top_type(const Stack* stack);
 int copy_stack(Stack* dest, const Stack* src);
 

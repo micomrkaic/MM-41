@@ -51,12 +51,14 @@ int pop_string_arg(Stack *stack, const char *what, char **out) {
 }
 
 int pop_real_arg(Stack *stack, const char *what, double *out) {
+  stack_coerce_real(stack, 0);
   if (stack->items[stack->top].type != TYPE_REAL) return mm_error("%s: expected a real number", what);
   *out = pop(stack).real;
   return 0;
 }
 
 int pop_two_reals(Stack *stack, const char *what, double *y, double *x) {
+  stack_coerce_real(stack, 0); stack_coerce_real(stack, 1);
   if (stack->items[stack->top].type != TYPE_REAL || stack->items[stack->top - 1].type != TYPE_REAL)
     return mm_error("%s: needs two real numbers", what);
   *x = pop(stack).real;
@@ -99,6 +101,7 @@ static int op_unuse(Stack *stack) {
 
 /* n roll: move the item at depth n (0 = top) to the top; 1 roll = swap. */
 static int op_roll_n(Stack *stack) {
+  stack_coerce_real(stack, 0);
   stack_element e = pop(stack);
   if (e.type != TYPE_REAL || e.real != (int)e.real || e.real < 0) {
     stack_element_free(&e);
@@ -110,6 +113,7 @@ static int op_roll_n(Stack *stack) {
 
 /* n pick: copy the item at depth n (0 = top) to the top; 0 pick = dup. */
 static int op_pick(Stack *stack) {
+  stack_coerce_real(stack, 0);
   stack_element e = pop(stack);
   if (e.type != TYPE_REAL || e.real != (int)e.real || e.real < 0) {
     stack_element_free(&e);

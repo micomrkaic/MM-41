@@ -273,6 +273,15 @@ gsl_matrix* load_matrix_from_file(int rows, int cols, const char* filename) {
   return m;
 }
 
+void stack_coerce_real(Stack* stack, int depth) {
+  if (stack->top - depth < 0) return;
+  stack_element *e = &stack->items[stack->top - depth];
+  if (e->type != TYPE_DECIMAL) return;
+  double x = dec_to_double(&e->dec);
+  e->type = TYPE_REAL;
+  e->real = x;
+}
+
 value_type stack_top_type(const Stack* stack) {
   if (stack->top < 0) {
     mm_error("Stack is empty\n");

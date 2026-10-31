@@ -182,6 +182,7 @@ int my_substring(Stack* stack) {
     mm_error("substr: usage is \"string\" start end substr (0-based, end exclusive)");
     return 1;
   }
+  stack_coerce_real(stack, 0); stack_coerce_real(stack, 1);
   const stack_element *e_end   = &stack->items[stack->top];
   const stack_element *e_start = &stack->items[stack->top - 1];
   const stack_element *e_str   = &stack->items[stack->top - 2];

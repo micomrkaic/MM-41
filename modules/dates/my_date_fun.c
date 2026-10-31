@@ -62,6 +62,7 @@ int date_plus_days(Stack* stack) {
     return 1;
   }
 
+  stack_coerce_real(stack, 0);
   const stack_element *days_elem = &stack->items[stack->top];
   const stack_element *date_elem = &stack->items[stack->top - 1];
 

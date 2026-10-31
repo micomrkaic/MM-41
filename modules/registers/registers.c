@@ -105,6 +105,7 @@ void store_to_register(Stack* stack) {
     mm_error("sto: need a value and a register index on the stack (value n sto)");
     return;
   }
+  stack_coerce_real(stack, 0);
   stack_element* reg_elem = &stack->items[stack->top];
   stack_element* value_elem = &stack->items[stack->top - 1];
 
@@ -130,6 +131,7 @@ void recall_from_register(Stack* stack) {
     return;
   }
 
+  stack_coerce_real(stack, 0);
   const stack_element *reg_elem = &stack->items[stack->top];
 
   if (reg_elem->type != TYPE_REAL) {

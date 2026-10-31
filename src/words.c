@@ -286,6 +286,7 @@ int exec_word(Stack *stack, user_word *w) {
       pc = in->target;
       break;
     case W_BRANCH0: {
+      stack_coerce_real(stack, 0);
       if (stack->top < 0 || stack->items[stack->top].type != TYPE_REAL) {
         mm_error("%s: conditional needs a real flag on the stack", w->name);
         break;
@@ -295,6 +296,7 @@ int exec_word(Stack *stack, user_word *w) {
       break;
     }
     case W_DO: {
+      stack_coerce_real(stack, 0); stack_coerce_real(stack, 1);
       if (stack->top < 1 || stack->items[stack->top].type != TYPE_REAL ||
           stack->items[stack->top - 1].type != TYPE_REAL) {
         mm_error("%s: do needs real limit and start", w->name);
@@ -311,6 +313,7 @@ int exec_word(Stack *stack, user_word *w) {
       if (lp[nl - 1].index < lp[nl - 1].limit) pc = in->target; else { nl--; pc++; }
       break;
     case W_PLOOP: {
+      stack_coerce_real(stack, 0);
       if (stack->top < 0 || stack->items[stack->top].type != TYPE_REAL) {
         mm_error("%s: +loop needs a real increment", w->name);
         break;
