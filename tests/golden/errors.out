@@ -9,4 +9,11 @@ Error: Unknown word: nosuchword
 [2] ℝ : 3.000000
 [3] Mℝ: 2 x 2 matrix
 [4] Mℝ: 3 x 3 matrix
+Error: Stack overflow
+Error: Stack overflow
+Error: Stack overflow
+Error: Stack overflow
+Error: Stack overflow
+Error: Stack overflow
+{}
 [exit 1]

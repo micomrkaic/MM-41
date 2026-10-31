@@ -30,6 +30,19 @@
 #include "stack.h"                          // for (anonymous struct)::(anon...
 #include "matrix_fun.h"                     // for make_diag_matrix, make_ga...
 
+
+/* The constructors refuse absurd sizes instead of letting GSL try (and leak
+   its struct when the block allocation fails). dims are doubles from the
+   stack, so the check also catches 1e300 before any cast to int. */
+#define MAX_MATRIX_ELEMENTS 50000000.0
+static int dims_ok(const char *what, double rows, double cols) {
+  if (!(rows >= 1) || !(cols >= 1)) { mm_error("%s: dimensions must be positive", what); return 0; }
+  if (rows * cols > MAX_MATRIX_ELEMENTS) {
+    mm_error("%s: a %g x %g matrix is too large (the limit is %.0f elements)", what, rows, cols, MAX_MATRIX_ELEMENTS);
+    return 0;
+  }
+  return 1;
+}
 int split_matrix(Stack *s) {
   if (s->top < 0) {
     mm_error("Error: stack underflow — no matrix on stack.\n");
@@ -284,11 +297,8 @@ int make_unit_matrix(Stack* stack) {
 
   stack_element dim_item = pop(stack);
 
+  if (!dims_ok("eye", dim_item.real, dim_item.real)) return 1;
   int n = (int)(dim_item.real);
-  if (n <= 0) {
-    mm_error("Dimension must be positive, got %d.\n", n);
-    return 1;
-  }
 
   gsl_matrix* m = gsl_matrix_calloc(n, n); // allocates and zeroes the matrix
   if (!m) {
@@ -362,17 +372,9 @@ int make_matrix_of_ones(Stack* stack) {
   stack_element cols = pop(stack);
   stack_element rows = pop(stack);
     
+  if (!dims_ok("ones", rows.real, cols.real)) return 1;
   int n = (int)(rows.real);
-  if (n <= 0) {
-    mm_error("Dimension must be positive, got %d.\n", n);
-    return 1;
-  }
-
   int m = (int)(cols.real);
-  if (m <= 0) {
-    mm_error("Dimension must be positive, got %d.\n", m);
-    return 1;
-  }
 
   gsl_matrix* mat = gsl_matrix_calloc(n, m); // allocates and zeroes the matrix
   if (!mat) {
@@ -405,17 +407,9 @@ int make_matrix_of_zeroes(Stack* stack) {
   stack_element cols = pop(stack);
   stack_element rows = pop(stack);
     
+  if (!dims_ok("zeroes", rows.real, cols.real)) return 1;
   int n = (int)(rows.real);
-  if (n <= 0) {
-    mm_error("Dimension must be positive, got %d.\n", n);
-    return 1;
-  }
-
   int m = (int)(cols.real);
-  if (m <= 0) {
-    mm_error("Dimension must be positive, got %d.\n", m);
-    return 1;
-  }
 
   gsl_matrix* mat = gsl_matrix_calloc(n, m); // allocates and zeroes the matrix
   if (!mat) {
@@ -446,13 +440,9 @@ int make_random_matrix(Stack* stack) {
   stack_element cols = pop(stack);
   stack_element rows = pop(stack);
 
+  if (!dims_ok("rand", rows.real, cols.real)) return 1;
   int n = (int)(rows.real);
   int m = (int)(cols.real);
-
-  if (n <= 0 || m <= 0) {
-    mm_error("Dimensions must be positive, got %d x %d.\n", n, m);
-    return 1;
-  }
 
   //    gsl_rng * rng = gsl_rng_alloc(gsl_rng_mt19937);
     
@@ -490,13 +480,9 @@ int make_gaussian_random_matrix(Stack* stack) {
   stack_element cols = pop(stack);
   stack_element rows = pop(stack);
 
+  if (!dims_ok("randn", rows.real, cols.real)) return 1;
   int n = (int)(rows.real);
   int m = (int)(cols.real);
-
-  if (n <= 0 || m <= 0) {
-    mm_error("Dimensions must be positive, got %d x %d.\n", n, m);
-    return 1;
-  }
   gsl_matrix* mat = gsl_matrix_alloc(n, m);  // Allocate uninitialized matrix
   if (!mat) {
     mm_error("Failed to allocate matrix.\n");
@@ -583,9 +569,9 @@ int reshape_matrix(Stack* stack) {
         }
 
         size_t original_elements = original->size1 * original->size2;
-        if ((size_t)(new_rows * new_cols) != original_elements) {
-            mm_error("Reshape error: size mismatch (%zu != %d).\n",
-                    original_elements, new_rows * new_cols);
+        if ((size_t)new_rows * (size_t)new_cols != original_elements) {
+            mm_error("Reshape error: size mismatch (%zu != %zu).\n",
+                    original_elements, (size_t)new_rows * (size_t)new_cols);
             return 1;
         }
 
@@ -618,9 +604,9 @@ int reshape_matrix(Stack* stack) {
         }
 
         size_t original_elements = original->size1 * original->size2;
-        if ((size_t)(new_rows * new_cols) != original_elements) {
-            mm_error("Reshape error: size mismatch (%zu != %d).\n",
-                    original_elements, new_rows * new_cols);
+        if ((size_t)new_rows * (size_t)new_cols != original_elements) {
+            mm_error("Reshape error: size mismatch (%zu != %zu).\n",
+                    original_elements, (size_t)new_rows * (size_t)new_cols);
             return 1;
         }
 

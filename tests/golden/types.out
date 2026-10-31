@@ -5,7 +5,7 @@ Error: Matrix is not square
 Error: Only real or complex matrices can be transposed
 Error: row and column must be real scalars.
 Error: Type error: top stack items must be real numbers (dimensions).
-Error: Dimension must be positive, got -1.
+Error: ones: dimensions must be positive
 Error: setprec: expected a real number
 Error: Type error: register index must be a real number.
 Error: Expected a string and a number

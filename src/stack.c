@@ -136,13 +136,16 @@ void push_string(Stack* stack, const char* str) {
   }
 }
 
+/* The push takes ownership of the matrix, so it is released when the push
+   cannot happen (a full stack): the caller has no handle to it any more. */
 void push_matrix_real(Stack* stack, gsl_matrix* matrix) {
-  if (stack->top >= STACK_SIZE - 1) {
-    mm_error("Stack overflow\n");
-    return;
-  }
   if (NULL == matrix) {
     mm_error("NULL pointer to matrix, exiting!\n");
+    return;
+  }
+  if (stack->top >= STACK_SIZE - 1) {
+    mm_error("Stack overflow\n");
+    gsl_matrix_free(matrix);
     return;
   }
   stack->top++;
@@ -151,8 +154,13 @@ void push_matrix_real(Stack* stack, gsl_matrix* matrix) {
 }
 
 void push_matrix_complex(Stack* stack, gsl_matrix_complex* matrix) {
+  if (NULL == matrix) {
+    mm_error("NULL pointer to matrix, exiting!\n");
+    return;
+  }
   if (stack->top >= STACK_SIZE - 1) {
     mm_error("Stack overflow\n");
+    gsl_matrix_complex_free(matrix);
     return;
   }
   stack->top++;
@@ -169,6 +177,9 @@ stack_element pop(Stack* stack) {
     return popped;
   }
   popped = stack->items[stack->top];
+  /* Clear the vacated slot: a stale pointer left there would keep a leaked
+     matrix or string "reachable" and hide it from the leak detector. */
+  memset(&stack->items[stack->top], 0, sizeof stack->items[stack->top]);
   stack->top--;
   return popped;
 }
@@ -327,6 +338,7 @@ void stack_nip(Stack* stack) {
   // This is a move, not a copy: no aliasing, no double free.
   stack_element_free(&stack->items[stack->top - 1]);
   stack->items[stack->top - 1] = stack->items[stack->top];
+  memset(&stack->items[stack->top], 0, sizeof stack->items[stack->top]);
   stack->top--;
 }
 
