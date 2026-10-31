@@ -1,85 +1,106 @@
-# MM-41 — Mico's RPN calculator
+# MM-41 — a modular RPN calculator
 
 MM-41 is a programmable, stack-based RPN calculator for the terminal, written in
 C17 on top of the GNU Scientific Library and GNU Readline. It handles **real and
-complex scalars, strings, and real and complex matrices**, and it is programmable
-in the spirit of the HP-41C and FORTH: user-defined words with conditionals and
-loops, numerical methods that take any word as the function, and HP-41 style
-programs with labels and jumps.
+complex scalars, strings, and real and complex matrices**; it is programmable
+with user-defined words (conditionals, loops, recursion), numerical methods that
+take any word as the function, and HP-41 style programs; and, like the HP-41 it
+is named after, it is built from **modules** you can add to.
+
+It unifies the earlier MM-11, MM-14 and MM-15 calculators. MM-B1's decimal
+arithmetic and finance words are the next modules to arrive.
 
 ```text
 $ mm41
-MM_RPN>> 2 3 + 4 *
+MM-41>> 2 3 + 4 *
 [0] ℝ : 20.000000
-MM_RPN>> (1,2) (3,-1) *
-[0] ℝ : 20.000000
+MM-41>> (1,2) (3,-1) *
 [1] ℂ : (5.000000, 5.000000i)
-MM_RPN>> [2 2 $ 4 7 2 6] det
+MM-41>> [2 2 $ 4 7 2 6] det
 [2] ℝ : 10.000000
-MM_RPN>> : f dup * 2 - ;
-MM_RPN>> 0 3 @f fzero
+MM-41>> : f dup * 2 - ;
+MM-41>> 0 3 @f fzero
 [3] ℝ : 1.414214
+MM-41>> modules
+module       version  words  summary
+core         1.0         85  arithmetic, functions, logic, the stack, words and the session
+complex      1.0          7  complex numbers: parts, argument, conjugate, construction
+special      1.0          7  gamma, beta and the standard normal distribution
+matrices     1.0         38  linear algebra, matrix construction and reduction, polynomials
+numerics     1.0         12  integration, roots, minima, derivatives and sums over any word
+strings      1.0          7  string construction and manipulation
+registers    1.0          7  64 storage registers of any type
+dates        1.0         13  calendar arithmetic, time zones, sunrise and sunset
+programs     1.0          1  HP-41 style programs with labels, jumps and subroutines
+std          1.0         30  standard word module: powers, norms, finance, storage arithmetic, locations
 ```
 
-The **[user manual](doc/mm41-manual.pdf)** (PDF, 27 pages) covers everything
-below in detail, with a complete command reference. `man mm41` and
-[COMMANDS.md](COMMANDS.md) are the short forms; inside the calculator,
-`help`, `listfcns` and `"name" usage`.
+The **[user manual](doc/mm41-manual.pdf)** (PDF, 32 pages) covers everything
+with a complete command reference. `man mm41` and [COMMANDS.md](COMMANDS.md)
+are the short forms; inside the calculator, `help`, `listfcns`, `modules` and
+`"name" usage`.
 
-## What it does
+## Modules
+
+Every command belongs to a module, and there are three kinds — indistinguishable
+from the stack:
+
+- **Built-in modules** live in `modules/<name>/` and are compiled in.
+  `make MODULES="matrices strings"` builds a smaller calculator.
+- **Word modules** are text files of definitions. Drop `geo.mm` into
+  `~/.config/mm41/modules/` and it is loaded at every start; `"geo" use` and
+  `"geo" unuse` load and unload by hand. The shipped `std` module is one.
+  ```text
+  \ module geo 0.1 circles and spheres
+  : circ 2 * pi * ;
+  sphere dup * 4 * pi *
+  ```
+- **Compiled modules** are shared objects exporting `mm41_module()` — the
+  same `Module` struct the built-ins use (`include/module.h`).
+  `make shared-module DIR=examples/modules/hello` builds the example;
+  `"hello.so" load` loads it, or put it in `~/.config/mm41/modules/`.
+
+Two modules may not define the same name; the clash is reported when the second
+loads. `"name" usage` tells you which module a command comes from.
+
+## What the core and the shipped modules do
 
 - **Atomic errors.** Every token either succeeds or leaves the stack exactly as
-  it was; the error is printed and the rest of the line is skipped. A user word
-  that fails half-way leaves no trace. `undo` restores the previous line's stack.
+  it was; the error is printed and the rest of the line is skipped. `undo`
+  restores the previous line's stack.
 - **One promotion rule.** `-1 sqrt` is `(0,1)`, `2 asin` is `(1.5708,1.3170)`,
   `-8 3 inv ^` is `(1,1.7321)`; a real matrix with one such entry becomes a
   complex matrix. Division by zero is an error, not `inf`.
-- **Matrices** via GSL: products, elementwise operators (`.* ./ .^`), inverse,
-  pseudoinverse, determinant, eigen-, Cholesky and singular value
-  decompositions, Kronecker product, reshaping and joining, column/row
-  statistics, polynomial roots and evaluation. Real and complex matrices mix.
+- **Matrices** via GSL: products, elementwise operators, inverse, pseudoinverse,
+  determinant, eigen-, Cholesky and singular value decompositions, Kronecker
+  product, reshaping and joining, column/row statistics, polynomial roots and
+  evaluation. Real and complex matrices mix.
 - **Words**, compiled at definition time, with `if/else/then`, `begin/until`,
   `begin/while/repeat`, `do/loop/+loop` and `i`/`j`; recursion allowed.
-- **Numerical methods** over any word or command: `integrate` (tanh-sinh with
-  adaptive bisection), `romberg`, `fzero` and `solve` (Brent), `minimize`,
-  `deriv` (Ridders), `fsum`, `fprod`. Cross-checked against SciPy.
+- **Numerical methods** over any word or command: `integrate` (tanh-sinh),
+  `romberg`, `fzero`, `solve`, `minimize`, `deriv`, `fsum`, `fprod`.
 - **Strings, registers, dates and the sun**: 64 registers of any type; date
-  arithmetic; sunrise, sunset and civil dawn/dusk for any location, with IANA
-  time zones resolved for the date in question.
-- **HP-41 style programs** from files (`LBL`, `GOTO`, `GOSUB`, `RTN`, tests that
-  skip the next line).
+  arithmetic; sunrise, sunset and civil dawn/dusk with IANA time zones.
+- **HP-41 style programs** from files (`LBL`, `GOTO`, `GOSUB`, `RTN`, tests).
 - **Batch mode**: `-e EXPR`, `-f FILE`, or piped stdin; exit status 1 on any
-  error, so it works in shell scripts and in the project's own golden tests.
-- Instant startup; one dispatch table drives dispatch, help, completion, the man
-  page's command list and the manual's reference appendix.
+  error.
 
 ## A taste
 
 ```text
 : fac dup 1 gt if dup 1 - fac * then ;
 10 fac                                   \ 3628800
-: sum 0 swap 1 + 1 do i + loop ;
-100 sum                                  \ 5050
-
 0 pi @sin integrate                      \ 2
-: rsqrt sqrt inv ;
-0 1 @rsqrt integrate                     \ 2   (endpoint singularity, exact)
 3 @sin solve                             \ 3.141592653590
-: par 3 - dup * 1 + ;
-0 5 @par minimize                        \ 3
-
 [2 2 $ 4 7 2 6] minv pm                  \ | 0.6 -0.7 | / | -0.2 0.4 |
 [1 3 $ 1 -3 2] roots pm                  \ | (1,0) (2,0) |
-[2 2 $ 1 2 3 4] [2 2 $ 1 (0,1) 0 1] +    \ complex matrix
-
 "1.1.2025" "31.12.2025" ddays            \ 364
 "21.6.2026" 46.24 14.36 "Europe/Ljubljana" sunset     \ "20:58"
-today 100 dateplus durham dawn           \ location macros carry their zone
 ```
 
 ```sh
-mm41 -e "2 10 ^"                        # batch: prints the final stack, exits 1 on error
-echo "[2 2 $ 1 2 3 4] det" | mm41 -n    # -n: ignore saved words and config
+mm41 -e "2 10 ^"                         # batch: prints the final stack, exits 1 on error
+echo "[2 2 $ 1 2 3 4] det" | mm41 -n     # -n: ignore saved words, modules and config
 ```
 
 ## Input in one paragraph
@@ -100,22 +121,27 @@ Requires a C17 compiler, GNU make, GNU Readline and GSL
 ```sh
 make                 # release build in bin/release/
 make test            # .t cases + golden files, under AddressSanitizer
-make install         # ~/.local: bin/mm41, man page, manual, docs; macros into ~/.config/mm41
+make install         # ~/.local: bin/mm41, man page, manual, docs; modules into ~/.config/mm41
 make uninstall
 make MODE=asan       # or ubsan, harden
+make MODULES="..."   # choose the built-in modules
+make shared-module DIR=path/to/module
 make docs            # regenerate COMMANDS.md and doc/commands.tex from the dispatch table
 make manual          # rebuild doc/mm41-manual.pdf (needs LuaLaTeX; LATEX=xelatex also works)
 ```
 
-`PREFIX=/usr/local make install` installs system-wide. Configuration, saved words,
-macros and registers live in `$XDG_CONFIG_HOME/mm41` (default `~/.config/mm41`).
+`PREFIX=/usr/local make install` installs system-wide. Configuration, saved
+words, modules and registers live in `$XDG_CONFIG_HOME/mm41` (default
+`~/.config/mm41`).
 
 ## Files
 
 | | |
 |---|---|
-| `src/`, `include/` | the calculator; `src/ops.c` is the dispatch table |
-| `data/` | default `config.txt`, `predefined_macros.txt`, sample programs |
+| `src/`, `include/` | the core: lexer, stack, types, words, errors, the module registry |
+| `modules/<name>/` | the built-in modules, one directory each |
+| `examples/modules/hello/` | a complete compiled module |
+| `data/` | default `config.txt`, the `std` word module, sample programs |
 | `doc/manual.tex` → `doc/mm41-manual.pdf` | the user manual |
 | `mm41.1`, `MANUAL.md`, `COMMANDS.md`, `CHANGES.md` | man page, quick reference, generated command list, changelog |
 | `tests/` | unit cases and golden files |

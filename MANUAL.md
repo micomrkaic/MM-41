@@ -68,6 +68,15 @@ Control words inside definitions: `flag if ... else ... then` ·
 `listwords` · `"name" usage` · `"name" delword` · `clrwords` · `savewords` /
 `loadwords` (`user_words.txt`, loaded at startup) · `listmacros`.
 
+## Modules
+
+`modules` lists what is loaded. Word modules: `~/.config/mm41/modules/*.mm`
+(loaded at startup), `"name" use`, `"name" unuse`; a file of `name body` or
+`: name body ;` lines with an optional `\ module name version summary` header.
+Compiled modules: `"file.so" load`, or drop the `.so` into the same directory;
+`make shared-module DIR=...` builds one from `examples/modules/hello`-style
+source. `make MODULES="..."` chooses the built-in modules.
+
 ## Numerical methods
 
 `a b @f integrate` · `a b @f romberg` · `a b @f fzero` · `g @f solve` ·
@@ -80,11 +89,11 @@ Control words inside definitions: `flag if ... else ... then` ·
 `GOSUB name`, `RTN`, `END`, and tests (`top_gt?`, `top_eq0?`, ...) that skip
 the next line when false. `"file" batch` runs ordinary lines.
 
-`mm41 -e EXPR` · `-f FILE` · stdin · `-n` (no saved state) · `--commands` ·
-`--version`. Exit status 1 if any error occurred.
+`mm41 -e EXPR` · `-f FILE` · stdin · `-n` (no saved state) · `--modules` ·
+`--commands` · `--version`. Exit status 1 if any error occurred.
 
 ## Files
 
 `$XDG_CONFIG_HOME/mm41/` (default `~/.config/mm41/`): `config.txt`,
-`predefined_macros.txt`, `user_words.txt`, `registers.txt`,
+`modules/*.mm`, `modules/*.so`, `user_words.txt`, `registers.txt`,
 `stack_backup.dat`, `.rpn_history`.

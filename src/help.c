@@ -52,6 +52,8 @@ void help_menu(void) {
   printf("    : name body ;     e.g.  : sq dup * ;     then  5 sq\n");
   printf("    inside a word: if else then   begin until   begin while repeat   do loop +loop  i j\n");
   printf("    listwords  \"name\" usage  \"name\" delword  savewords  listmacros\n");
+  subtitle("Modules");
+  printf("    modules  \"name\" use  \"name\" unuse  \"file.so\" load     word modules: ~/.config/mm41/modules/*.mm\n");
   subtitle("Numerical methods (@name pushes a function token)");
   printf("    a b @f integrate   a b @f romberg   a b @f fzero   x @f solve   a b @f minimize\n");
   printf("    x @f deriv   lo hi @f fsum   lo hi @f fprod   @f exec   x tol   nevals  interr\n");
@@ -62,7 +64,7 @@ void help_menu(void) {
   printf("    listfcns            every command by module and category, with stack pictures\n");
   printf("    modules             the loaded modules\n");
   printf("    \"name\" usage        one command in detail, or a word's definition\n");
-  printf("    man mm41, and the manual in the share/doc directory\n");
+  printf("    man mm41, and the manual mm41-manual.pdf in the share/doc directory\n");
   printf("\n");
   skip_stack_printing = true;
 }

@@ -1,6 +1,36 @@
 # MM-41 changes
 
-## 2.1
+## MM-41 1.0
+
+MM-41 unifies the MM calculator family. It starts from MM-15 2.1 (which
+already contained MM-11 and MM-14) and restructures it into modules; every
+MM-15 command, word and program runs unchanged.
+
+- **Modules.** `include/module.h` defines a module as a named, versioned set
+  of commands with init/shutdown hooks. The core (stack, types, words,
+  errors, batch) is the module `core`; complex, special, matrices (with
+  polynomials), numerics, strings, registers, dates and programs are modules
+  under `modules/<name>/`, compiled in according to `MODULES` in the
+  Makefile. `modules` and `--modules` list them; `"name" usage`, `listfcns`
+  and the generated reference name the module of each command. Two modules
+  defining one name is an error at load time.
+- **Word modules.** Files of definitions (`name body` or `: name body ;`
+  lines, optional `\ module name version summary` header) in
+  `~/.config/mm41/modules/*.mm` are loaded at startup; `"name" use` and
+  `"name" unuse` load and unload by hand; `listmacros` lists them by module.
+  `predefined_macros.txt` is now the `std` word module, installed as
+  `modules/std.mm`.
+- **Compiled modules.** A shared object exporting `mm41_module()` is loaded
+  with `"file.so" load` or from the same directory at startup;
+  `make shared-module DIR=...` builds one; `examples/modules/hello/` is a
+  complete example. `mm41` is linked with `-rdynamic` so a module uses the
+  calculator's own API.
+- Binary `mm41`, config in `~/.config/mm41/`, prompt `MM-41>>`, man page
+  `mm41.1`, manual `doc/mm41-manual.pdf` with a Modules chapter.
+
+The MM-15 history below is kept for reference.
+
+## MM-15 2.1
 
 - **User manual.** `doc/manual.tex` builds `doc/mm41-manual.pdf` (`make
   manual`, LuaLaTeX or XeLaTeX); the command reference appendix is generated
@@ -40,7 +70,7 @@
   now says "singular" and `det` returns 0 with any GSL version. Negative
   zero prints as 0.
 
-## 2.0
+## MM-15 2.0
 
 Six commits on top of 1.1, each buildable and tested on its own.
 
@@ -127,7 +157,7 @@ exact), `romberg`, `fzero` (Brent), `solve` (one guess), `minimize`
   `make install` installs the man page and docs, `make uninstall` removes
   them.
 
-## 1.1
+## MM-15 1.1
 
 - `5 sto` read past the stack (ASan abort); fixed.
 - A self-calling word overflowed the C stack; nesting now stops at 256.

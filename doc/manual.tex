@@ -56,7 +56,7 @@
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 
-\title{\sffamily\Huge MM-41\\[0.3em]\Large A programmable RPN calculator for real and complex\\scalars, strings and matrices\\[1em]\large User Manual, version 1.0}
+\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real and complex\\scalars, strings and matrices\\[1em]\large User Manual, version 1.0}
 \author{Mico Mrkaic}
 \date{November 2026}
 
@@ -81,13 +81,15 @@ Source, issues and releases: \url{https://github.com/micomrkaic/MM-41}.
 
 MM-41 is a stack-based calculator in the tradition of the HP-41C and of FORTH, written in C17 on top of the GNU Scientific Library and GNU Readline. You type numbers and commands; numbers go on a stack and commands take their arguments from it. Beyond the usual scalar functions it handles complex numbers, strings, and real and complex matrices, and it is programmable in three ways: user-defined \emph{words} with conditionals and loops, numerical methods (integration, root finding, minimisation, differentiation) that take any word as the function, and HP-41 style line programs with labels and jumps.
 
+Like the HP-41, it is built from \emph{modules}. The core knows about numbers, the stack, words and errors; everything else---matrices, numerical methods, dates, strings---is a module, and you can add your own, either as a file of word definitions or as compiled code (Section~\ref{sec:modules}). MM-41 unifies the earlier MM-11, MM-14 and MM-15 calculators; MM-B1's decimal arithmetic and finance words are the next modules to arrive.
+
 The design has a few fixed points worth knowing before you start.
 
 \begin{itemize}
   \item \textbf{Everything is a token on a line.} Whitespace separates tokens; a line is evaluated left to right. There is no operator precedence because there are no infix operators.
   \item \textbf{Every token is atomic.} If a command fails---wrong type, singular matrix, division by zero---the stack is put back exactly as it was before that token, the error is printed, and the rest of the line is skipped. You never end up with half a result.
   \item \textbf{One promotion rule.} A real function applied outside its real domain returns a complex number rather than \code{nan}: \code{-1 sqrt} is $(0,1)$, \code{2 asin} is $(1.5708, 1.3170)$, and a real matrix with one such entry becomes a complex matrix.
-  \item \textbf{Instant startup, no ceremony.} The calculator starts in a few milliseconds, reads your saved words and configuration from \code{\textasciitilde/.config/mm\_15}, and is equally at home in a terminal session and in a shell pipeline.
+  \item \textbf{Instant startup, no ceremony.} The calculator starts in a few milliseconds, reads your saved words and configuration from \code{\textasciitilde/.config/mm41}, and is equally at home in a terminal session and in a shell pipeline.
 \end{itemize}
 
 \subsection{Notation used in this manual}
@@ -120,7 +122,7 @@ make              # builds bin/release/mm41
 make test         # 21 unit cases + golden files, run under AddressSanitizer
 make install      # into ~/.local: bin/mm41, the man page, this manual, and docs
 \end{shell}
-\code{make install} also seeds \code{\textasciitilde/.config/mm\_15/} with the default configuration and the shipped macros, without overwriting files you already have. \code{PREFIX=/usr/local make install} installs system-wide; \code{make uninstall} removes exactly what was installed. Make sure \code{\textasciitilde/.local/bin} is on your \code{PATH}.
+\code{make install} also seeds \code{\textasciitilde/.config/mm41/} with the default configuration (kept if you already have one) and the shipped word modules (always replaced, so they match the program). \code{PREFIX=/usr/local make install} installs system-wide; \code{make uninstall} removes exactly what was installed. Make sure \code{\textasciitilde/.local/bin} is on your \code{PATH}.
 
 \subsection{A first session}
 
@@ -138,13 +140,14 @@ MM_RPN>> q
 
 The prompt is \code{MM\_RPN>>}. After each line the whole stack is printed, one item per line, deepest first: the index in brackets, a type glyph (\g{ℝ} real, \g{ℂ} complex, \g{𝒮} string, M\g{ℝ} and M\g{ℂ} real and complex matrices), and the value. Position \code{[0]} is the \emph{bottom} of the stack; the highest index is the top, which is where commands take their arguments.
 
-The REPL has GNU Readline editing: arrow keys recall history (kept in \code{.rpn\_history} between sessions), and \textsc{tab} completes command, word and macro names. \cmd{q} exits, saving the configuration; \cmd{undo} restores the stack as it was before the previous line.
+The REPL has GNU Readline editing: arrow keys recall history (kept in \code{.rpn\_history} between sessions), and \textsc{tab} completes command and word names. \cmd{q} exits, saving the configuration; \cmd{undo} restores the stack as it was before the previous line.
 
 \subsection{Getting help inside the calculator}
 
 \begin{description}[style=nextline,leftmargin=1.5em]
   \item[\cmd{help}] a one-screen summary of the input syntax and the command families.
-  \item[\cmd{listfcns}] every command, grouped by category, with its stack picture.
+  \item[\cmd{listfcns}] every command, grouped by module and category, with its stack picture.
+  \item[\cmd{modules}] the loaded modules with their versions.
   \item[\cmd{"name" usage}] the stack picture, description and an example for one command---or, for a user word, its definition:
 \end{description}
 \begin{rpn}
@@ -153,7 +156,7 @@ MM_RPN>> "mod" usage
     floored modulo (result has the sign of x)
     Example: -7 3 mod
 \end{rpn}
-Outside the calculator there is \code{man mm\_15}, and \code{mm\_15 --commands} prints the complete reference as Markdown (it is also Appendix~\ref{app:commands} of this manual).
+Outside the calculator there is \code{man mm41}, and \code{mm41 --commands} prints the complete reference as Markdown (it is also Appendix~\ref{app:commands} of this manual).
 
 %======================================================================
 \section{Entering data}
@@ -201,7 +204,7 @@ The stack shows a matrix as \code{M\g{ℝ}: 2 x 2 matrix}; \cmd{pm} (or \cmd{pri
 
 \subsection{Execution tokens}
 
-\code{@name} does not run \code{name}; it pushes a reference to it, an \emph{execution token}, as a real number. The numerical methods (Section~\ref{sec:numerics}) and \cmd{exec} consume these: \code{0 pi @sin integrate} integrates the sine over $[0,\pi]$. Any command, user word or macro can be referenced this way.
+\code{@name} does not run \code{name}; it pushes a reference to it, an \emph{execution token}, as a real number. The numerical methods (Section~\ref{sec:numerics}) and \cmd{exec} consume these: \code{0 pi @sin integrate} integrates the sine over $[0,\pi]$. Any command or word, from any module, can be referenced this way.
 
 \subsection{Shell commands}
 
@@ -390,7 +393,7 @@ The unary functions---\cmd{sqrt}, \cmd{exp}, \cmd{ln}, the trigonometric and hyp
 [2 2 $ 2 1 1 2] eig pm         \ L: eigenvalues 3 and 1 on the diagonal
 [2 2 $ 4 2 2 3] chol pm        \ | 2 0 | / | 1 1.4142 |
 \end{rpn}
-Solving $Ax = b$ is \code{b A minv *}---or, keeping the operands in the natural order, \code{A b swap minv *}. The shipped macros add \code{cond} (condition number), \code{norm2}, \code{normfro} and \code{XprimeX} (Appendix~\ref{app:macros}).
+Solving $Ax = b$ is \code{b A minv *}---or, keeping the operands in the natural order, \code{A b swap minv *}. The \code{std} word module adds \code{cond} (condition number), \code{norm2}, \code{normfro} and \code{XprimeX} (Appendix~\ref{app:macros}).
 
 \subsection{Elements and shape}
 
@@ -419,7 +422,7 @@ Indices are 0-based.
 
 \subsection{Reductions and statistics}
 
-The \code{c}-prefixed commands reduce each column and return a row vector; the \code{r}-prefixed ones reduce each row and return a column vector. They consume the matrix: \cmd{csum}/\cmd{rsum}, \cmd{cmean}/\cmd{rmean}, \cmd{cvar}/\cmd{rvar} (sample variance, $n-1$ in the denominator), \cmd{cmin}/\cmd{rmin}, \cmd{cmax}/\cmd{rmax}. \cmd{cumsum\_r} and \cmd{cumsum\_c} are cumulative sums along rows and down columns; the macros \code{cumprod\_r} and \code{cumprod\_c} do the same for products.
+The \code{c}-prefixed commands reduce each column and return a row vector; the \code{r}-prefixed ones reduce each row and return a column vector. They consume the matrix: \cmd{csum}/\cmd{rsum}, \cmd{cmean}/\cmd{rmean}, \cmd{cvar}/\cmd{rvar} (sample variance, $n-1$ in the denominator), \cmd{cmin}/\cmd{rmin}, \cmd{cmax}/\cmd{rmax}. \cmd{cumsum\_r} and \cmd{cumsum\_c} are cumulative sums along rows and down columns; \code{cumprod\_r} and \code{cumprod\_c} in the \code{std} module do the same for products.
 \begin{rpn}
 [2 2 $ 1 2 3 4] cmean pm       \ | 2 3 |
 [2 2 $ 1 2 3 4] rsum pm        \ | 3 | / | 7 |
@@ -434,7 +437,7 @@ A polynomial is a vector of coefficients, \emph{highest degree first}, as in Mat
 [1 3 $ 1 -3 2] roots pm        \ | (1,0) (2,0) |
 [1 3 $ 1 0 1] roots pm         \ | (0,1) (0,-1) |   x^2 + 1
 \end{rpn}
-The macros \code{npv} and \code{irr} are built on these two commands (Appendix~\ref{app:macros}).
+The \code{npv} and \code{irr} words of the \code{std} module are built on these two commands (Appendix~\ref{app:macros}).
 
 %======================================================================
 \section{Strings}
@@ -457,9 +460,9 @@ The macros \code{npv} and \code{irr} are built on these two commands (Appendix~\
 "abcdef" 1 3 substr        \ "bc"
 "foo" "bar" scon s2u       \ "FOOBAR"
 "2 3 +" eval               \ 5
-"12:45" dec_hr             \ 12.75   (a shipped macro: substr + eval)
+"12:45" dec_hr             \ 12.75   (from the std module: substr + eval)
 \end{rpn}
-\cmd{eval} is the bridge from text to computation: the macro \code{dec\_hr} converts a time string such as the one \cmd{sunrise} returns into decimal hours by cutting out the hour and minute fields with \cmd{substr} and evaluating them.
+\cmd{eval} is the bridge from text to computation: the \code{std} word \code{dec\_hr} converts a time string such as the one \cmd{sunrise} returns into decimal hours by cutting out the hour and minute fields with \cmd{substr} and evaluating them.
 
 %======================================================================
 \section{Registers}
@@ -472,7 +475,7 @@ There are 64 storage registers, numbered 0--63, and each can hold any type---a m
 pr                   \ shows which registers are occupied
 ffr                  \ 1    index of the first free register
 \end{rpn}
-The macros \code{sto\_add}, \code{sto\_sub}, \code{sto\_mul} and \code{sto\_div} are the HP storage arithmetic: \code{5 0 sto\_add} adds 5 to register 0. \cmd{saveregs} and \cmd{loadregs} write and read \code{registers.txt} in the configuration directory; \cmd{clregs} empties all registers.
+\code{sto\_add}, \code{sto\_sub}, \code{sto\_mul} and \code{sto\_div} (in the \code{std} module) are the HP storage arithmetic: \code{5 0 sto\_add} adds 5 to register 0. \cmd{saveregs} and \cmd{loadregs} write and read \code{registers.txt} in the configuration directory; \cmd{clregs} empties all registers.
 
 Registers are the natural way to pass parameters to a word used in a numerical method (Section~\ref{sec:numerics}): the word reads the parameter with \cmd{rcl} and you change it with \cmd{sto} between calls.
 
@@ -489,7 +492,7 @@ A \emph{word} is a named sequence of tokens. Defining one takes a single line th
 \end{rpn}
 Once defined, a word is used exactly like a built-in command; it can appear in other words, in scripts, in programs, and as a function for the numerical methods. \cmd{listwords} lists your words with their definitions, \code{"hyp" usage} shows one, \code{"hyp" delword} deletes one, and \cmd{clrwords} deletes them all.
 
-Words are \emph{compiled} when defined. Every name in the body must already exist (as a command, a word or a macro), so a typo is reported immediately rather than when the word is first run; the control structures described below are turned into branches at this point. A word may call itself, and nesting stops with an error at 256 levels. Redefining a word replaces it, and any word that calls it sees the new definition.
+Words are \emph{compiled} when defined. Every name in the body must already exist (as a command or a word, from any module), so a typo is reported immediately rather than when the word is first run; the control structures described below are turned into branches at this point. A word may call itself, and nesting stops with an error at 256 levels. Redefining a word replaces it, and any word that calls it sees the new definition.
 
 A name must not be a built-in command or control word and must not start with a digit. Names are case sensitive.
 
@@ -535,9 +538,9 @@ A definition occupies the whole line: nothing may follow the closing semicolon. 
 
 \cmd{savewords} writes all your words to \code{user\_words.txt} in the configuration directory, one \code{name body} per line, and they are loaded automatically at the next start; \cmd{loadwords} reloads the file by hand. The file is plain text and you may edit it: forward references are fine (it is loaded in two passes), comments start with \code{\textbackslash}, and a line that fails to compile is reported with its line number and skipped.
 
-\subsection{Macros}
+\subsection{Words from modules}
 
-Macros are words that ship with the calculator in \code{predefined\_macros.txt}, loaded at startup from the configuration directory; \cmd{listmacros} lists them. They behave exactly like words---the only difference is where they are stored, so that \cmd{clrwords} does not remove them. Appendix~\ref{app:macros} describes each. If a word and a macro have the same name, the word wins. \code{make install} replaces the macro file with the version that matches the program, so put your own definitions in \code{user\_words.txt}, not there.
+Words also arrive in \emph{word modules}: files of definitions plugged in at startup, such as the shipped \code{std} module (Appendix~\ref{app:macros}). They behave exactly like your own words---the only difference is where they are stored, so that \cmd{clrwords} does not remove them. \cmd{listmacros} lists them by module. If one of your words has the same name as a module's word, yours wins. Section~\ref{sec:modules} explains how to write a module.
 
 %======================================================================
 \section{Numerical methods}
@@ -585,7 +588,7 @@ Some practical notes.
   \item \cmd{integrate} uses the tanh--sinh rule, whose nodes cluster at the endpoints; an integrable singularity \emph{at} an endpoint converges to full precision, and the method is exponentially convergent for analytic integrands. Interior kinks or peaks are handled by bisecting the interval where the rule does not converge. If the error estimate stays above the tolerance a warning is printed and the result is returned anyway; \cmd{interr} tells you how good it is.
   \item \cmd{fzero} needs a sign change; \cmd{solve} needs only a guess and will grow a bracket around it, so it is the one to reach for interactively. Both are exact to the tolerance for simple roots.
   \item A function may take parameters from registers: \code{: f 0 rcl * sin ;} integrates $\sin(kx)$ with $k$ in register 0, and \code{2 0 sto} changes $k$.
-  \item The function may be a built-in (\code{@sin}, \code{@exp}) or a macro as well as a word. It may also be a long-running word; the limit is two million evaluations per call, after which the method gives up with an error suggesting a looser tolerance.
+  \item The function may be a built-in (\code{@sin}, \code{@exp}) or a word from a module as well as your own word. It may also be a long-running word; the limit is two million evaluations per call, after which the method gives up with an error suggesting a looser tolerance.
   \item Loosen \cmd{tol} for expensive functions: \code{1e-6 tol}. The value is kept in \code{config.txt}.
 \end{itemize}
 The methods were cross-checked against SciPy on 62 cases with a worst relative error of $3.5\times10^{-11}$.
@@ -620,12 +623,12 @@ Dates are strings in the form \code{d.m.yyyy}; leading zeros are optional on inp
 "1.12.2026" "America/New_York" tz_offset        \ -5
 "21.6.2026" 46.24 14.36 "Europe/Ljubljana" sunset   \ "20:58"
 \end{rpn}
-The \code{zone} argument of the solar functions is either an IANA zone name such as \code{"Europe/Ljubljana"} or a UTC offset in hours such as \code{-4}. With a zone name the offset is resolved \emph{for the date on the stack}, so daylight-saving time is never your problem; names are validated against the system's \code{zoneinfo} database. The shipped location macros push latitude, longitude and zone in one go:
+The \code{zone} argument of the solar functions is either an IANA zone name such as \code{"Europe/Ljubljana"} or a UTC offset in hours such as \code{-4}. With a zone name the offset is resolved \emph{for the date on the stack}, so daylight-saving time is never your problem; names are validated against the system's \code{zoneinfo} database. The location words of the \code{std} module push latitude, longitude and zone in one go:
 \begin{rpn}
 today 100 dateplus durham dawn      \ civil dawn in Durham, NC, 100 days from now
 today kranj sunset dec_hr           \ sunset in Kranj as a decimal hour
 \end{rpn}
-Add your own with one line in \code{user\_words.txt}: \code{home 51.5 -0.12 "Europe/London"}.
+Add your own with one line in \code{user\_words.txt} or in a word module of your own: \code{home 51.5 -0.12 "Europe/London"}.
 
 %======================================================================
 \section{Programs}
@@ -663,6 +666,101 @@ END
 \end{rpn}
 \cmd{run} loads and runs a program file; with \code{verbose\_mode = 1} in the configuration it also prints the listing. Two related commands: \cmd{batch} runs a file of ordinary lines (no labels or tests), and \cmd{eval} evaluates a string.
 
+
+%======================================================================
+\section{Modules}
+\label{sec:modules}
+
+The HP-41 took plug-in ROMs; MM-41 takes modules. A module is a named set of commands with a version and a one-line summary. The core of the calculator---numbers, the stack, words and control flow, errors, batch mode---is itself the module \code{core}, and everything a user would call a feature is a module alongside it. \cmd{modules} shows what is plugged in:
+
+\begin{rpn}
+MM-41>> modules
+module       version  words  summary
+core         1.0         85  arithmetic, functions, logic, the stack, words and the session
+complex      1.0          7  complex numbers: parts, argument, conjugate, construction
+special      1.0          7  gamma, beta and the standard normal distribution
+matrices     1.0         38  linear algebra, matrix construction and reduction, polynomials
+numerics     1.0         12  integration, roots, minima, derivatives and sums over any word
+strings      1.0          7  string construction and manipulation
+registers    1.0          7  64 storage registers of any type
+dates        1.0         13  calendar arithmetic, time zones, sunrise and sunset
+programs     1.0          1  HP-41 style programs with labels, jumps and subroutines
+std          1.0         30  standard word module: powers, norms, finance, storage arithmetic, locations
+\end{rpn}
+
+Every command belongs to exactly one module; \code{"name" usage} says which. Two modules may not define the same name---a clash is reported when the second one loads, with the file and line for a word module---so a command means the same thing whatever is plugged in. There are three kinds of module, and from the stack they are indistinguishable.
+
+\subsection{Built-in modules}
+
+These are compiled into the calculator from the \code{modules/} directory of the source tree, one subdirectory each. The \code{MODULES} variable in the Makefile chooses which; the default is all of them, and
+\begin{shell}
+make MODULES="matrices strings"
+\end{shell}
+builds a smaller calculator with only those two (and the core). The command reference in Appendix~\ref{app:commands} is generated per module, so it always describes the binary it was built with.
+
+\subsection{Word modules}
+
+A word module is a text file of definitions, and it is the way to add commands without a compiler. The file holds one definition per line in either form, with an optional header line naming the module:
+\begin{rpn}
+\ module geo 0.1 circles and spheres
+: circ 2 * pi * ;              \ circumference of a circle of radius x
+sphere dup * 4 * pi *          \ surface of a sphere (name body form)
+\end{rpn}
+Save it as \code{geo.mm} in \code{\textasciitilde/.config/mm41/modules/} and it is loaded at every start, like a ROM left in its slot; the \code{std} module ships there. To load one by hand:
+\begin{rpn}
+"geo" use                  \ modules/geo.mm in the configuration directory
+"/tmp/draft.mm" use        \ or any path
+"geo" unuse                \ remove its words
+listmacros                 \ the words of every loaded word module, by module
+\end{rpn}
+Loading a module that is already loaded replaces it, which makes editing one a quick cycle of save and \cmd{use}. Definitions are compiled on loading with the same rules as words typed at the prompt: unknown names, control-flow mistakes and clashes are reported with the line number, the offending word is skipped, and the rest of the module loads. Forward references within a module are fine. Modules are loaded in name order, so a module that uses another's words should sort after it (or simply not depend on it).
+
+Word modules cannot redefine a built-in command. They can be shadowed by your own words, which is deliberate: a word you type always wins.
+
+\subsection{Compiled modules}
+
+A compiled module is a shared object exporting one function, \code{mm41\_module()}, which returns the same \code{Module} structure the built-in modules use (\code{include/module.h}):
+\begin{Verbatim}[fontsize=\small,frame=single,rulecolor=\color{rule}]
+#include "module.h"
+#include "errors.h"
+#include "stack.h"
+
+static int op_cube(Stack *stack) {           /* x -- x^3 */
+  double x;
+  if (pop_real_arg(stack, "cube", &x) != 0) return -1;
+  push_real(stack, x * x * x);
+  return 0;
+}
+
+static const Op table[] = {
+  /* name, min depth, function, category, stack picture, description, example */
+  { "cube", 1, op_cube, "Example", "x -- x^3", "cube of a real number", "3 cube" },
+};
+
+static const Module mod = {
+  "hello", "0.1", "example module",
+  table, (int)(sizeof table / sizeof table[0]),
+  NULL, NULL,           /* init, shutdown */
+  MM41_MODULE_API
+};
+
+const Module *mm41_module(void) { return &mod; }
+\end{Verbatim}
+A command takes the stack and returns 0, or reports a problem with \code{mm\_error()} and returns nonzero; the core checks the minimum depth before calling it and rolls the stack back on error, exactly as for a built-in. The helpers in \code{ops.h} (\code{pop\_real\_arg}, \code{pop\_two\_reals}, \code{pop\_string\_arg}) and the whole stack API are available. The complete example, with init and shutdown hooks and three commands, is \code{examples/modules/hello/}.
+\begin{shell}
+make shared-module DIR=examples/modules/hello     # -> hello.so
+\end{shell}
+\begin{rpn}
+"examples/modules/hello/hello.so" load
+3 cube                     \ 27
+"cube" usage               \ [hello: Example]
+\end{rpn}
+A \code{.so} placed in \code{\textasciitilde/.config/mm41/modules/} is loaded at startup. A compiled module stays loaded for the session (its code must remain mapped while its commands are in the dispatch table), and loading one renumbers execution tokens, so do not keep an \code{@name} token on the stack across a \cmd{load}. The \code{api} field guards against a module built for a different version of the interface.
+
+\subsection{Which kind to write}
+
+A word module for anything that can be said in words---formulas, conventions, locations, a house style of abbreviations; it needs no compiler and travels as one text file. A compiled module when you need a new algorithm, a library, or speed: an FFT, a database connector, a different number type. The \code{std} module is the first kind; the matrix module is the second, and the only difference between it and a module you write is that it happens to be compiled in.
+
 %======================================================================
 \section{Batch mode and scripting}
 
@@ -674,14 +772,15 @@ mm41 -f script.rpn                       # a file; '-' means stdin
 echo "1 3 /" | mm41 -n                   # a pipeline
 mm41 -n -e ': f dup * 2 - ;' -e '0 3 @f fzero'
 \end{shell}
-\code{-n} starts with a clean slate: no saved words, macros or configuration, and nothing is written at exit. Use it in scripts so that their behaviour does not depend on the state of your configuration directory. Scripts may define words, and \code{\textbackslash} or \code{\#} comments are allowed. The project's own tests are batch runs compared against golden output files (\code{tests/golden/}).
+\code{-n} starts with a clean slate: no saved words, modules or configuration, and nothing is written at exit. Use it in scripts so that their behaviour does not depend on the state of your configuration directory. Scripts may define words, and \code{\textbackslash} or \code{\#} comments are allowed. The project's own tests are batch runs compared against golden output files (\code{tests/golden/}).
 
 \begin{center}
 \begin{tabular}{@{}lp{0.7\textwidth}@{}}
 \toprule
 \code{-e EXPR} & evaluate one line; may be repeated \\
 \code{-f FILE} & run the lines of a file; \code{-} is standard input; may be repeated and mixed with \code{-e} \\
-\code{-n}      & do not load the saved macros, words and configuration \\
+\code{-n}      & do not load the saved words, the modules in the config directory, or the configuration \\
+\code{--modules} & list the built-in modules and exit \\
 \code{--commands} & print the command reference as Markdown \\
 \code{--commands-tex} & the same as LaTeX tables (used to build this manual) \\
 \code{--version}, \code{-h} & version; usage \\
@@ -693,13 +792,14 @@ Exit status: 0 on success, 1 if any error was reported in batch mode, 2 for a us
 %======================================================================
 \section{Configuration and files}
 
-Everything lives in \code{\$XDG\_CONFIG\_HOME/mm\_15/}, which defaults to \code{\textasciitilde/.config/mm\_15/}:
+Everything lives in \code{\$XDG\_CONFIG\_HOME/mm41/}, which defaults to \code{\textasciitilde/.config/mm41/}:
 
 \begin{center}
 \begin{tabular}{@{}lp{0.65\textwidth}@{}}
 \toprule
 \code{config.txt} & \code{print\_precision}, \code{fixed\_point}, \code{verbose\_mode}, \code{tol}; written at exit \\
-\code{predefined\_macros.txt} & macros, one \code{name body} per line; replaced by \code{make install} \\
+\code{modules/*.mm} & word modules, loaded at startup in name order; the shipped ones are replaced by \code{make install} \\
+\code{modules/*.so} & compiled modules, loaded at startup \\
 \code{user\_words.txt} & words saved by \cmd{savewords}; loaded at startup \\
 \code{registers.txt} & \cmd{saveregs} / \cmd{loadregs} \\
 \code{stack\_backup.dat} & \cmd{savestack} / \cmd{loadstack} \\
@@ -707,7 +807,7 @@ Everything lives in \code{\$XDG\_CONFIG\_HOME/mm\_15/}, which defaults to \code{
 \bottomrule
 \end{tabular}
 \end{center}
-A missing configuration directory is created on first use. \code{verbose\_mode = 1} makes the calculator chattier: it lists macros at startup, echoes word definitions in batch mode, and prints program listings.
+A missing configuration directory is created on first use. \code{verbose\_mode = 1} makes the calculator chattier: it lists the module words at startup, echoes word definitions in batch mode, and prints program listings.
 
 The configuration directory is per user; the \code{data/} directory in the source tree holds the defaults that \code{make install} copies there if nothing exists yet.
 
@@ -740,21 +840,21 @@ In batch mode any error makes the exit status 1, so a script can be checked with
 \section{Command reference}
 \label{app:commands}
 
-Generated from the dispatch table by \code{mm\_15 --commands-tex}; the same information is available at run time from \cmd{listfcns} and \code{"name" usage}. Stack pictures read deepest-first.
+Generated from the dispatch table by \code{mm41 --commands-tex}; the same information is available at run time from \cmd{listfcns} and \code{"name" usage}. Stack pictures read deepest-first.
 
 \small
 \input{commands.tex}
 \normalsize
 
 \clearpage
-\section{Shipped macros}
+\section{The std word module}
 \label{app:macros}
 
-The following words are loaded from \code{predefined\_macros.txt}. The file is replaced at each \code{make install}; add your own words to \code{user\_words.txt} instead.
+The following words are loaded from \code{modules/std.mm} in the configuration directory. The file is replaced at each \code{make install}; add your own words to \code{user\_words.txt} or to a word module of your own.
 
 \begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.13\textwidth}>{\raggedright\arraybackslash}p{0.38\textwidth}>{\raggedright\arraybackslash}p{0.41\textwidth}@{}}
-\toprule \textbf{Macro} & \textbf{Definition} & \textbf{Meaning} \\ \midrule \endfirsthead
-\toprule \textbf{Macro} & \textbf{Definition} & \textbf{Meaning} \\ \midrule \endhead
+\toprule \textbf{Word} & \textbf{Definition} & \textbf{Meaning} \\ \midrule \endfirsthead
+\toprule \textbf{Word} & \textbf{Definition} & \textbf{Meaning} \\ \midrule \endhead
 \bottomrule \endlastfoot
 \code{sq}      & \code{dup *}            & $x^2$ \\
 \code{qu}      & \code{sq sq}            & $x^4$ \\
@@ -780,19 +880,16 @@ The following words are loaded from \code{predefined\_macros.txt}. The file is r
 \end{longtable}
 
 \clearpage
-\section{Changes from version 1.x}
+\section{Coming from MM-15, MM-14, MM-11 or MM-B1}
 \label{app:changes}
 
-Users of MM-41 1.x will notice these differences; \code{CHANGES.md} in the source tree has the complete list.
+MM-41 1.0 is MM-15 2.1 restructured into modules; every MM-15 command, word and program runs unchanged. What is different:
 \begin{itemize}
-  \item Errors are atomic and roll the stack back; batch mode exits 1 on error.
-  \item One promotion rule for \cmd{sqrt}, \cmd{ln}, \cmd{log}, \cmd{asin}, \cmd{acos}, \cmd{acosh}, \cmd{atanh}, \cmd{\textasciicircum}; division by zero is an error.
-  \item \cmd{sto} takes \stk{x n} (HP order); \cmd{substr} takes \stk{s start end}; \cmd{set\_aij} takes \stk{A i j x} like \cmd{get\_aij}; \cmd{roll} honours its argument; \cmd{pick} and \cmd{depth} are new.
-  \item \cmd{roots} takes coefficients highest degree first, consistent with \cmd{pval}.
-  \item \cmd{rrange} takes \stk{start step end}; \cmd{days2eoy} takes a date; \cmd{eq} and \cmd{neq} compare strings; real and complex matrices mix in arithmetic.
-  \item Numerical methods take \code{@name} tokens: \code{selword}, \code{set\_intg\_tol} and \code{set\_f0\_tol} are gone, \cmd{tol} replaces them; \cmd{romberg}, \cmd{solve}, \cmd{minimize}, \cmd{deriv}, \cmd{fsum}, \cmd{fprod}, \cmd{exec} are new.
-  \item Words are compiled at definition time and have \code{if/else/then}, \code{begin/until}, \code{begin/while/repeat}, \code{do/loop/+loop}.
-  \item Startup no longer makes network requests; the configuration directory is found at run time.
+  \item The binary is \code{mm41}, the configuration directory \code{\textasciitilde/.config/mm41/}. Copy \code{user\_words.txt}, \code{registers.txt} and \code{config.txt} across from \code{mm\_15} if you want them.
+  \item \code{predefined\_macros.txt} is now the word module \code{modules/std.mm} and is installed there; the old file is not read. Your own additions belong in \code{user\_words.txt} or in a module of your own.
+  \item New commands: \cmd{modules}, \cmd{use}, \cmd{unuse}, \cmd{load}; the option \code{--modules}; \code{make MODULES=...} and \code{make shared-module}.
+  \item \cmd{listfcns}, \code{"name" usage} and the generated reference name the module a command comes from.
 \end{itemize}
+MM-11 and MM-14 users: MM-15 2.0 already contained both (the same core, words, control flow and numerical methods), so MM-41 is the one calculator to install. MM-B1 users: the decimal number type and the finance words (TVM, amortisation, bonds, dated cash flows) are being ported as the \code{decimal} and \code{finance} modules; until then MM-B1 remains the tool for ledger arithmetic. \code{CHANGES.md} in the source tree has the full history, including the MM-15 2.x changes from 1.x.
 
 \end{document}

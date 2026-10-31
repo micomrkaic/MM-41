@@ -10,11 +10,12 @@ mm41 \- programmable RPN calculator for real and complex scalars, strings and ma
 .IR FILE ]...
 .br
 .B mm41
-.BR \-\-commands " | " \-\-commands\-tex " | " \-\-version " | " \-h
+.BR \-\-modules " | " \-\-commands " | " \-\-commands\-tex " | " \-\-version " | " \-h
 .SH DESCRIPTION
 .B mm41
-is a stack-based reverse Polish notation calculator in the spirit of the
-HP-41C and FORTH. The stack holds real and complex scalars, strings, and
+is a modular stack-based reverse Polish notation calculator in the spirit
+of the HP-41C and FORTH; it unifies the earlier MM-11, MM-14 and MM-15
+calculators. The stack holds real and complex scalars, strings, and
 real and complex matrices (GNU Scientific Library). It has 64 storage
 registers, user-defined words with conditionals and loops, numerical
 integration, root finding, minimisation and differentiation over those
@@ -41,7 +42,10 @@ means standard input. May be repeated and mixed with
 .BR \-e .
 .TP
 .B \-n
-Do not load the saved macros, words and config at startup.
+Do not load the saved words, the modules in the config directory, or the config at startup.
+.TP
+.B \-\-modules
+List the built-in modules and exit.
 .TP
 .B \-\-commands
 Print the complete command reference as Markdown (this is how COMMANDS.md
@@ -165,12 +169,37 @@ the next outer one. Flags are real numbers; 0 is false.
 : fac  dup 1 gt if dup 1 \- fac * then ;
 : sum  0 swap 1 + 1 do i + loop ;
 .fi
-.SS Macros
-Words loaded from
-.I predefined_macros.txt
-at startup (NPV, IRR, cumprod, sto_add, location/zone macros, ...);
+.SS Modules
+Every command belongs to a module;
+.B modules
+lists them with versions, and
+.B \(dqname\(dq usage
+names the module of a command. Built-in modules are compiled in
+(\fBmake MODULES=...\fR chooses which). A
+.I word module
+is a file of definitions, one per line as \fIname body\fR or
+\fB: \fIname body\fB ;\fR, with an optional first line
+.BR "\e module NAME VERSION SUMMARY" ;
+every
+.I modules/*.mm
+in the configuration directory is loaded at startup, and
+.B \(dqname\(dq use
+/
+.B \(dqname\(dq unuse
+load and unload one by name or path. The shipped
+.B std
+module (NPV, IRR, cumprod, sto_add, norms, locations, ...) is one;
 .B listmacros
-lists them. They work exactly like words.
+lists the words of the loaded word modules. A
+.I compiled module
+is a shared object exporting
+.BR mm41_module() ;
+.B \(dqfile.so\(dq load
+loads one, as does placing it in
+.IR modules/ ;
+.B make shared-module DIR=...
+builds one (see
+.IR examples/modules/hello ).
 .SS Numerical methods
 A function is any word or command mapping x on the stack to f(x).
 .nf
@@ -216,13 +245,14 @@ which defaults to
 .I config.txt
 print precision, fixed/scientific, tolerance; written at exit.
 .TP
-.I predefined_macros.txt
-macros, loaded at startup.
+.I modules/*.mm, modules/*.so
+word modules and compiled modules, loaded at startup in name order.
 .B make install
-replaces it with the shipped
-.IR data/predefined_macros.txt ,
+replaces the shipped word modules (such as
+.IR std.mm ),
 so keep your own words in
-.IR user_words.txt .
+.I user_words.txt
+or in a module of your own.
 .TP
 .I user_words.txt
 words saved by
