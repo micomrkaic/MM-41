@@ -1,6 +1,6 @@
-.TH MM41 1 "November 2026" "MM-41 1.0" "User Commands"
+.TH MM41 1 "November 2026" "MM-41 1.1" "User Commands"
 .SH NAME
-mm41 \- programmable RPN calculator for real and complex scalars, strings and matrices
+mm41 \- programmable RPN calculator for real, complex and decimal scalars, strings and matrices
 .SH SYNOPSIS
 .B mm41
 .RB [ \-n ]
@@ -14,13 +14,15 @@ mm41 \- programmable RPN calculator for real and complex scalars, strings and ma
 .SH DESCRIPTION
 .B mm41
 is a modular stack-based reverse Polish notation calculator in the spirit
-of the HP-41C and FORTH; it unifies the earlier MM-11, MM-14 and MM-15
-calculators. The stack holds real and complex scalars, strings, and
-real and complex matrices (GNU Scientific Library). It has 64 storage
-registers, user-defined words with conditionals and loops, numerical
-integration, root finding, minimisation and differentiation over those
-words, polynomial roots, dates and sunrise/sunset, and HP-41 style
-programs loaded from files.
+of the HP-41C and FORTH; it unifies the earlier MM-11, MM-14, MM-15 and
+MM-B1 calculators. The stack holds real, complex and exact decimal
+scalars, strings, and real and complex matrices (GNU Scientific Library).
+It has 64 storage registers, user-defined words with conditionals and
+loops, numerical integration, root finding, minimisation and
+differentiation over those words, polynomial roots, dates and
+sunrise/sunset, a finance module (time value of money, amortisation,
+NPV/IRR, bonds, depreciation, day counts) computing in 34-digit decimals,
+and HP-41 style programs loaded from files.
 .PP
 With no arguments and a terminal on standard input it runs interactively
 with GNU readline editing, history and tab completion; the stack is
@@ -64,7 +66,15 @@ Print usage and exit.
 Input is whitespace-separated tokens. All input is case sensitive.
 .TP
 .B Numbers
-.BR 3 ", " \-1.2e\-4 ", " .5
+.BR 3 ", " \-1.2e\-4 ", " .5 ;
+with the suffix
+.B d
+.RB ( 0.1d )
+a 34-digit decimal, with
+.B b
+a binary double. In decimal mode
+.RB ( decimal " / " binary )
+every literal is a decimal.
 .TP
 .B Complex numbers
 .BR (1,2) ", " "(\-1.2e\-4, 0.7e2)"
@@ -120,9 +130,9 @@ by
 .BR "mm41 \-\-commands" ;
 .B \(dqname\(dq usage
 describes one command or shows a word's definition. The categories are
-Arithmetic, Exp/Log, Trigonometry, Complex, Special functions, Constants,
-Logic, Stack, Strings, Matrices, Polynomials, Numerics, Registers, Dates,
-Display, Words, Programs and Session.
+Arithmetic, Exp/Log, Trigonometry, Decimal, Finance, Complex, Special
+functions, Constants, Logic, Stack, Strings, Matrices, Polynomials,
+Numerics, Registers, Dates, Display, Words, Programs and Session.
 .SS Stack
 .B dup drop swap over nip tuck pick roll depth clst print ps pm savestack loadstack.
 .B n pick
@@ -144,6 +154,72 @@ shows which are in use;
 and
 .B loadregs
 persist them.
+.SS Decimals
+A decimal combined with a real gives a decimal (the real is converted by
+its shortest round-trip form), so
+.B 0.1d 0.2 +
+is exactly 0.3. Arithmetic, percentages, comparisons, registers and the
+control words accept decimals; trigonometry, complex numbers, matrices and
+the numerical methods are binary and reject a decimal value with a message
+naming
+.BR >bin ,
+while a decimal given as an index, count, dimension, precision or flag is
+converted.
+.B >dec
+and
+.B >bin
+convert;
+.B x n round
+rounds half-even to n places;
+.B isdec
+and
+.B decmode
+test. Fixed-point display rounds to the
+.B setprec
+places; scientific display shows a decimal as stored.
+.SS Finance
+Every finance word computes in decimals and leaves a decimal; rates are in
+percent per period; cash received is positive. Time value of money:
+.B n i% pv pmt fv
+store the registers,
+.B ?n ?i% ?pv ?pmt ?fv
+solve for one of them,
+.BR beg / end
+set the payment timing,
+.B clrtvm
+and
+.B tvm
+clear and show them;
+.B amort
+prints the amortisation schedule and
+.B amortm
+pushes it as an n x 4 matrix.
+.B cf rate npv
+and
+.B cf irr
+take a cash-flow vector in time order (or an N x 2 matrix of amount and
+count).
+.BR "nom m nom>eff" ", " "eff m eff>nom" ;
+.BR "cost salvage life sl" ", " "... year soyd" ", " "... year factor db" ;
+.BR "cpn yld n redeem bprice" ", " "price cpn n redeem byield" .
+Dated words take dates as \(dqd.m.yyyy\(dq strings or YYYYMMDD numbers
+.RB ( date>ymd ", " ymd>date
+convert):
+.B M rate xnpv
+and
+.B M xirr
+over an N x 2 matrix of amount and date (actual/365 from the first date);
+.BR "settle maturity cpn yld redeem freq basis xprice" ,
+.BR "... cpn price redeem freq basis xyield" ,
+.BR "settle maturity cpn freq basis xaccr" ,
+.B d1 d2 basis yearfrac
+with basis 0 = 30/360, 1 = actual/actual, 2 = actual/360, 3 = actual/365,
+4 = 30E/360.
+.nf
+clrtvm 12 n 1 i% 10000 pv 0 fv ?pmt      \-888.49
+[6 1 $ \-1000 300 300 300 300 300] 10 npv  137.24
+20080215 20171115 5.75 6.5 100 2 0 xprice 94.6344
+.fi
 .SS Words
 .nf
 : name body ;        \e" one line; redefinition replaces
@@ -243,7 +319,7 @@ which defaults to
 .IR ~/.config/mm41/ :
 .TP
 .I config.txt
-print precision, fixed/scientific, tolerance; written at exit.
+print precision, fixed/scientific, number mode, tolerance; written at exit.
 .TP
 .I modules/*.mm, modules/*.so
 word modules and compiled modules, loaded at startup in name order.
@@ -272,6 +348,8 @@ $ mm41 \-n \-e \(dq[2 2 $ 4 7 2 6] minv pm\(dq
 $ mm41 \-n \-e \(dq: f dup * 2 \- ;\(dq \-e \(dq0 3 @f fzero\(dq
 [0] ℝ : 1.414214
 $ echo \(dq(1,2) (3,4) *\(dq | mm41 \-n
+$ mm41 \-n \-e \(dq2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt\(dq
+[0] 𝔻 : \-1798.65
 .fi
 .SH SEE ALSO
 The user manual,

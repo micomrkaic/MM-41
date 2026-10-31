@@ -12,8 +12,8 @@
   {\setmonofont{DejaVu Sans Mono}[Scale=0.86]}
   {\setmonofont{Latin Modern Mono}}
 \newfontface\mathglyphs{Latin Modern Math}
-\begingroup\catcode`𝒮=\active
-\gdef𝒮{{\mathglyphs\char"1D4AE}}\endgroup
+\begingroup\catcode`𝒮=\active\catcode`𝔻=\active
+\gdef𝒮{{\mathglyphs\char"1D4AE}}\gdef𝔻{{\mathglyphs\char"1D53B}}\endgroup
 \usepackage{unicode-math}
 \IfFontExistsTF{TeX Gyre Pagella Math}{\setmathfont{TeX Gyre Pagella Math}}{\setmathfont{Latin Modern Math}}
 
@@ -41,7 +41,7 @@
 \setcounter{tocdepth}{2}
 
 % Session transcripts and scripts.
-\DefineVerbatimEnvironment{rpn}{Verbatim}{frame=single,rulecolor=\color{rule},framesep=4pt,fontsize=\small,xleftmargin=0pt,codes={\catcode`𝒮=\active}}
+\DefineVerbatimEnvironment{rpn}{Verbatim}{frame=single,rulecolor=\color{rule},framesep=4pt,fontsize=\small,xleftmargin=0pt,codes={\catcode`𝒮=\active\catcode`𝔻=\active}}
 \DefineVerbatimEnvironment{shell}{Verbatim}{frame=leftline,rulecolor=\color{rule},framesep=4pt,fontsize=\small,xleftmargin=0pt}
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\g}[1]{{\mathglyphs #1}}   % stack type glyphs in running text
@@ -56,7 +56,7 @@
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 
-\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real and complex\\scalars, strings and matrices\\[1em]\large User Manual, version 1.0}
+\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 1.1}
 \author{Mico Mrkaic}
 \date{November 2026}
 
@@ -79,16 +79,16 @@ Source, issues and releases: \url{https://github.com/micomrkaic/MM-41}.
 %======================================================================
 \section{Introduction}
 
-MM-41 is a stack-based calculator in the tradition of the HP-41C and of FORTH, written in C17 on top of the GNU Scientific Library and GNU Readline. You type numbers and commands; numbers go on a stack and commands take their arguments from it. Beyond the usual scalar functions it handles complex numbers, strings, and real and complex matrices, and it is programmable in three ways: user-defined \emph{words} with conditionals and loops, numerical methods (integration, root finding, minimisation, differentiation) that take any word as the function, and HP-41 style line programs with labels and jumps.
+MM-41 is a stack-based calculator in the tradition of the HP-41C and of FORTH, written in C17 on top of the GNU Scientific Library and GNU Readline. You type numbers and commands; numbers go on a stack and commands take their arguments from it. Beyond the usual scalar functions it handles complex numbers, exact decimals for money, strings, and real and complex matrices, and it is programmable in three ways: user-defined \emph{words} with conditionals and loops, numerical methods (integration, root finding, minimisation, differentiation) that take any word as the function, and HP-41 style line programs with labels and jumps.
 
-Like the HP-41, it is built from \emph{modules}. The core knows about numbers, the stack, words and errors; everything else---matrices, numerical methods, dates, strings---is a module, and you can add your own, either as a file of word definitions or as compiled code (Section~\ref{sec:modules}). MM-41 unifies the earlier MM-11, MM-14 and MM-15 calculators; MM-B1's decimal arithmetic and finance words are the next modules to arrive.
+Like the HP-41, it is built from \emph{modules}. The core knows about numbers, the stack, words and errors; everything else---matrices, numerical methods, dates, strings, finance---is a module, and you can add your own, either as a file of word definitions or as compiled code (Section~\ref{sec:modules}). MM-41 unifies the earlier MM-11, MM-14, MM-15 and MM-B1 calculators.
 
 The design has a few fixed points worth knowing before you start.
 
 \begin{itemize}
   \item \textbf{Everything is a token on a line.} Whitespace separates tokens; a line is evaluated left to right. There is no operator precedence because there are no infix operators.
   \item \textbf{Every token is atomic.} If a command fails---wrong type, singular matrix, division by zero---the stack is put back exactly as it was before that token, the error is printed, and the rest of the line is skipped. You never end up with half a result.
-  \item \textbf{One promotion rule.} A real function applied outside its real domain returns a complex number rather than \code{nan}: \code{-1 sqrt} is $(0,1)$, \code{2 asin} is $(1.5708, 1.3170)$, and a real matrix with one such entry becomes a complex matrix.
+  \item \textbf{Two promotion rules.} A real function applied outside its real domain returns a complex number rather than \code{nan}: \code{-1 sqrt} is $(0,1)$, \code{2 asin} is $(1.5708, 1.3170)$, and a real matrix with one such entry becomes a complex matrix. And decimal absorbs binary: a decimal combined with a real gives a decimal, so \code{0.1d 0.2 +} is exactly \code{0.3}.
   \item \textbf{Instant startup, no ceremony.} The calculator starts in a few milliseconds, reads your saved words and configuration from \code{\textasciitilde/.config/mm41}, and is equally at home in a terminal session and in a shell pipeline.
 \end{itemize}
 
@@ -165,7 +165,7 @@ All input is case sensitive. A line is split into tokens at whitespace; the exce
 
 \subsection{Numbers}
 
-Real numbers in the usual forms: \code{3}, \code{-1.25}, \code{.5}, \code{1e3}, \code{-2.5e-3}. A leading \code{+} is accepted. Numbers are IEEE double precision; \cmd{inf} and \cmd{nan} push the special values, and \cmd{pi}, \cmd{e} and \cmd{gravity} ($9.80665\,\mathrm{m/s^2}$) push constants.
+Real numbers in the usual forms: \code{3}, \code{-1.25}, \code{.5}, \code{1e3}, \code{-2.5e-3}. A leading \code{+} is accepted. Numbers are IEEE double precision; \cmd{inf} and \cmd{nan} push the special values, and \cmd{pi}, \cmd{e} and \cmd{gravity} ($9.80665\,\mathrm{m/s^2}$) push constants. A number with the suffix \code{d} (\code{0.1d}, \code{1250.00d}) is a \emph{decimal}, an exact 34-digit number for money; Section~\ref{sec:decimal} explains decimals and the \cmd{decimal} mode in which every literal is one.
 
 \subsection{Complex numbers}
 
@@ -331,6 +331,54 @@ A real matrix with one such entry becomes a complex matrix: \code{[2 2 \$ 1 -2 3
 [1 3 $ 1 5 3] 2 gt pm      \ | 0 1 1 |
 \end{rpn}
 Flags are what the control words inside user words test (Section~\ref{sec:words}).
+
+%======================================================================
+\section{Decimal numbers}
+\label{sec:decimal}
+
+Binary floating point cannot represent one tenth, so \code{0.1 0.2 +} is \code{0.30000000000000004} on every computer. For most of science that is irrelevant; for money it is not. MM-41 therefore has a fifth stack type, the \emph{decimal}: a 34-digit decimal floating-point number with round-half-even arithmetic, the same arithmetic as SQL \code{NUMERIC}, Java \code{BigDecimal} and Python's \code{decimal} module, implemented by IBM's decNumber library. A decimal shows on the stack with the glyph \g{𝔻}:
+\begin{rpn}
+0.1d 0.2d +            \ [0] 𝔻 : 0.300000
+0.1 0.2 + 0.3 eq       \ 0   (binary)
+0.1d 0.2d + 0.3d eq    \ 1   (decimal)
+\end{rpn}
+
+\subsection{Writing decimals}
+
+A number with the suffix \code{d} is a decimal literal; \code{b} forces a binary one. In \emph{decimal mode}, entered with \cmd{decimal} and left with \cmd{binary}, every number without a suffix is a decimal, and the prompt becomes \code{MM-41[dec]>>}. The mode is saved in \code{config.txt} as \code{number\_mode}, so a calculator used for bookkeeping can start in decimal mode every time.
+\begin{rpn}
+decimal
+19.99 3 * 0.0825 1 + *         \ 64.917525   (exact: 59.97 x 1.0825)
+2 round                        \ 64.92
+binary
+\end{rpn}
+\cmd{>dec} converts a real to a decimal by its \emph{shortest round-trip representation}, so \code{0.1 >dec} is exactly \code{0.1} and not \code{0.1000000000000000055511151231257827}; \cmd{>bin} goes the other way and keeps 16 or 17 of the 34 digits. \cmd{round} rounds a number to $n$ decimal places, half-even, and always leaves a decimal: \code{2.345d 2 round} is 2.34 and \code{2.355d 2 round} is 2.36. \cmd{isdec} and \cmd{decmode} test the type of the top item and the current mode.
+
+\subsection{Decimal absorbs binary}
+
+A decimal combined with a real gives a decimal (the real is converted first, as with \cmd{>dec}): \code{1d 3 /} is \code{0.3333333333333333333333333333333333}. The operators and functions defined for decimals are
+\begin{center}
+\begin{tabular}{@{}lp{0.72\textwidth}@{}}
+\toprule
+arithmetic & \cmd{+} \cmd{-} \cmd{*} \cmd{/} \cmd{\textasciicircum} \cmd{chs} \cmd{abs} \cmd{inv} \cmd{mod} \\
+functions & \cmd{sqrt} \cmd{exp} \cmd{ln} \cmd{log} \cmd{intg} \cmd{frac} \cmd{round} \\
+percentages & \cmd{\%} \cmd{\%t} \cmd{\%chg} \\
+comparisons & \cmd{eq} \cmd{neq} \cmd{lt} \cmd{leq} \cmd{gt} \cmd{geq} \cmd{and} \cmd{or} \cmd{not} \\
+elsewhere & \cmd{sto} and \cmd{rcl}, \cmd{savestack} and \cmd{loadstack}, \cmd{int2str}, the control words, and the finance module (Section~\ref{sec:finance}), which computes in decimals throughout \\
+\bottomrule
+\end{tabular}
+\end{center}
+Everything else---trigonometry, complex numbers, matrices, the numerical methods---is binary only, and a decimal \emph{value} given to them is an error that tells you to convert with \cmd{>bin}. A decimal given where a command wants an index, a count, a dimension, a precision or a flag is simply converted, since nothing can be lost: \code{2 setprec}, \code{1 pick}, \code{5 rcl}, \code{3 3 eye}, \code{0 pi @sin integrate} and \code{3 0 do ... loop} all work in decimal mode. This is deliberate: the one direction in which digits are lost should be visible in the transcript. A decimal that would need a complex result (\code{-4d sqrt}, \code{-1d ln}) is likewise an error rather than a silent promotion, because money has no imaginary part. The numerical methods accept a word that returns a decimal and convert the result, so \code{: f dup * 2d - ; 0 3 @f fzero} works.
+
+\subsection{Display}
+
+In fixed-point display a decimal is shown rounded half-even to the \cmd{setprec} number of decimals, the natural way to show money; in scientific display (\cmd{sfs}) it is shown \emph{as stored}, with all its digits and its exponent, which is how you inspect it:
+\begin{rpn}
+1d 3d /                \ [0] 𝔻 : 0.333333
+sfs                    \ [0] 𝔻 : 0.3333333333333333333333333333333333
+1e-7d                  \ [1] 𝔻 : 1E-7
+\end{rpn}
+Decimals keep their trailing zeros, as the General Decimal Arithmetic specification prescribes: \code{1.10d 2d *} is \code{2.20}.
 
 %======================================================================
 \section{Matrices}
@@ -631,6 +679,164 @@ today kranj sunset dec_hr           \ sunset in Kranj as a decimal hour
 Add your own with one line in \code{user\_words.txt} or in a word module of your own: \code{home 51.5 -0.12 "Europe/London"}.
 
 %======================================================================
+\section{Finance}
+\label{sec:finance}
+
+The \code{finance} module is MM-B1, the decimal business calculator, rebuilt as a module: the time value of money, amortisation, cash flows, interest-rate conversions, depreciation, bonds and day counts. Three conventions hold throughout.
+\begin{itemize}
+  \item \textbf{Everything is decimal.} Every finance word computes in 34-digit decimals and leaves a decimal, whatever it was given; a real argument is converted on the way in. You can therefore use the module in either number mode, and \code{2 setprec} shows money to the cent, correctly rounded.
+  \item \textbf{Rates are in percent, per period.} \code{1 i\%} is one percent per period; a 6\,\% annual rate paid monthly is \code{0.5 i\%}. The dated words (\cmd{xnpv}, \cmd{xirr}, \cmd{xprice}, \ldots) take annual rates.
+  \item \textbf{Cash received is positive, cash paid is negative.} A loan is a positive \code{pv} with a negative \code{pmt}; a savings plan is a negative \code{pmt} with a positive \code{fv}.
+\end{itemize}
+
+\subsection{Time value of money}
+\label{sec:tvm}
+
+Like the HP-12C, the module keeps five registers---$n$ (periods), $i\%$ (rate per period), $pv$, $pmt$ and $fv$---tied together by
+\[
+  pv\,(1+r)^n + pmt\,(1 + r\,\tau)\,\frac{(1+r)^n - 1}{r} + fv = 0, \qquad r = \frac{i\%}{100},
+\]
+where $\tau$ is 0 when payments fall at the end of each period (\cmd{end}, the default) and 1 when they fall at the beginning (\cmd{beg}). Store a value with the register's name, solve for the unknown with a question mark:
+
+\begin{center}
+\begin{tabular}{@{}llp{0.55\textwidth}@{}}
+\toprule
+\cmd{n} \cmd{i\%} \cmd{pv} \cmd{pmt} \cmd{fv} & \stk{x --} & store into the register \\
+\cmd{?n} \cmd{?i\%} \cmd{?pv} \cmd{?pmt} \cmd{?fv} & \stk{-- x} & solve for that register from the other four; the result is stored and pushed \\
+\cmd{beg}, \cmd{end} & \stk{--} & payments at the beginning or the end of the period \\
+\cmd{clrtvm} & \stk{--} & clear the registers and select \cmd{end} \\
+\cmd{tvm} & \stk{--} & show the registers \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{rpn}
+2 setprec
+clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt      \ -1798.65   30-year mortgage at 6%
+clrtvm 120 n 0.4 i% 0 pv -200 pmt ?fv        \ 30726.39   200 a month for 10 years at 4.8%
+clrtvm 6 12 / i% 250000 pv -1500 pmt 0 fv ?n \ 359.25     months to repay
+clrtvm 48 n 20000 pv -450 pmt 0 fv ?i% 12 *  \ 3.82       annual rate of a car loan
+\end{rpn}
+\cmd{?n}, \cmd{?pv}, \cmd{?pmt} and \cmd{?fv} are closed forms; \cmd{?i\%} brackets the rate on a grid from $-99\,\%$ to $1000\,\%$ per period and bisects in decimal to 34 digits, so it is exact to the last displayed digit and reports an error if no rate satisfies the equation. The registers are not saved between sessions.
+
+\subsection{Amortisation}
+
+\cmd{amort} prints the schedule of the loan in the registers, period by period: payment, interest, principal and remaining balance, with totals, all to the current display precision. \cmd{amortm} pushes the same schedule as an $n\times 4$ real matrix, for \cmd{csum}, \cmd{getrow} or saving to a file. Both use the magnitudes of \code{pv} and \code{pmt} and the \cmd{end} convention.
+\begin{rpn}
+clrtvm 3 n 1 i% 1000 pv 0 fv ?pmt drop amort
+  per        payment       interest      principal        balance
+  --- -------------- -------------- -------------- --------------
+    1         340.02          10.00         330.02         669.98
+    2         340.02           6.70         333.32         336.66
+    3         340.02           3.37         336.66           0.00
+  --- -------------- -------------- -------------- --------------
+  tot                         20.07        1000.00
+\end{rpn}
+
+\subsection{Cash flows: NPV and IRR}
+\label{sec:cashflows}
+
+Cash flows are given as a vector in time order, the first element at $t=0$ (the outlay) and one element per period. When a flow repeats, an $N\times 2$ matrix gives the amounts in the first column and the repeat counts in the second.
+\begin{center}
+\begin{tabular}{@{}llp{0.55\textwidth}@{}}
+\toprule
+\cmd{npv} & \stk{cf rate -- x} & net present value at \code{rate} percent per period \\
+\cmd{irr} & \stk{cf -- x} & internal rate of return, percent per period \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{rpn}
+[5 1 $ -5000 1500 1500 1500 1500] 8 npv     \ -31.81    not worth it at 8%
+[5 1 $ -5000 1500 1500 1500 1500] irr       \ 7.71
+[2 2 $ -5000 1 1500 4] irr                  \ 7.71      the same flows, with a count
+\end{rpn}
+
+\begin{note}
+MM-15's \code{std} word module defined \code{npv} and \code{irr} as macros over \cmd{pval} and \cmd{roots}, with the cash flows written \emph{latest first} and the rate as a fraction. Those macros are gone; the finance words take the flows in time order and the rate in percent, like every other business calculator.
+\end{note}
+
+\subsection{Interest-rate conversions and depreciation}
+
+\begin{center}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.3\textwidth}>{\raggedright\arraybackslash}p{0.42\textwidth}@{}}
+\toprule
+\cmd{nom>eff} & \stk{nom m -- eff} & nominal annual rate compounded $m$ times a year to the effective annual rate \\
+\cmd{eff>nom} & \stk{eff m -- nom} & the inverse \\
+\cmd{sl}   & \stk{cost salvage life -- d} & straight-line depreciation per period \\
+\cmd{soyd} & \stk{cost salvage life year -- d} & sum-of-the-years'-digits depreciation in \code{year} \\
+\cmd{db}   & \stk{cost salvage life year factor -- d} & declining-balance depreciation in \code{year}; \code{factor} 2 is double-declining; never below salvage \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{rpn}
+6 12 nom>eff            \ 6.17   6% monthly is 6.17% effective
+6 365 nom>eff           \ 6.18
+12.6825 12 eff>nom      \ 12.00
+10000 1000 5 sl         \ 1800
+10000 1000 5 1 soyd     \ 3000   first year
+10000 1000 5 1 2 db     \ 4000   first year, double declining
+10000 1000 5 5 2 db     \ 296    fifth year: capped by the salvage value
+\end{rpn}
+
+\subsection{Bonds}
+
+Two bond words work in periods, for a bond settled on a coupon date: price per 100 of face value from the coupon and yield per period, the number of periods and the redemption value, and the yield from the price.
+\begin{rpn}
+3 3.5 20 100 bprice     \ 92.89   3% coupon, 3.5% yield, 20 periods
+92.89 3 20 100 byield   \ 3.50
+\end{rpn}
+The dated words follow the SIA conventions used by Excel's \code{PRICE}, \code{YIELD} and \code{ACCRINT}: settlement and maturity dates, the annual coupon rate and yield in percent, the redemption value, the number of coupons per year (1, 2, 3, 4, 6 or 12) and a day-count \emph{basis}:
+\begin{center}
+\begin{tabular}{@{}cl@{}}
+\toprule
+0 & 30/360 (US, NASD) \\
+1 & actual/actual (ISDA) \\
+2 & actual/360 \\
+3 & actual/365 \\
+4 & 30E/360 (European) \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{center}
+\begin{tabular}{@{}lp{0.3\textwidth}p{0.4\textwidth}@{}}
+\toprule
+\cmd{xprice} & \stk{settle maturity cpn yld redeem freq basis -- price} & clean price per 100 \\
+\cmd{xyield} & \stk{settle maturity cpn price redeem freq basis -- yld} & annual yield from the clean price \\
+\cmd{xaccr}  & \stk{settle maturity cpn freq basis -- accrued} & accrued interest per 100 at settlement \\
+\cmd{yearfrac} & \stk{d1 d2 basis -- f} & year fraction between two dates on a basis \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{rpn}
+4 setprec
+20080215 20171115 5.75 6.5 100 2 0 xprice        \ 94.6344   (Excel's PRICE example)
+20080215 20161115 5.75 95.04287 100 2 0 xyield   \ 6.5000
+20080215 20171115 5.75 2 0 xaccr                 \ 1.4375
+"1.1.2007" "1.1.2008" 3 yearfrac                 \ 1.0000    actual/365
+20070101 20080101 2 yearfrac                     \ 1.0139    actual/360
+\end{rpn}
+
+\subsection{Dates in the finance module}
+\label{sec:findates}
+
+A date argument to any finance word is either a date string of the dates module, \code{"d.m.yyyy"}, or the integer \code{YYYYMMDD}, which is the form that fits in a matrix. \cmd{date>ymd} and \cmd{ymd>date} convert between the two, so the dates module's \cmd{today}, \cmd{dateplus} and \cmd{ddays} combine with the finance words:
+\begin{rpn}
+"15.3.2026" date>ymd       \ 20260315
+20260315 ymd>date          \ "15.03.2026"
+today 90 dateplus date>ymd \ the numeric date 90 days from now
+\end{rpn}
+
+\subsection{Dated cash flows: XNPV and XIRR}
+
+Irregularly spaced flows are an $N\times 2$ matrix of amount and numeric date, in date order. \cmd{xnpv} discounts each flow by actual/365 from the first date at an \emph{annual} rate in percent, exactly as Excel's \code{XNPV}; \cmd{xirr} finds the annual rate that makes the net present value zero.
+\begin{rpn}
+2 setprec
+[4 2 $ -5000 20250110  2000 20250601  2000 20251201  2000 20260601] 8 xnpv   \ 605.77
+[4 2 $ -5000 20250110  2000 20250601  2000 20251201  2000 20260601] xirr     \ 23.25
+\end{rpn}
+A matrix literal is binary, so the amounts are converted on the way in like every other real argument; dates that you hold as strings go through \cmd{date>ymd} first. The matrix can also be built up with \cmd{join\_v} from $1\times 2$ rows, or read from a file with \code{[4, 2, "flows.txt"]}.
+
+%======================================================================
 \section{Programs}
 
 Besides words, MM-41 runs HP-41 style \emph{programs}: text files with one instruction per line, labels, jumps and subroutine calls. They are useful for longer procedures with explicit control flow, and they are how the calculator was programmed before words had loops.
@@ -676,7 +882,9 @@ The HP-41 took plug-in ROMs; MM-41 takes modules. A module is a named set of com
 \begin{rpn}
 MM-41>> modules
 module       version  words  summary
-core         1.0         85  arithmetic, functions, logic, the stack, words and the session
+core         1.1         85  arithmetic, functions, logic, the stack, words and the session
+decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
+finance      1.0         33  time value of money, cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
 special      1.0          7  gamma, beta and the standard normal distribution
 matrices     1.0         38  linear algebra, matrix construction and reduction, polynomials
@@ -685,7 +893,7 @@ strings      1.0          7  string construction and manipulation
 registers    1.0          7  64 storage registers of any type
 dates        1.0         13  calendar arithmetic, time zones, sunrise and sunset
 programs     1.0          1  HP-41 style programs with labels, jumps and subroutines
-std          1.0         30  standard word module: powers, norms, finance, storage arithmetic, locations
+std          1.0         28  standard word module: powers, norms, storage arithmetic, locations
 \end{rpn}
 
 Every command belongs to exactly one module; \code{"name" usage} says which. Two modules may not define the same name---a clash is reported when the second one loads, with the file and line for a word module---so a command means the same thing whatever is plugged in. There are three kinds of module, and from the stack they are indistinguishable.
@@ -797,7 +1005,7 @@ Everything lives in \code{\$XDG\_CONFIG\_HOME/mm41/}, which defaults to \code{\t
 \begin{center}
 \begin{tabular}{@{}lp{0.65\textwidth}@{}}
 \toprule
-\code{config.txt} & \code{print\_precision}, \code{fixed\_point}, \code{verbose\_mode}, \code{tol}; written at exit \\
+\code{config.txt} & \code{print\_precision}, \code{fixed\_point}, \code{number\_mode}, \code{verbose\_mode}, \code{tol}; written at exit \\
 \code{modules/*.mm} & word modules, loaded at startup in name order; the shipped ones are replaced by \code{make install} \\
 \code{modules/*.so} & compiled modules, loaded at startup \\
 \code{user\_words.txt} & words saved by \cmd{savewords}; loaded at startup \\
@@ -869,8 +1077,6 @@ The following words are loaded from \code{modules/std.mm} in the configuration d
 \code{isnan}, \code{isinf} & \code{nan eq}, \code{inf eq} & flags \\
 \code{isreal}  & \code{im 0 eq}          & 1 if the imaginary part is zero \\
 \code{selreal} & \code{dup isreal swap re .*} & keep the real entries of a vector, zero the rest \\
-\code{npv}     & \code{1 + inv pval}     & net present value, \code{cashflows rate npv}; the cash flows are a row vector with the \emph{latest} period first, so \code{[1 3 \$ 121 0 -100] 0.1 npv} is 0 \\
-\code{irr}     & \code{roots selreal rmax split\_mat inv 1 - 100 *} & internal rate of return in percent, same cash-flow convention: \code{[1 3 \$ 121 0 -100] irr} is 10 \\
 \code{cumprod\_c}, \code{cumprod\_r} & \code{ln cumsum\_c exp} & cumulative products \\
 \code{sto\_add}, \code{sto\_sub}, \code{sto\_mul}, \code{sto\_div} & \code{dup rcl 2 roll + swap sto} etc. & storage arithmetic: \code{x n sto\_add} adds $x$ to register $n$ \\
 \code{XprimeX} & \code{dup ' swap *}     & $X^T X$ \\
@@ -883,13 +1089,23 @@ The following words are loaded from \code{modules/std.mm} in the configuration d
 \section{Coming from MM-15, MM-14, MM-11 or MM-B1}
 \label{app:changes}
 
-MM-41 1.0 is MM-15 2.1 restructured into modules; every MM-15 command, word and program runs unchanged. What is different:
+MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
 \begin{itemize}
   \item The binary is \code{mm41}, the configuration directory \code{\textasciitilde/.config/mm41/}. Copy \code{user\_words.txt}, \code{registers.txt} and \code{config.txt} across from \code{mm\_15} if you want them.
   \item \code{predefined\_macros.txt} is now the word module \code{modules/std.mm} and is installed there; the old file is not read. Your own additions belong in \code{user\_words.txt} or in a module of your own.
   \item New commands: \cmd{modules}, \cmd{use}, \cmd{unuse}, \cmd{load}; the option \code{--modules}; \code{make MODULES=...} and \code{make shared-module}.
   \item \cmd{listfcns}, \code{"name" usage} and the generated reference name the module a command comes from.
+  \item The \code{std} macros \code{npv} and \code{irr} (latest flow first, rate as a fraction) are replaced by the finance module's \cmd{npv} and \cmd{irr} (time order, rate in percent); see Section~\ref{sec:cashflows}.
 \end{itemize}
-MM-11 and MM-14 users: MM-15 2.0 already contained both (the same core, words, control flow and numerical methods), so MM-41 is the one calculator to install. MM-B1 users: the decimal number type and the finance words (TVM, amortisation, bonds, dated cash flows) are being ported as the \code{decimal} and \code{finance} modules; until then MM-B1 remains the tool for ledger arithmetic. \code{CHANGES.md} in the source tree has the full history, including the MM-15 2.x changes from 1.x.
+MM-11 and MM-14 users: MM-15 2.0 already contained both (the same core, words, control flow and numerical methods), so MM-41 is the one calculator to install.
+
+MM-B1 users: every MM-B1 word is here with the same name and argument order, except that
+\begin{itemize}
+  \item cash flows are matrices on the stack rather than a bank filled with \code{cf}/\code{cfn}/\code{xcf}: \code{-1000 cf 300 cf 5 cfn} becomes \code{[2 2 \$ -1000 1 300 5]}, and \code{xcf} rows become an $N\times 2$ matrix of amount and date (Sections~\ref{sec:cashflows} and~\ref{sec:findates}); \code{cfs}, \code{clrcf}, \code{xcfs} and \code{clrxcf} are not needed;
+  \item \code{i} is spelled \cmd{i\%} and \code{?i} is \cmd{?i\%}; \code{begin} is \cmd{beg} (\code{begin} is a control word);
+  \item \code{fix} is \cmd{setprec}; \code{date+} is \cmd{dateplus} and \code{ddays} is in the dates module, both of which also accept \code{YYYYMMDD} numbers through \cmd{ymd>date}; \code{dow} returns the weekday name;
+  \item numbers are binary by default; \cmd{decimal} switches the number mode, and the finance words return decimals whatever the mode.
+\end{itemize}
+\code{CHANGES.md} in the source tree has the full history, including the MM-15 2.x changes from 1.x.
 
 \end{document}

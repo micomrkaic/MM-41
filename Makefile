@@ -155,7 +155,7 @@ examples/modules/hello/hello.so: examples/modules/hello/hello.c include/module.h
 
 # Regenerate git version header when HEAD or index changes
 # Rebuild when HEAD changes (new commit) or refs change (branch moves / packed-refs updates)
-$(GIT_HEADER): .git/HEAD .git/packed-refs
+$(GIT_HEADER): .git/HEAD $(wildcard .git/packed-refs .git/refs/heads/*)
 	@$(MKDIR_P) "$(@D)"
 	@ver=$$(git rev-parse --short HEAD 2>/dev/null || echo unknown); \
 	  dirty=$$(git diff --no-ext-diff --quiet --ignore-submodules -- 2>/dev/null || echo -dirty); \

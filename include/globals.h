@@ -23,7 +23,7 @@
 #include <gsl/gsl_rng.h>
 #include "stack.h"
 
-#define MM41_VERSION "1.0"
+#define MM41_VERSION "1.1"
 #define MAX_PATH 2048
 
 #define HISTORY_FILE ".rpn_history"

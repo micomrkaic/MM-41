@@ -32,9 +32,9 @@ void whose_place(void) {
 
 void help_menu(void) {
   printf("\n");
-  title("MM-41 " MM41_VERSION " -- RPN calculator for real and complex scalars, strings and matrices");
+  title("MM-41 " MM41_VERSION " -- RPN calculator for real, complex and decimal scalars, strings and matrices");
   subtitle("Entering data");
-  printf("    Numbers 3  -1.2e-4   complex (1,2)   strings \"text\"   all input is case sensitive\n");
+  printf("    Numbers 3  -1.2e-4   decimal 0.1d   complex (1,2)   strings \"text\"   all input is case sensitive\n");
   printf("    Matrices [rows cols $ a11 a12 ...]  e.g. [2 2 $ 1 2 3 4];  from a file [2, 2, \"m.txt\"]\n");
   printf("    Comments start with \\ or #.  undo restores the stack before the previous line.\n");
   subtitle("Stack");
@@ -44,6 +44,11 @@ void help_menu(void) {
   printf("    exp ln log  sin cos tan asin acos atan  sinh cosh tanh asinh acosh atanh\n");
   printf("    re im arg conj re2c split_c j2r   npdf ncdf nquant gamma ln_gamma beta ln_beta\n");
   printf("    Real arguments outside the real domain promote to complex: -1 sqrt is (0,1).\n");
+  subtitle("Decimals (34 digits, half-even; decimal absorbs binary: 0.1d 0.2 + is 0.3)");
+  printf("    decimal binary (number mode)  >dec >bin  x n round  isdec decmode\n");
+  subtitle("Finance (all decimal; rates in percent per period; cash received +)");
+  printf("    n i%% pv pmt fv  ?n ?i%% ?pv ?pmt ?fv  beg end clrtvm tvm  amort amortm   cf rate npv  cf irr\n");
+  printf("    nom>eff eff>nom  sl soyd db  bprice byield   xnpv xirr xprice xyield xaccr yearfrac  date>ymd ymd>date\n");
   subtitle("Matrices");
   printf("    tran ' minv pinv det eig chol svd kron  eye ones zeroes rand randn rrange\n");
   printf("    dim reshape get_aij set_aij split_mat diag to_diag join_v join_h\n");

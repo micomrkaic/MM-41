@@ -90,3 +90,21 @@ clst 6 setprec
 "1.12.2026" "America/New_York" tz_offset
 "21.6.2026" 46.24 14.36 "Europe/Ljubljana" sunset
 clst 1 2 [2 2 $ 1 2 2 4] minv +
+clst
+0.1d 0.2d + 0.1 0.2 + 0.3 eq 0.1d 0.2d + 0.3d eq
+decimal 19.99 3 * 0.0825 1 + * 2 round binary
+0.1 >dec 1d 3 / 1.10d 2d * 2.345d 2 round 2.355d 2 round
+2 setprec
+clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
+clrtvm 120 n 0.4 i% 0 pv -200 pmt ?fv
+clrtvm 6 12 / i% 250000 pv -1500 pmt 0 fv ?n
+clrtvm 48 n 20000 pv -450 pmt 0 fv ?i% 12 *
+[5 1 $ -5000 1500 1500 1500 1500] 8 npv
+[5 1 $ -5000 1500 1500 1500 1500] irr
+[2 2 $ -5000 1 1500 4] irr
+6 12 nom>eff 6 365 nom>eff 12.6825 12 eff>nom
+"15.6.2026" "15.11.2030" 4 6.5 100 2 1 xprice
+[4 2 $ -5000 20250110 2000 20250601 2000 20251201 2000 20260601] 8 xnpv
+[4 2 $ -5000 20250110 2000 20250601 2000 20251201 2000 20260601] xirr
+"15.3.2026" date>ymd 20260315 ymd>date
+6 setprec

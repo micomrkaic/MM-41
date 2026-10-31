@@ -1,5 +1,50 @@
 # MM-41 changes
 
+## MM-41 1.1
+
+MM-B1, the decimal business calculator, becomes two modules; with this
+release MM-41 contains the whole MM family.
+
+- **Decimal numbers**, a fifth stack type (glyph `𝔻`): IBM decNumber,
+  vendored under `vendor/decNumber/`, 34 significant digits, round-half-even.
+  The literal suffix `d` makes a decimal and `b` a binary double; the
+  `decimal`/`binary` commands switch the number mode (prompt `MM-41[dec]>>`,
+  saved as `number_mode` in `config.txt`). Decimal absorbs binary: a decimal
+  combined with a real gives a decimal, the real converted by its shortest
+  round-trip form. `+ - * / ^ chs abs inv sqrt exp ln log intg frac mod % %t
+  %chg`, the comparisons and logic, `sto`/`rcl`, `savestack`/`loadstack`,
+  `int2str` and the control words accept decimals; the binary-only parts
+  (trigonometry, complex, matrices, numerics) reject a decimal value with a
+  message naming `>bin`, while a decimal given as an index, count, dimension,
+  precision or flag is converted. Module `decimal`: `decimal binary >dec >bin
+  round decmode isdec`. Fixed-point display rounds to `setprec` places,
+  scientific display shows the number as stored.
+- **Finance module** (`modules/finance/`), MM-B1's kernel ported onto the
+  decimal type; every word computes and returns decimals, rates in percent
+  per period, cash received positive. TVM registers `n i% pv pmt fv`, solvers
+  `?n ?i% ?pv ?pmt ?fv` (closed forms; the rate by bracketing and decimal
+  bisection), `beg`/`end`, `clrtvm`, `tvm`; `amort` (printed schedule) and
+  `amortm` (n×4 matrix); `npv`/`irr` over cash-flow vectors in time order
+  (N×2 for repeat counts); `nom>eff`, `eff>nom`; `sl`, `soyd`, `db`;
+  `bprice`, `byield`; dated `xnpv`, `xirr` (actual/365 from the first date),
+  `xprice`, `xyield`, `xaccr` (SIA conventions, bases 0–4), `yearfrac`;
+  dates as `"d.m.yyyy"` strings or `YYYYMMDD` numbers, converted by
+  `date>ymd`/`ymd>date`. The `tests/golden/finance.rpn` cases reproduce
+  MM-B1's regression values (and Excel's PRICE/YIELD/ACCRINT/XNPV/XIRR
+  examples).
+- The `std` macros `npv` and `irr` (latest flow first, rate as a fraction)
+  are removed in favour of the finance words.
+- In decimal mode a decimal is accepted wherever a command wants an index,
+  count, dimension, precision or flag (`2 setprec`, `1 pick`, `5 rcl`,
+  `3 3 eye`, `do ... loop` limits, the numerical methods' bounds).
+- Fixes from a type sweep of every command under ASan: a matrix pushed onto
+  a full stack was leaked; `reshape` with huge dimensions overflowed an
+  `int`; `eye`, `ones`, `zeroes`, `rand` and `randn` now refuse more than
+  50 million elements instead of asking GSL for terabytes. `pop` clears the
+  vacated slot so the leak detector sees what is really leaked.
+- Manual chapters *Decimal numbers* and *Finance*; the *Coming from* appendix
+  maps every MM-B1 word to its MM-41 spelling.
+
 ## MM-41 1.0
 
 MM-41 unifies the MM calculator family. It starts from MM-15 2.1 (which
