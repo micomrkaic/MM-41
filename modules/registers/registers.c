@@ -44,6 +44,10 @@ stack_element copy_element(const stack_element* src) {
     copy.complex_val = src->complex_val;
     break;
 
+  case TYPE_DECIMAL:
+    copy.dec = src->dec;
+    break;
+
   case TYPE_STRING:
     copy.string = strdup(src->string);
     break;
@@ -197,6 +201,12 @@ void save_registers_to_file(const char* filename) {
     case TYPE_COMPLEX:
       fprintf(f, "COMPLEX (%.17g,%.17g)\n", GSL_REAL(el->complex_val), GSL_IMAG(el->complex_val));
       break;
+    case TYPE_DECIMAL: {
+      char buf[DECNUMDIGITS + 16];
+      dec_to_string(&el->dec, buf, sizeof buf);
+      fprintf(f, "DECIMAL %s\n", buf);
+      break;
+    }
     case TYPE_STRING:
       fprintf(f, "STRING \"%s\"\n", el->string);
       break;
@@ -254,6 +264,10 @@ void load_registers_from_file(const char* filename) {
       sscanf(line, "REG %*d %*s (%lf,%lf)", &re, &im);
       el.type = TYPE_COMPLEX;
       el.complex_val = gsl_complex_rect(re,im);
+    } else if (strcmp(type, "DECIMAL") == 0) {
+      char buf[128];
+      if (sscanf(line, "REG %*d %*s %127s", buf) != 1 || dec_from_string(&el.dec, buf) != 0) continue;
+      el.type = TYPE_DECIMAL;
     } else if (strcmp(type, "STRING") == 0) {
       char* start = strchr(line, '"');
       char* end = strrchr(line, '"');

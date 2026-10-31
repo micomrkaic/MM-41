@@ -23,6 +23,7 @@
 #include <complex.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_complex_math.h>
+#include "decimal.h"
 
 #define STACK_SIZE 100
 
@@ -39,7 +40,8 @@ typedef enum {
   TYPE_COMPLEX,
   TYPE_STRING,
   TYPE_MATRIX_REAL,
-  TYPE_MATRIX_COMPLEX
+  TYPE_MATRIX_COMPLEX,
+  TYPE_DECIMAL
 } value_type;
 
 typedef struct {
@@ -50,6 +52,7 @@ typedef struct {
     char* string;
     gsl_matrix* matrix_real;
     gsl_matrix_complex* matrix_complex;
+    mm_dec dec;
   };
 } stack_element;
 
@@ -70,6 +73,7 @@ int  stack_element_clone(stack_element* dst, const stack_element* src);
 void init_stack(Stack* stack);
 int stack_size(const Stack* stack);
 void push_real(Stack* stack, double value);
+void push_decimal(Stack* stack, const mm_dec *value);
 void push_complex(Stack* stack, gsl_complex value);
 void push_string(Stack* stack, const char* str);
 void push_matrix_real(Stack* stack, gsl_matrix* matrix);

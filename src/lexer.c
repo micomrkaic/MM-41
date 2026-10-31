@@ -121,6 +121,11 @@ Token lex_number(Lexer* lexer) {
     while (isdigit((unsigned char)peek(lexer))) advance(lexer);
   }
 
+  /* a trailing d or b pins the literal to decimal or binary, whatever the mode */
+  if ((peek(lexer) == 'd' || peek(lexer) == 'b') &&
+      !isalnum((unsigned char)safe_peek_ahead(lexer, 1)) && safe_peek_ahead(lexer, 1) != '_')
+    advance(lexer);
+
   size_t len = lexer->pos - start;
 
   char buf[MAX_TOKEN_LEN] = {0};
@@ -134,6 +139,19 @@ Token lex_number(Lexer* lexer) {
 Token lex_identifier(Lexer* lexer) {
   size_t start = lexer->pos;
   while (isalnum((unsigned char)peek(lexer)) || peek(lexer) == '_') advance(lexer);
+
+  /* Commands may contain one '>' or '%' after the leading name (nom>eff, i%):
+     extend the token if the longer spelling is a command. */
+  if (peek(lexer) == '>' || peek(lexer) == '%') {
+    size_t p = lexer->pos + 1;
+    while (isalnum((unsigned char)lexer->input[p]) || lexer->input[p] == '_') p++;
+    char cand[MAX_TOKEN_LEN] = {0};
+    size_t clen = p - start;
+    if (clen < MAX_TOKEN_LEN) {
+      memcpy(cand, &lexer->input[start], clen);
+      if (is_function_name(cand)) lexer->pos = p;
+    }
+  }
 
   size_t len = lexer->pos - start;
 
@@ -391,7 +409,18 @@ Token next_token(Lexer* lexer) {
   case '/': advance(lexer); return make_token(TOK_SLASH, "/");
   case '^': advance(lexer); return make_token(TOK_CARET, "^");
   case '<': advance(lexer); return make_token(TOK_BRA, "<");
-  case '>': advance(lexer); return make_token(TOK_KET, ">");
+  case '>': case '?': {                         /* >dec, >bin, ?pmt ... : commands that start with a symbol */
+    size_t p = lexer->pos + 1;
+    while (isalnum((unsigned char)lexer->input[p]) || lexer->input[p] == '_' || lexer->input[p] == '%') p++;
+    char cand[MAX_TOKEN_LEN] = {0};
+    size_t clen = p - lexer->pos;
+    if (clen > 1 && clen < MAX_TOKEN_LEN) {
+      memcpy(cand, &lexer->input[lexer->pos], clen);
+      if (is_function_name(cand)) { lexer->pos = p; return make_token(TOK_FUNCTION, cand); }
+    }
+    if (c == '>') { advance(lexer); return make_token(TOK_KET, ">"); }
+    advance(lexer); return make_token(TOK_UNKNOWN, "?");
+  }
   case '|': advance(lexer); return make_token(TOK_VERTICAL, "|");
   case ':': advance(lexer); return make_token(TOK_COLON, ":");
   case ';': advance(lexer); return make_token(TOK_SEMICOLON, ";");

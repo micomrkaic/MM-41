@@ -266,6 +266,15 @@ int save_stack_to_file(const Stack *stack, const char *filename) {
       break;
     }
 
+    case TYPE_DECIMAL: {               /* as its decimal string */
+      char buf[DECNUMDIGITS + 16];
+      dec_to_string(&elem->dec, buf, sizeof buf);
+      size_t len = strlen(buf);
+      if (write_u32(file, (uint32_t)len, "write decimal len") != 0) goto done;
+      if (write_exact(file, buf, len, "write decimal") != 0) goto done;
+      break;
+    }
+
     case TYPE_MATRIX_REAL: {
       if (!elem->matrix_real) {
 	mm_error("save_stack_to_file: NULL real matrix at index %u\n", i);
@@ -457,6 +466,17 @@ int load_stack_from_file(Stack *stack, const char *filename) {
       }
       if (read_exact(file, elem->string, len, "read string bytes") != 0) goto done;
       elem->string[len] = '\0';
+      break;
+    }
+
+    case TYPE_DECIMAL: {
+      uint32_t len = 0;
+      char buf[DECNUMDIGITS + 16];
+      if (read_u32(file, &len, "read decimal len") != 0) goto done;
+      if (len >= sizeof buf) { mm_error("load_stack_from_file: bad decimal"); goto done; }
+      if (read_exact(file, buf, len, "read decimal") != 0) goto done;
+      buf[len] = '\0';
+      if (dec_from_string(&elem->dec, buf) != 0) { mm_error("load_stack_from_file: bad decimal"); goto done; }
       break;
     }
 

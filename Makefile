@@ -27,7 +27,7 @@ WORD_MODULES := $(wildcard $(DATA_DIR)/modules/*.mm)
 
 # Compiler and base flags
 CC       ?= gcc
-CFLAGS   ?= -g -std=c17 -Wall -Wextra -Werror -Wpedantic -Iinclude -fno-common
+CFLAGS   ?= -g -std=c17 -Wall -Wextra -Werror -Wpedantic -Iinclude -Ivendor/decNumber -fno-common
 LDFLAGS  ?= -rdynamic   # export symbols to shared-object modules
 LDLIBS   ?= -lgsl -lgslcblas -lreadline -lm -ldl
 
@@ -63,15 +63,20 @@ TARGET = $(BIN_DIR)/$(APP)
 # Each built-in module is a directory modules/<name>/ exporting one `Module`
 # struct (see include/module.h). MODULES chooses which are compiled in;
 # the registry table is generated from the list. The core is always built.
-MODULES ?= complex special matrices numerics strings registers dates programs
+MODULES ?= decimal complex special matrices numerics strings registers dates programs
 MODULE_SRCS := $(foreach m,$(MODULES),$(wildcard modules/$(m)/*.c))
 MODULE_TABLE := $(OBJ_DIR)/module_table.c
 CFLAGS += $(foreach m,$(MODULES),-Imodules/$(m))
 
+# Vendored libraries: compiled with relaxed warnings and without UBSan (decNumber
+# relies on type punning and shifts that UBSan reports but that are benign)
+VENDOR_SRCS := vendor/decNumber/decNumber.c vendor/decNumber/decContext.c
+
 # Sources / objects / deps
-SRCS := $(wildcard $(SRC_DIR)/*.c) $(MODULE_SRCS)
+SRCS := $(wildcard $(SRC_DIR)/*.c) $(MODULE_SRCS) $(VENDOR_SRCS)
 OBJS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)) \
         $(patsubst modules/%.c,$(OBJ_DIR)/modules/%.o,$(MODULE_SRCS)) \
+        $(patsubst vendor/%.c,$(OBJ_DIR)/vendor/%.o,$(VENDOR_SRCS)) \
         $(OBJ_DIR)/module_table.o
 DEPS := $(OBJS:.o=.d)
 
@@ -181,6 +186,10 @@ $(OBJ_DIR)/modules/%.o: modules/%.c $(GIT_HEADER)
 	@$(MKDIR_P) "$(@D)"
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(DEPFLAGS) -c $< -o $@
 
+$(OBJ_DIR)/vendor/%.o: vendor/%.c
+	@$(MKDIR_P) "$(@D)"
+	$(CC) $(filter-out -Werror -Wpedantic -Wextra,$(CFLAGS)) -w -fno-sanitize=undefined -DDECNUMDIGITS=34 -DHAVE_STDINT_H=1 -MMD -MP -MF $(@:.o=.d) -MT $@ -c $< -o $@
+
 # The registry table: the core first, then the modules in MODULES order.
 # Regenerated on every run but only touched when the list changes.
 .PHONY: FORCE
@@ -256,7 +265,7 @@ docs: $(TARGET)
 .PHONY: shared-module
 shared-module:
 	@test -n "$(DIR)" || { echo "usage: make shared-module DIR=path/to/module"; exit 2; }
-	$(CC) -std=c17 -Wall -Wextra -O2 -fPIC -shared -Iinclude -o "$(DIR)/$$(basename "$(DIR)").so" $(DIR)/*.c -lm
+	$(CC) -std=c17 -Wall -Wextra -O2 -fPIC -shared -Iinclude -Ivendor/decNumber -o "$(DIR)/$$(basename "$(DIR)").so" $(DIR)/*.c -lm
 
 # The user manual: doc/manual.tex + the generated command tables -> doc/mm41-manual.pdf.
 # Needs LuaLaTeX (or XeLaTeX: LATEX=xelatex) with fontspec, booktabs, longtable, tcolorbox.

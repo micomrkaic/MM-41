@@ -30,7 +30,8 @@
 #include <stdio.h>                          // for size_t, fprintf, stderr
 #include "stack.h"                          // for (anonymous struct)::(anon...
 #include "math_helpers.h"                   // for is_zero_comple
-#include "binary_fun.h"                     // for add_top_two, add_top_two_...
+#include "binary_fun.h"
+#include "dec_ops.h"                     // for add_top_two, add_top_two_...
 
 void add_top_two_scalars(Stack* stack) {
   if (stack->top < 1) {
@@ -234,6 +235,7 @@ void add_top_two(Stack* stack) {
     mm_error("Stack underflow in add_top_two.\n");
     return;
   }
+  if (dec_involved2(stack)) { dec_binary_apply(stack, "+"); return; }
 
   stack_element* a = &stack->items[stack->top - 1]; // second from top
   stack_element* b = &stack->items[stack->top];     // top
@@ -362,6 +364,7 @@ void sub_top_two(Stack* stack) {
     mm_error("Stack underflow in sub_top_two.\n");
     return;
   }
+  if (dec_involved2(stack)) { dec_binary_apply(stack, "-"); return; }
 
   stack_element* a = &stack->items[stack->top - 1]; // second from top
   stack_element* b = &stack->items[stack->top];     // top
@@ -530,6 +533,7 @@ void mul_top_two(Stack* stack) {
     mm_error("Stack underflow in mul_top_two.\n");
     return;
   }
+  if (dec_involved2(stack)) { dec_binary_apply(stack, "*"); return; }
 
   stack_element* a = &stack->items[stack->top - 1]; // second from top
   stack_element* b = &stack->items[stack->top];     // top
@@ -669,6 +673,7 @@ void div_top_two(Stack* stack) {
     mm_error("Stack underflow in div_top_two.\n");
     return;
   }
+  if (dec_involved2(stack)) { dec_binary_apply(stack, "/"); return; }
 
   stack_element* a = &stack->items[stack->top - 1]; // numerator
   stack_element* b = &stack->items[stack->top];     // denominator
@@ -857,6 +862,7 @@ void pow_top_two(Stack* stack) {
     mm_error("Stack underflow in pow_top_two.\n");
     return;
   }
+  if (dec_involved2(stack)) { dec_binary_apply(stack, "^"); return; }
 
   stack_element* a = &stack->items[stack->top - 1]; // base
   stack_element* b = &stack->items[stack->top];     // exponent
@@ -1184,6 +1190,7 @@ void dot_div_top_two(Stack* stack) {
     mm_error("Stack underflow in dot_div_top_two.\n");
     return;
   }
+  if (dec_involved2(stack)) { dec_binary_apply(stack, "/"); return; }
 
   stack_element* a = &stack->items[stack->top - 1]; // second from top (numerator)
   stack_element* b = &stack->items[stack->top];     // top (denominator)
@@ -1319,6 +1326,7 @@ void dot_mult_top_two(Stack* stack) {
     mm_error("Stack underflow in dot_mult_top_two.\n");
     return;
   }
+  if (dec_involved2(stack)) { dec_binary_apply(stack, "*"); return; }
 
   stack_element* a = &stack->items[stack->top - 1]; // second from top
   stack_element* b = &stack->items[stack->top];     // top
@@ -1453,6 +1461,7 @@ void dot_pow_top_two(Stack* stack) {
     mm_error("Stack underflow in dot_pow_top_two.\n");
     return;
   }
+  if (dec_involved2(stack)) { dec_binary_apply(stack, "^"); return; }
 
   stack_element* a = &stack->items[stack->top - 1]; // second from top (base)
   stack_element* b = &stack->items[stack->top];     // top (exponent)

@@ -26,6 +26,7 @@
 #include <stdbool.h>                        // for bool, false, true
 #include <stdio.h>                          // for fprintf, stderr, size_t
 #include "math_helpers.h"                   // for abs_wrapper, acos_wrapper
+#include "dec_ops.h"
 #include "stack.h"                          // for stack_top_type, pop, (ano...
 #include "unary_fun.h"                      // for apply_real_matrix_unary_i...
 
@@ -174,6 +175,7 @@ bool is_zero_complex(gsl_complex z) {
 #define DEFINE_UNARY_WRAPPER(name, real_fn, complex_fn)		\
   void name##_wrapper(Stack* stack) {				\
     value_type top_type = stack_top_type(stack);			\
+    if (top_type == TYPE_DECIMAL) { dec_unary_apply(stack, #name); return; } \
     switch (top_type) {						\
     case TYPE_REAL:						\
       apply_real_unary(stack, real_fn);				\
@@ -216,6 +218,7 @@ DEFINE_UNARY_WRAPPER(asinh, asinh, my_complex_asinh)
    This is the one rule for every such function. */
 static void promoting_unary(Stack *stack, const char *name, double (*fr)(double),
                             gsl_complex (*fc)(gsl_complex), bool (*in_domain)(double)) {
+  if (stack_top_type(stack) == TYPE_DECIMAL) { dec_unary_apply(stack, name); return; }
   switch (stack_top_type(stack)) {
   case TYPE_REAL: {
     double x = stack->items[stack->top].real;
@@ -321,6 +324,7 @@ void re_wrapper(Stack *stack) {
 
 void abs_wrapper(Stack *stack) {
   value_type a = stack_top_type(stack);
+  if (a == TYPE_DECIMAL) { dec_unary_apply(stack, "abs"); return; }
   if (a == TYPE_REAL) {
     stack_element b = pop(stack);	
     push_real(stack,fabs(b.real));

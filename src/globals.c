@@ -18,6 +18,7 @@
 
 #include "errors.h"
 #include "globals.h"
+#include "decimal.h"
 
 bool fixed_point = true;
 bool verbose_mode = false;
@@ -108,6 +109,7 @@ void save_config(const char* filename) {
   fprintf(f, "fixed_point = %d\n", fixed_point);
   fprintf(f, "verbose_mode = %d\n", verbose_mode);
   fprintf(f, "tol = %g\n", num_tol);
+  fprintf(f, "number_mode = %s\n", decimal_mode ? "decimal" : "binary");
 
   fclose(f);
 }
@@ -139,6 +141,8 @@ int load_config(const char* filename) {
       print_precision = atoi(value);
     } else if (strcmp(key, "fixed_point") == 0) {
       fixed_point = atoi(value);
+    } else if (strcmp(key, "number_mode") == 0) {
+      decimal_mode = strcmp(value, "decimal") == 0;
     } else if (strcmp(key, "verbose_mode") == 0) {
       verbose_mode = atoi(value);
     } else if (strcmp(key, "tol") == 0) {

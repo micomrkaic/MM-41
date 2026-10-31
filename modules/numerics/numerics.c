@@ -39,6 +39,11 @@ int num_eval(Stack *stack, double xt, double x, double *fx) {
   if (error_count != errors_before)
     return mm_error("  while evaluating %s at x = %.17g", xt_name(xt), x);
   int d = stack->top + 1 - depth0;
+  if (d == 1 && stack->items[stack->top].type == TYPE_DECIMAL) {     /* a decimal result is accepted */
+    double v = dec_to_double(&stack->items[stack->top].dec);
+    stack->items[stack->top].type = TYPE_REAL;
+    stack->items[stack->top].real = v;
+  }
   if (d != 1 || stack->items[stack->top].type != TYPE_REAL) {
     while (stack->top + 1 > depth0) { stack_element e = pop(stack); stack_element_free(&e); }
     return mm_error("%s must leave exactly one real result (x -- f(x)); it left %d item%s",

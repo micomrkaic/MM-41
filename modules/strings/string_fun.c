@@ -142,15 +142,18 @@ void top_to_string(Stack* stack) {
 
   stack_element* el = &stack->items[stack->top];
 
-  if (el->type != TYPE_REAL) {
-    mm_error("Error: top element is not a real number\n");
+  char buf[DECNUMDIGITS + 16];
+  if (el->type == TYPE_DECIMAL) {
+    mm_dec i;
+    dec_intg(&i, &el->dec);
+    dec_to_string(&i, buf, sizeof buf);
+  } else if (el->type == TYPE_REAL) {
+    snprintf(buf, sizeof buf, "%ld", (long)el->real);   /* truncate toward zero */
+  } else {
+    mm_error("int2str: needs a number");
     return;
   }
-
-  char buf[32];
-  long int_part = (long)el->real;  // truncate toward zero
-  snprintf(buf, sizeof(buf), "%ld", int_part);
-
+  stack->top--;
   push_string(stack, buf);
 }
 

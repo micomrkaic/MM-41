@@ -44,6 +44,7 @@
 #include "globals.h"           // for CONFIG_PATH, HISTORY_PATH, completed_...
 #include "print_fun.h"         // for print_stack
 #include "module.h"
+#include "decimal.h"
 #include "splash.h"            // for splash_screen
 #include "stack.h"             // for copy_stack, free_stack, init_stack
 #include "tab_completion.h"    // for function_name_completion
@@ -135,6 +136,7 @@ bool batch_mode = false;          /* -e, -f, or stdin that is not a terminal */
 static bool autoload = true;      /* -n turns off macros/config at startup */
 
 static void load_modules(void) {
+  dec_init();
   for (const Module *const *m = mm41_builtin_modules; *m; m++)
     if (modules_register(*m) != 0) exit(2);
   if (modules_init_all() != 0) exit(2);
@@ -199,7 +201,7 @@ int repl(void) {
   rl_attempted_completion_function = function_name_completion;
 
   while (1) {
-    char *line = readline("MM-41>> ");
+    char *line = readline(decimal_mode ? "MM-41[dec]>> " : "MM-41>> ");
     if (!line) { putchar('\n'); break; }
     if (*line) add_history(line);
     bool go_on = handle_line(&stack, &old_stack, line);

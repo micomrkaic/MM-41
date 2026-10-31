@@ -26,9 +26,20 @@
 #include <gsl/gsl_matrix_double.h>          // for gsl_matrix_get, gsl_matrix
 #include <math.h>                           // for fabs
 #include <stdio.h>                          // for printf, size_t, snprintf
+#include "stack.h"
+#include "globals.h"
+#include "print_fun.h"
 
 /* print -0 as 0 */
 static inline double nz(double x) { return x == 0.0 ? 0.0 : x; }
+
+/* a decimal: rounded to the print precision in fixed mode, as stored otherwise */
+static void print_decimal(int i, const mm_dec *d) {
+  char buf[DECNUMDIGITS + 48];
+  if (fixed_point) dec_to_fixed(d, print_precision, buf, sizeof buf);
+  else dec_to_string(d, buf, sizeof buf);
+  printf("[%d] 𝔻 : %s\n", i, buf);
+}
 #include <stdlib.h>                         // for calloc, free
 #include <string.h>                         // for strlen
 #include "globals.h"                        // for print_precision, fixed_point
@@ -57,6 +68,9 @@ void print_top_scalar(const Stack* stack) {
       printf("[%d] ℂ : (%.*g, %.*gi)\n", i,
 	     print_precision, nz(GSL_REAL(stack->items[i].complex_val)),
 	     print_precision, nz(GSL_IMAG(stack->items[i].complex_val)));
+    break;
+  case TYPE_DECIMAL:
+    print_decimal(i, &stack->items[i].dec);
     break;
   case TYPE_STRING:
     printf("[%d] 𝒮 : \"%s\"\n", i, stack->items[i].string);
@@ -100,6 +114,9 @@ void print_stack(const Stack* stack, char *title) {
 	printf("[%d] ℂ : (%.*g, %.*gi)\n", i,
 	       print_precision, nz(GSL_REAL(stack->items[i].complex_val)),
 	       print_precision, nz(GSL_IMAG(stack->items[i].complex_val)));
+      break;
+    case TYPE_DECIMAL:
+      print_decimal(i, &stack->items[i].dec);
       break;
     case TYPE_STRING:
       printf("[%d] 𝒮 : \"%s\"\n", i, stack->items[i].string);

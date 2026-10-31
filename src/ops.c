@@ -26,6 +26,8 @@
 #include <string.h>
 #include "ops.h"
 #include "module.h"
+#include "dec_ops.h"
+#include "decimal.h"
 #include "binary_fun.h"
 #include "compare_fun.h"
 #include "globals.h"
@@ -124,24 +126,66 @@ static int op_pick(Stack *stack) {
 
 static int op_depth(Stack *stack) { push_real(stack, stack->top + 1); return 0; }
 
+/* The percentage keys and mod have a decimal path: y x -- y r */
+static int dec_two(Stack *stack, const char *what, mm_dec *y, mm_dec *x) {
+  const stack_element *ey = &stack->items[stack->top - 1], *ex = &stack->items[stack->top];
+  if (ey->type == TYPE_DECIMAL) *y = ey->dec; else if (ey->type == TYPE_REAL) dec_from_double(y, ey->real);
+  else return mm_error("%s: needs two numbers", what);
+  if (ex->type == TYPE_DECIMAL) *x = ex->dec; else if (ex->type == TYPE_REAL) dec_from_double(x, ex->real);
+  else return mm_error("%s: needs two numbers", what);
+  return 0;
+}
 static int op_pct(Stack *stack) {          /* y x -- y y*x/100  (HP %) */
+  if (dec_involved2(stack)) {
+    mm_dec y, x, h, t, r;
+    if (dec_two(stack, "%", &y, &x)) return -1;
+    dec_from_long(&h, 100);
+    if (dec_mul(&t, &y, &x) || dec_div(&r, &t, &h)) return -1;
+    stack->top -= 2; push_decimal(stack, &y); push_decimal(stack, &r); return 0;
+  }
   double y, x;
   if (pop_two_reals(stack, "%", &y, &x)) return 0;
   push_real(stack, y); push_real(stack, y * x / 100.0); return 0;
 }
 static int op_pctt(Stack *stack) {         /* y x -- y 100*x/y  (HP %T) */
+  if (dec_involved2(stack)) {
+    mm_dec y, x, h, t, r;
+    if (dec_two(stack, "%t", &y, &x)) return -1;
+    if (dec_is_zero(&y)) return mm_error("%%t: total is zero");
+    dec_from_long(&h, 100);
+    if (dec_mul(&t, &x, &h) || dec_div(&r, &t, &y)) return -1;
+    stack->top -= 2; push_decimal(stack, &y); push_decimal(stack, &r); return 0;
+  }
   double y, x;
   if (pop_two_reals(stack, "%t", &y, &x)) return 0;
   if (y == 0.0) return mm_error("%%t: total is zero");
   push_real(stack, y); push_real(stack, 100.0 * x / y); return 0;
 }
 static int op_pctchg(Stack *stack) {       /* y x -- y 100*(x-y)/y  (HP delta%) */
+  if (dec_involved2(stack)) {
+    mm_dec y, x, h, d, t, r;
+    if (dec_two(stack, "%chg", &y, &x)) return -1;
+    if (dec_is_zero(&y)) return mm_error("%%chg: base is zero");
+    dec_from_long(&h, 100);
+    if (dec_sub(&d, &x, &y) || dec_mul(&t, &d, &h) || dec_div(&r, &t, &y)) return -1;
+    stack->top -= 2; push_decimal(stack, &y); push_decimal(stack, &r); return 0;
+  }
   double y, x;
   if (pop_two_reals(stack, "%chg", &y, &x)) return 0;
   if (y == 0.0) return mm_error("%%chg: base is zero");
   push_real(stack, y); push_real(stack, 100.0 * (x - y) / y); return 0;
 }
 static int op_mod(Stack *stack) {          /* floored modulo, sign of x */
+  if (dec_involved2(stack)) {
+    mm_dec y, x, q, r, t;
+    if (dec_two(stack, "mod", &y, &x)) return -1;
+    if (dec_is_zero(&x)) return mm_error("mod: modulus is zero");
+    /* r = y - x*floor(y/x) */
+    if (dec_div(&q, &y, &x)) return -1;
+    { decContext c = dec_ctx; c.round = DEC_ROUND_FLOOR; decContextZeroStatus(&c); decNumberToIntegralValue(&t, &q, &c); }
+    if (dec_mul(&q, &x, &t) || dec_sub(&r, &y, &q)) return -1;
+    stack->top -= 2; push_decimal(stack, &r); return 0;
+  }
   double y, x;
   if (pop_two_reals(stack, "mod", &y, &x)) return 0;
   if (x == 0.0) return mm_error("mod: modulus is zero");

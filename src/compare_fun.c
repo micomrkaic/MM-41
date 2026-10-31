@@ -18,6 +18,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 #include "errors.h"
+#include "dec_ops.h"
 #include <string.h>
 #include <gsl/gsl_complex.h>                // for gsl_complex
 #include <gsl/gsl_complex_math.h>           // for gsl_complex_abs, gsl_comp...
@@ -57,8 +58,26 @@ void dot_cmp_top_two(Stack* stack, comparison_op op) {
   stack_element* b = &stack->items[stack->top];
   stack_element result = {0};
 
+  // Decimal vs decimal or real: compare exactly
+  if (a->type == TYPE_DECIMAL || b->type == TYPE_DECIMAL) {
+    result.type = TYPE_REAL;
+    if (op == CMP_AND || op == CMP_OR) {
+      bool ta, tb;
+      if (a->type == TYPE_DECIMAL) ta = !dec_is_zero(&a->dec);
+      else if (a->type == TYPE_REAL) ta = a->real != 0.0;
+      else { mm_error("and/or: unsupported argument types"); return; }
+      if (b->type == TYPE_DECIMAL) tb = !dec_is_zero(&b->dec);
+      else if (b->type == TYPE_REAL) tb = b->real != 0.0;
+      else { mm_error("and/or: unsupported argument types"); return; }
+      result.real = (op == CMP_AND) ? (ta && tb) : (ta || tb);
+    } else {
+      int c;
+      if (dec_compare_apply(stack, &c) != 0) return;
+      result.real = cmp_real((double)c, 0.0, op);
+    }
+  }
   // String vs String: eq and neq only
-  if (a->type == TYPE_STRING && b->type == TYPE_STRING) {
+  else if (a->type == TYPE_STRING && b->type == TYPE_STRING) {
     if (op != CMP_EQ && op != CMP_NE) {
       mm_error("strings support only eq and neq");
       return;

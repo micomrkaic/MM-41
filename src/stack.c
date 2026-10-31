@@ -58,6 +58,9 @@ int stack_element_clone(stack_element* dst, const stack_element* src) {
   case TYPE_COMPLEX:
     dst->complex_val = src->complex_val;
     return 0;
+  case TYPE_DECIMAL:
+    dst->dec = src->dec;
+    return 0;
   case TYPE_STRING:
     if (!src->string) { dst->string = NULL; return 0; }
     dst->string = strdup(src->string);
@@ -97,6 +100,16 @@ void push_real(Stack* stack, double value) {
   stack->top++;
   stack->items[stack->top].type = TYPE_REAL;
   stack->items[stack->top].real = value;
+}
+
+void push_decimal(Stack* stack, const mm_dec *value) {
+  if (stack->top >= STACK_SIZE - 1) {
+    mm_error("Stack overflow\n");
+    return;
+  }
+  stack->top++;
+  stack->items[stack->top].type = TYPE_DECIMAL;
+  stack->items[stack->top].dec = *value;
 }
 
 void push_complex(Stack* stack, gsl_complex value) {

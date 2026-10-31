@@ -88,9 +88,22 @@ void evaluate_one_token(Stack *stack, Token tok) {
   switch (tok.type) {
   case TOK_EOF:
     return;
-  case TOK_NUMBER:
-    push_real(stack, atof(tok.text));
+  case TOK_NUMBER: {
+    /* "0.1" follows the number mode; "0.1d" is always decimal, "0.1b" always binary */
+    size_t n = strlen(tok.text);
+    char last = n ? tok.text[n - 1] : 0;
+    bool dec = (last == 'd') || (decimal_mode && last != 'b');
+    char buf[MAX_TOKEN_LEN];
+    snprintf(buf, sizeof buf, "%.*s", (int)(last == 'd' || last == 'b' ? n - 1 : n), tok.text);
+    if (dec) {
+      mm_dec d;
+      if (dec_from_string(&d, buf) != 0) { mm_error("not a decimal number: %s", buf); return; }
+      push_decimal(stack, &d);
+    } else {
+      push_real(stack, atof(buf));
+    }
     return;
+  }
   case TOK_COMPLEX: {
     gsl_complex z;
     if (read_complex(tok.text, &z)) push_complex(stack,z);
