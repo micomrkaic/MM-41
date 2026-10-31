@@ -1,4 +1,4 @@
-\ module std 1.0 standard word module: powers, norms, finance, storage arithmetic, locations
+\ module std 1.0 standard word module: powers, norms, storage arithmetic, locations
 sq dup *
 qu sq sq
 cube 3 ^
@@ -13,8 +13,6 @@ isnan nan eq
 isinf inf eq
 isreal im 0 eq
 selreal dup isreal swap re .*
-npv 1 + inv pval
-irr roots selreal rmax split_mat inv 1 - 100 *
 cumprod_c ln cumsum_c exp
 cumprod_r ln cumsum_r exp
 sto_add dup rcl 2 roll + swap sto

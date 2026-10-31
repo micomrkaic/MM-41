@@ -63,7 +63,7 @@ TARGET = $(BIN_DIR)/$(APP)
 # Each built-in module is a directory modules/<name>/ exporting one `Module`
 # struct (see include/module.h). MODULES chooses which are compiled in;
 # the registry table is generated from the list. The core is always built.
-MODULES ?= decimal complex special matrices numerics strings registers dates programs
+MODULES ?= decimal finance complex special matrices numerics strings registers dates programs
 MODULE_SRCS := $(foreach m,$(MODULES),$(wildcard modules/$(m)/*.c))
 MODULE_TABLE := $(OBJ_DIR)/module_table.c
 CFLAGS += $(foreach m,$(MODULES),-Imodules/$(m))

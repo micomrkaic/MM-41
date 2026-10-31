@@ -1,0 +1,53 @@
+# the finance module: the MM-B1 regression values, then errors (the stack is left alone)
+2 setprec
+clrtvm 12 n 1 i% 10000 pv 0 fv end ?pmt
+tvm
+amort
+clrtvm 12 n 10000 pv -888.49 pmt 0 fv ?i%
+clrtvm 12 n 1 i% 0 pv -100 pmt ?fv
+clrtvm 1 i% 10000 pv -888.49 pmt 0 fv ?n
+clrtvm 12 n 1 i% -888.49 pmt 0 fv ?pv
+clrtvm 12 n 1 i% 10000 pv 0 fv beg ?pmt
+[6 1 $ -1000 300 300 300 300 300] 10 npv
+4 setprec
+[2 2 $ -1000 1 300 5] irr
+[1 6 $ -1000 300 300 300 300 300] irr
+12 12 nom>eff
+12.682503013196972 12 eff>nom
+2 setprec
+10000 1000 5 sl
+10000 1000 5 1 soyd
+10000 1000 5 1 2 db
+10000 1000 5 5 2 db
+3 3.5 20 100 bprice
+4 setprec
+92.89 3 20 100 byield
+20070101 20080101 3 yearfrac
+"1.1.2007" "1.1.2008" 2 yearfrac
+20070101 20080101 0 yearfrac
+20070101 20080101 1 yearfrac
+20070101 20080101 4 yearfrac
+2 setprec
+[5 2 $ -10000 20080101 2750 20080301 4250 20081030 3250 20090215 2750 20090401] 9 xnpv
+4 setprec
+[5 2 $ -10000 20080101 2750 20080301 4250 20081030 3250 20090215 2750 20090401] xirr
+20080215 20171115 5.75 6.5 100 2 0 xprice
+"15.2.2008" "15.11.2016" 5.75 95.04287 100 2 0 xyield
+20080215 20171115 5.75 2 0 xaccr
+"15.3.2026" date>ymd 20260315 ymd>date 20260315d ymd>date
+decimal 10000 1000 5 sl binary 10000d 1000 5 sl
+clrtvm 3 n 1 i% 1000 pv 0 fv ?pmt drop amortm
+ps
+clst
+"x" n
+12 n 1 i% 10000 pv 0 fv clrtvm ?pmt
+0 n 1 i% 10000 pv 0 fv ?pmt
+[2 1 $ 1 1] irr
+"a" 10 npv
+[2 3 $ 1 2 3 4 5 6] 10 npv
+20080215 20171115 5.75 6.5 100 5 0 xprice
+20080215 20171115 5.75 6.5 100 2 7 xprice
+20171115 20080215 5.75 6.5 100 2 0 xprice
+"31.2.2008" 20171115 5.75 2 0 xaccr
+20070101 20080101 5 yearfrac
+20070132 ymd>date
