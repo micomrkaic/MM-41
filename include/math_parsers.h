@@ -34,7 +34,6 @@
 #include <gsl/gsl_vector_complex.h>      // for gsl_vector_complex
 #include <gsl/gsl_eigen.h>        // for eigen decomposition functions
 #include "stack.h"
-#include "string_fun.h"
 #include "binary_fun.h"
 
 int read_complex(const char* input, gsl_complex* z);

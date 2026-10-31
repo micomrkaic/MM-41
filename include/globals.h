@@ -51,6 +51,12 @@ extern gsl_rng * global_rng;
 extern bool fixed_point;
 extern bool verbose_mode;
 extern bool batch_mode;           /* set in main: -e, -f, or stdin not a terminal */
+
+/* numerical-methods state (the numerics module uses it; `tol` is saved in config.txt) */
+#define DEFAULT_TOL 1e-10
+extern double num_tol;            /* set by 'tol' */
+extern long   num_evals;          /* function evaluations in the last call */
+extern double num_last_err;       /* error estimate of the last integrate */
 extern bool completed_batch;
 extern bool test_flag;
 extern bool skip_stack_printing;

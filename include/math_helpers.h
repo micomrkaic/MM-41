@@ -84,13 +84,6 @@ void arg_wrapper(Stack* stack);
 void ln_wrapper(Stack* stack);
 void log_wrapper(Stack* stack);
 void sqrt_wrapper(Stack* stack);
-void npdf_wrapper(Stack *stack);
-void ncdf_wrapper(Stack *stack);
-void nquant_wrapper(Stack *stack);
 
-void gamma_wrapper(Stack *stack);
-void ln_gamma_wrapper(Stack *stack);
-void beta_wrapper(Stack *stack);
-void ln_beta_wrapper(Stack *stack);
 
 #endif // MATH_HELPERS_H

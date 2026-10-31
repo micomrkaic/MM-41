@@ -211,27 +211,6 @@ static compare_fn get_compare_fn(const char* name) {
     return NULL;
 }
 
-int run_batch(Stack *stack, char *fname) {
-  FILE* f = fopen(fname, "r");
-  if (!f) {
-    mm_perror("Failed to open input file");
-    return 1;
-  } else if (verbose_mode) printf("Running batch: %s\n",fname);
-
-  char *line = NULL;
-  size_t len = 0;
-
-  while (getline(&line, &len, f) != -1) {
-    // Remove trailing newline
-    line[strcspn(line, "\r\n")] = '\0';
-    evaluate_line(stack, line);
-  }
-  free(line);
-  fclose(f);
-  completed_batch = true;
-  return 0;
-}
-
 static bool evaluate_test_condition(Stack* stack, const char* test_name) {
   bool result;
   compare_fn fn = get_compare_fn(test_name);

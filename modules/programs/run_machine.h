@@ -80,7 +80,6 @@ bool is_ctr_lte_0(Stack* stack);
 bool is_ctr_compare(Stack* stack, const char* op);
 
 // Batch execution
-int run_batch(Stack * stack, char *fname);
 
 // Program execution
 void list_program(const Program* prog);

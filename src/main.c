@@ -43,7 +43,7 @@
 #include "ops.h"               // for print_ops_markdown
 #include "globals.h"           // for CONFIG_PATH, HISTORY_PATH, completed_...
 #include "print_fun.h"         // for print_stack
-#include "registers.h"         // for free_all_registers, init_registers
+#include "module.h"
 #include "splash.h"            // for splash_screen
 #include "stack.h"             // for copy_stack, free_stack, init_stack
 #include "tab_completion.h"    // for function_name_completion
@@ -63,7 +63,6 @@
 // Globals
 gsl_rng
     *global_rng; // Global random number generator, used throughout the program
-Register registers[MAX_REG] = {0}; // Global or static array
 
 
 // Local declarations
@@ -135,10 +134,16 @@ static char *capture_command_output(const char *cmd, int *wait_status_out) {
 bool batch_mode = false;          /* -e, -f, or stdin that is not a terminal */
 static bool autoload = true;      /* -n turns off macros/config at startup */
 
+static void load_modules(void) {
+  for (const Module *const *m = mm41_builtin_modules; *m; m++)
+    if (modules_register(*m) != 0) exit(2);
+  if (modules_init_all() != 0) exit(2);
+}
+
 static void startup(Stack *stack, Stack *old_stack) {
   init_stack(stack);
   init_stack(old_stack);
-  init_registers();
+  load_modules();
   if (autoload) {
     load_macros_from_file();
     autoload_words();
@@ -150,7 +155,7 @@ static void shutdown(Stack *stack, Stack *old_stack) {
   if (autoload && !batch_mode) save_config(CONFIG_PATH);
   free_stack(old_stack);
   free_stack(stack);
-  free_all_registers();
+  modules_shutdown_all();
   free_words();
 }
 
@@ -232,7 +237,7 @@ static int run_lines_from(Stack *stack, Stack *old_stack, FILE *f) {
 static void usage_text(FILE *f) {
   fprintf(f,
     "usage: mm41 [-n] [-e EXPR]... [-f FILE]...\n"
-    "       mm41 --commands | --commands-tex | --version | -h\n"
+    "       mm41 --modules | --commands | --commands-tex | --version | -h\n"
     "\n"
     "  (no args)   interactive calculator (reads stdin when it is not a terminal)\n"
     "  -e EXPR     evaluate EXPR as one line; may be repeated\n"
@@ -251,8 +256,9 @@ int main(int argc, char **argv) {
   for (int i = 1; i < argc; i++) {
     const char *a = argv[i];
     if (!strcmp(a, "-h") || !strcmp(a, "--help")) { usage_text(stdout); return 0; }
-    if (!strcmp(a, "--commands")) { print_ops_markdown(); return 0; }
-    if (!strcmp(a, "--commands-tex")) { print_ops_latex(); return 0; }
+    if (!strcmp(a, "--commands")) { load_modules(); print_ops_markdown(); return 0; }
+    if (!strcmp(a, "--commands-tex")) { load_modules(); print_ops_latex(); return 0; }
+    if (!strcmp(a, "--modules")) { load_modules(); list_modules(); return 0; }
     if (!strcmp(a, "--version")) { printf("MM-41 %s (%s)\n", MM41_VERSION, VERSION); return 0; }
     if (!strcmp(a, "-n")) { autoload = false; continue; }
     if ((!strcmp(a, "-e") || !strcmp(a, "-f")) && i + 1 < argc && njobs < MAXJOBS) {

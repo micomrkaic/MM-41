@@ -31,26 +31,17 @@
 #include "lexer.h"
 #include "stack.h"
 #include "stack_io.h"
-#include "string_fun.h"
-#include "linear_algebra.h"
-#include "matrix_fun.h"
 #include "math_parsers.h"
 #include "math_helpers.h"
 #include "binary_fun.h"
 #include "unary_fun.h"
 #include "help.h"
 #include "print_fun.h"
-#include "my_date_fun.h"
-#include "poly_fun.h"
-#include "stat_fun.h"
-#include "registers.h"
 #include "compare_fun.h"
 #include "words.h"
-#include "run_machine.h"
-#include "numerics.h"
 #include "globals.h"
-#include "my_astronomy.h"
 #include "ops.h"
+#include "xt.h"
 
 // **************** The main loop in this file ****************
 /* Each top-level token is atomic: a snapshot of the stack is taken before
@@ -161,5 +152,27 @@ void evaluate_one_token(Stack *stack, Token tok) {
     mm_error("Unhandled token: %s", tok.text);
     return;
   }
+}
+
+/* Run the lines of a file as input (the `batch` command and -f). */
+int run_batch(Stack *stack, char *fname) {
+  FILE* f = fopen(fname, "r");
+  if (!f) {
+    mm_perror("Failed to open input file");
+    return 1;
+  } else if (verbose_mode) printf("Running batch: %s\n",fname);
+
+  char *line = NULL;
+  size_t len = 0;
+
+  while (getline(&line, &len, f) != -1) {
+    // Remove trailing newline
+    line[strcspn(line, "\r\n")] = '\0';
+    evaluate_line(stack, line);
+  }
+  free(line);
+  fclose(f);
+  completed_batch = true;
+  return 0;
 }
 

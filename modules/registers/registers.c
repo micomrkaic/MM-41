@@ -29,6 +29,8 @@
 #include "stack.h"                          // for (anonymous struct)::(anon...
 #include "registers.h"                      // for registers, MAX_REG, Register
 
+Register registers[MAX_REG] = {0};
+
 stack_element copy_element(const stack_element* src) {
   stack_element copy;
   copy.type = src->type;

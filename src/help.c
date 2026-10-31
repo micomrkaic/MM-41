@@ -11,6 +11,7 @@
 #include <stdlib.h>         // for free, malloc, qsort
 #include <string.h>         // for strcmp
 #include "ops.h"            // for ops, find_op
+#include "module.h"         // for module_of
 #include "words.h"          // for find_word
 #include "globals.h"        // for skip_stack_printing
 #include "help.h"           // for HelpEntry, help_menu, list_all_functions
@@ -58,7 +59,8 @@ void help_menu(void) {
   printf("    x n sto  n rcl  pr  ffr  saveregs loadregs      today now dow dateplus ddays sunrise ...\n");
   printf("    scon substr s2u s2l slen srev int2str eval      \"file\" run   \"file\" batch   !shell command\n");
   subtitle("More help");
-  printf("    listfcns            every command by category, with stack pictures\n");
+  printf("    listfcns            every command by module and category, with stack pictures\n");
+  printf("    modules             the loaded modules\n");
   printf("    \"name\" usage        one command in detail, or a word's definition\n");
   printf("    man mm41, and the manual in the share/doc directory\n");
   printf("\n");
@@ -88,7 +90,9 @@ void usage(const char *name) {
     const Op *e = &ops[idx];
 
     /* First line: "sin" usage: x -- sin(x) */
-    printf(BOLD "\"%s\" usage" RESET ": %s   [%s]\n", e->name, e->effect, e->cat);
+    const Module *m = module_of(idx);
+    printf(BOLD "\"%s\" usage" RESET ": %s   [%s%s%s]\n", e->name, e->effect,
+           m ? m->name : "", m ? ": " : "", e->cat);
     if (e->help[0])    printf("    %s\n", e->help);
     if (e->example[0]) printf("    Example: %s\n", e->example);
 

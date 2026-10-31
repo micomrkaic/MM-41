@@ -25,4 +25,5 @@
 void evaluate_line(Stack *stack, char * line);
 void evaluate_one_token(Stack *stack, Token tok);
 
+int run_batch(Stack *stack, char *fname);
 #endif // EVAL_FUN_H

@@ -16,14 +16,9 @@
  * along with MM-41. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SPEC_FUN_H
-#define SPEC_FUN_H
+#ifndef STAT_FUN_H
+#define STAT_FUN_H
 
-#include <gsl/gsl_sf_gamma.h>
-
-double gamma_function(double x);
-double ln_gamma_function(double x);
-double beta_function(double x, double y);
-double ln_beta_function(double x, double y);
-
-#endif // SPEC_FUN_H
+#include "stack.h"
+void matrix_reduce(Stack* stack, const char* axis, const char* op);
+#endif // STAT_FUN_H

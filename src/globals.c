@@ -18,10 +18,12 @@
 
 #include "errors.h"
 #include "globals.h"
-#include "numerics.h"
 
 bool fixed_point = true;
 bool verbose_mode = false;
+double num_tol = DEFAULT_TOL;
+long   num_evals = 0;
+double num_last_err = 0.0;
 bool completed_batch=false;
 bool test_flag = false;
 bool skip_stack_printing = false;

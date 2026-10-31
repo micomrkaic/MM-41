@@ -16,12 +16,25 @@
  * along with MM-41. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef STAT_FUN_H
-#define STAT_FUN_H
+#ifndef SPEC_FUN_H
+#define SPEC_FUN_H
 
+#include <gsl/gsl_sf_gamma.h>
+
+double gamma_function(double x);
+double ln_gamma_function(double x);
+double beta_function(double x, double y);
+double ln_beta_function(double x, double y);
+
+#include "stack.h"
 double standard_normal_pdf(double x);
 double standard_normal_cdf(double x);
 double standard_normal_quantile(double p);
-void matrix_column_means(Stack* stack);
-void matrix_reduce(Stack* stack, const char* axis, const char* op);
-#endif // STAT_FUN_H
+void npdf_wrapper(Stack *stack);
+void ncdf_wrapper(Stack *stack);
+void nquant_wrapper(Stack *stack);
+void gamma_wrapper(Stack *stack);
+void ln_gamma_wrapper(Stack *stack);
+void beta_wrapper(Stack *stack);
+void ln_beta_wrapper(Stack *stack);
+#endif // SPEC_FUN_H

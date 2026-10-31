@@ -36,10 +36,16 @@ typedef struct {
   const char *example;
 } Op;
 
-extern const Op ops[];
-extern const int n_ops;
+/* The flat table assembled from all loaded modules (see module.h). */
+extern const Op *ops;
+extern int       n_ops;
 
 int  find_op(const char *name);                   /* index or -1 */
+
+/* argument helpers for command implementations */
+int pop_string_arg(Stack *stack, const char *what, char **out);   /* caller frees *out */
+int pop_real_arg(Stack *stack, const char *what, double *out);
+int pop_two_reals(Stack *stack, const char *what, double *y, double *x);
 int  call_op(Stack *stack, int idx);              /* depth check + call */
 void print_ops_markdown(void);                    /* --commands */
 void print_ops_latex(void);                       /* --commands-tex */

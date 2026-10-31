@@ -1,0 +1,18 @@
+module       version  words  summary
+core         1.0         82  arithmetic, functions, logic, the stack, words and the session
+complex      1.0          7  complex numbers: parts, argument, conjugate, construction
+special      1.0          7  gamma, beta and the standard normal distribution
+matrices     1.0         38  linear algebra, matrix construction and reduction, polynomials
+numerics     1.0         12  integration, roots, minima, derivatives and sums over any word
+strings      1.0          7  string construction and manipulation
+registers    1.0          7  64 storage registers of any type
+dates        1.0         13  calendar arithmetic, time zones, sunrise and sunset
+programs     1.0          1  HP-41 style programs with labels, jumps and subroutines
+[1m"det" usage[0m: A -- det(A)   [matrices: Matrices]
+    determinant of a square real or complex matrix
+    Example: [2 2 $ 4 7 2 6] det
+[1m"integrate" usage[0m: a b xt -- I   [numerics: Numerics]
+    integral of f over [a,b] (tanh-sinh with adaptive bisection; handles endpoint singularities)
+    Example: 0 pi @sin integrate
+{}
+[exit 0]

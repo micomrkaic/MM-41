@@ -28,18 +28,9 @@
    registers and other words; an error inside it aborts the call and the
    top-level rollback restores the stack. Convergence uses num_tol. */
 
-#define DEFAULT_TOL   1e-10
 #define MAX_FN_EVALS  2000000
 
-extern double num_tol;        /* set by 'tol' */
-extern long   num_evals;      /* function evaluations in the last call */
-extern double num_last_err;   /* error estimate of the last integrate */
-
-/* execution tokens */
-double      xt_of(const char *name);     /* -1 if unknown */
-const char *xt_name(double xt);
-int         xt_check(double xt);         /* error unless valid */
-int         xt_exec(Stack *stack, double xt);
+/* num_tol, num_evals and num_last_err live in globals.h (tol is saved in the config). */
 
 int num_eval(Stack *stack, double xt, double x, double *fx);
 int num_integrate(Stack *stack, double xt, double a, double b, double *result, double *err);
