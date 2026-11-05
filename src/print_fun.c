@@ -24,7 +24,8 @@
 #include <gsl/gsl_complex.h>                // for GSL_IMAG, GSL_REAL, gsl_c...
 #include <gsl/gsl_matrix_complex_double.h>  // for gsl_matrix_complex_get
 #include <gsl/gsl_matrix_double.h>          // for gsl_matrix_get, gsl_matrix
-#include <math.h>                           // for fabs
+#include <math.h>
+#include <stdbool.h>                           // for fabs
 #include <stdio.h>                          // for printf, size_t, snprintf
 #include "stack.h"
 #include "globals.h"
@@ -142,6 +143,15 @@ void print_matrix(Stack *stack) {
   return;
 }
 
+/* One cell. A matrix whose entries are all whole numbers (dates, counts,
+   cash flows) prints them as integers; otherwise four decimals, or
+   scientific notation for very large or very small entries. */
+static void format_cell(char *buf, size_t n, double val, bool integral) {
+  if (integral) snprintf(buf, n, "%.0f", nz(val));
+  else if (fabs(val) > 1e5 || (fabs(val) > 0 && fabs(val) < 1e-4)) snprintf(buf, n, "%.4e", nz(val));
+  else snprintf(buf, n, "%.4f", nz(val));
+}
+
 void print_real_matrix(const gsl_matrix* m) {
   size_t rows = m->size1;
   size_t cols = m->size2;
@@ -152,17 +162,19 @@ void print_real_matrix(const gsl_matrix* m) {
     return;
   }
 
+  bool integral = true;
+  for (size_t i = 0; i < rows && integral; ++i)
+    for (size_t j = 0; j < cols; ++j) {
+      double v = gsl_matrix_get(m, i, j);
+      if (!(v == floor(v) && fabs(v) < 1e15)) { integral = false; break; }
+    }
+
   // Step 1: find max width per column
   for (size_t j = 0; j < cols; ++j) {
     col_width[j] = 0;
     for (size_t i = 0; i < rows; ++i) {
       char buf[64];
-      double val = gsl_matrix_get(m, i, j);
-      if (fabs(val) > 1e5 || (fabs(val) > 0 && fabs(val) < 1e-4)) {
-	snprintf(buf, sizeof(buf), "%.4e", nz(val));
-      } else {
-	snprintf(buf, sizeof(buf), "%.4f", nz(val));
-      }
+      format_cell(buf, sizeof buf, gsl_matrix_get(m, i, j), integral);
       int len = (int)strlen(buf);
       if (len > col_width[j]) col_width[j] = len;
     }
@@ -172,12 +184,9 @@ void print_real_matrix(const gsl_matrix* m) {
   for (size_t i = 0; i < rows; ++i) {
     printf("| ");
     for (size_t j = 0; j < cols; ++j) {
-      double val = gsl_matrix_get(m, i, j);
-      if (fabs(val) > 1e5 || (fabs(val) > 0 && fabs(val) < 1e-4)) {
-	printf("%*.*e ", col_width[j], 4, nz(val));
-      } else {
-	printf("%*.*f ", col_width[j], 4, nz(val));
-      }
+      char buf[64];
+      format_cell(buf, sizeof buf, gsl_matrix_get(m, i, j), integral);
+      printf("%*s ", col_width[j], buf);
     }
     printf("|\n");
   }

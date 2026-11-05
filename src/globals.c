@@ -29,6 +29,7 @@ bool completed_batch=false;
 bool test_flag = false;
 bool skip_stack_printing = false;
 int print_precision = 6;
+char holiday_calendar[64] = "";
 char path_to_data_and_programs[MAX_PATH];
 
 #include "globals.h"
@@ -111,6 +112,7 @@ void save_config(const char* filename) {
   fprintf(f, "verbose_mode = %d\n", verbose_mode);
   fprintf(f, "tol = %g\n", num_tol);
   fprintf(f, "number_mode = %s\n", decimal_mode ? "decimal" : "binary");
+  if (holiday_calendar[0]) fprintf(f, "holidays = %s\n", holiday_calendar);
 
   fclose(f);
 }
@@ -135,6 +137,16 @@ int load_config(const char* filename) {
     char* key = line;
     char* value = equal_sign + 1;
 
+    /* Trim the key: the file is written as "key = value", and the space
+       before '=' used to end up in the key, so nothing ever matched and no
+       setting survived a restart. */
+    while (*key == ' ' || *key == '\t') key++;
+    size_t klen = strlen(key);
+    while (klen > 0 && (key[klen - 1] == ' ' || key[klen - 1] == '\t')) key[--klen] = '\0';
+    value[strcspn(value, "\r\n")] = '\0';
+    size_t vlen = strlen(value);
+    while (vlen > 0 && (value[vlen - 1] == ' ' || value[vlen - 1] == '\t')) value[--vlen] = '\0';
+
     // Trim leading spaces from value
     while (*value == ' ') value++;
 
@@ -144,6 +156,8 @@ int load_config(const char* filename) {
       fixed_point = atoi(value);
     } else if (strcmp(key, "number_mode") == 0) {
       decimal_mode = strcmp(value, "decimal") == 0;
+    } else if (strcmp(key, "holidays") == 0) {
+      snprintf(holiday_calendar, sizeof holiday_calendar, "%s", value);
     } else if (strcmp(key, "verbose_mode") == 0) {
       verbose_mode = atoi(value);
     } else if (strcmp(key, "tol") == 0) {
