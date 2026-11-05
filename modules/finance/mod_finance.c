@@ -22,6 +22,7 @@
 #include "globals.h"
 #include "decimal.h"
 #include "fin.h"
+#include "calendar.h"
 #include <gsl/gsl_matrix.h>
 #include <math.h>
 #include <stdio.h>
@@ -61,27 +62,8 @@ static int dec_to_whole(const mm_dec *d, const char *what, const char *which, lo
   return 0;
 }
 
-/* A date argument: the string "d.m.yyyy" or the number YYYYMMDD. */
-static int elem_to_serial(const stack_element *e, const char *what, long *serial) {
-  if (e->type == TYPE_STRING) {
-    int d, m; long y; int n = 0;
-    if (sscanf(e->string, " %d.%d.%ld %n", &d, &m, &y, &n) != 3 || e->string[n] != '\0')
-      return mm_error("%s: a date is \"d.m.yyyy\" or the number YYYYMMDD, not \"%s\"", what, e->string);
-    return fin_dmy_to_serial(what, d, m, y, serial);
-  }
-  if (e->type == TYPE_REAL || e->type == TYPE_DECIMAL) {
-    mm_dec d; long ymd;
-    elem_to_dec(e, &d);
-    if (dec_to_whole(&d, what, "a numeric date (YYYYMMDD)", &ymd) != 0) return -1;
-    return fin_ymd_to_serial(what, ymd, serial);
-  }
-  return mm_error("%s: a date is \"d.m.yyyy\" or the number YYYYMMDD", what);
-}
-
-static int top_is_date(const Stack *stack, int depth) {
-  value_type t = stack->items[stack->top - depth].type;
-  return t == TYPE_REAL || t == TYPE_DECIMAL || t == TYPE_STRING;
-}
+#define elem_to_serial cal_elem_to_serial
+static int top_is_date(const Stack *stack, int depth) { return cal_elem_is_date(&stack->items[stack->top - depth]); }
 
 static void push_dec_result(Stack *stack, const mm_dec *r) { push_decimal(stack, r); }
 
@@ -256,7 +238,7 @@ static int dated_flows_at(const Stack *stack, int depth, const char *what, Dated
     double amt = gsl_matrix_get(m, j, 0), dt = gsl_matrix_get(m, j, 1);
     if (!isfinite(amt)) { free(cf); return mm_error("%s: amount %zu is not finite", what, j + 1); }
     if (dt != floor(dt) || dt < 10101 || dt > 99991231) { free(cf); return mm_error("%s: date %zu must be a whole number YYYYMMDD", what, j + 1); }
-    if (fin_ymd_to_serial(what, (long)dt, &cf[j].serial) != 0) { free(cf); return -1; }
+    if (cal_ymd_to_serial(what, (long)dt, &cf[j].serial) != 0) { free(cf); return -1; }
     dec_from_double(&cf[j].amt, amt);
   }
   *out = cf; *n = (int)N;
@@ -387,7 +369,7 @@ static int op_date_to_ymd(Stack *s) {
   long serial;
   if (elem_to_serial(&s->items[s->top], "date>ymd", &serial) != 0) return -1;
   stack_element e = pop(s); stack_element_free(&e);
-  push_real(s, (double)fin_serial_to_ymd(serial));
+  push_real(s, (double)cal_serial_to_ymd(serial));
   return 0;
 }
 
@@ -396,10 +378,8 @@ static int op_ymd_to_date(Stack *s) {
   if (!top_is_date(s, 0)) return mm_error("ymd>date: needs a date");
   long serial;
   if (elem_to_serial(&s->items[s->top], "ymd>date", &serial) != 0) return -1;
-  int d, m; long y;
-  fin_serial_to_dmy(serial, &d, &m, &y);
   char buf[32];
-  snprintf(buf, sizeof buf, "%02d.%02d.%ld", d, m, y);
+  cal_serial_to_string(serial, buf, sizeof buf);
   stack_element e = pop(s); stack_element_free(&e);
   push_string(s, buf);
   return 0;

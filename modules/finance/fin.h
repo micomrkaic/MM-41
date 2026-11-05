@@ -63,13 +63,9 @@ int fin_xbond_yield(long settle, long maturity, const mm_dec *ratepct, const mm_
                     const mm_dec *redeem, int freq, int basis, mm_dec *out);
 int fin_xaccrued(long settle, long maturity, const mm_dec *ratepct, int freq, int basis, mm_dec *out);
 
-/* ---- calendar (fin_dates.c): proleptic Gregorian, serial days ----
+/* ---- day counts (fin_dates.c), on the serial days of include/calendar.h ----
  * Day-count basis as in Excel: 0 = 30/360 US, 1 = actual/actual (ISDA),
  * 2 = actual/360, 3 = actual/365, 4 = 30E/360. */
-int  fin_ymd_to_serial(const char *what, long ymd, long *serial);   /* YYYYMMDD -> serial; -1 and error if invalid */
-long fin_serial_to_ymd(long serial);
-int  fin_dmy_to_serial(const char *what, int d, int m, long y, long *serial);
-void fin_serial_to_dmy(long serial, int *d, int *m, long *y);
 int  fin_year_frac(long s1, long s2, int basis, mm_dec *out);
 int  fin_coupon_geometry(const char *what, long settle, long maturity, int freq, int basis, int *N, long *A, long *E);
 

@@ -7,69 +7,18 @@
  * version. See <https://www.gnu.org/licenses/>.
  */
 
-/* The finance module's calendar. Dates are serial days (epoch 1970-01-01,
-   arbitrary: everything uses differences) in the proleptic Gregorian
-   calendar, following Howard Hinnant's branch-free civil<->days algorithm.
-   Ported from MM-B1. */
+/* The finance module's day counts and coupon schedules, on the serial days
+   of src/calendar.c (shared with the dates module). Ported from MM-B1. */
 
 #include "fin.h"
 #include "errors.h"
+#include "calendar.h"
 
-static int is_leap(long y) { return (y % 4 == 0 && y % 100 != 0) || y % 400 == 0; }
-static int dim(long y, int m) {
-  static const int t[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-  if (m == 2 && is_leap(y)) return 29;
-  return t[m - 1];
-}
-static long days_in_year(long y) { return is_leap(y) ? 366 : 365; }
-
-static long civil_to_serial(long y, int m, int d) {
-  y -= m <= 2;
-  long era = (y >= 0 ? y : y - 399) / 400;
-  long yoe = y - era * 400;
-  long doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;
-  long doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
-  return era * 146097 + doe - 719468;
-}
-
-static void serial_to_civil(long z, long *yy, int *mm, int *dd) {
-  z += 719468;
-  long era = (z >= 0 ? z : z - 146096) / 146097;
-  long doe = z - era * 146097;
-  long yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-  long y = yoe + era * 400;
-  long doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-  long mp = (5 * doy + 2) / 153;
-  int d = (int)(doy - (153 * mp + 2) / 5 + 1);
-  int m = (int)(mp < 10 ? mp + 3 : mp - 9);
-  *yy = y + (m <= 2);
-  *mm = m;
-  *dd = d;
-}
-
-int fin_dmy_to_serial(const char *what, int d, int m, long y, long *serial) {
-  if (m < 1 || m > 12 || d < 1 || d > dim(y, m) || y < 1 || y > 9999)
-    return mm_error("%s: invalid date %d.%d.%ld", what, d, m, y);
-  *serial = civil_to_serial(y, m, d);
-  return 0;
-}
-
-void fin_serial_to_dmy(long serial, int *d, int *m, long *y) { serial_to_civil(serial, y, m, d); }
-
-int fin_ymd_to_serial(const char *what, long ymd, long *serial) {
-  long y = ymd / 10000;
-  int m = (int)((ymd / 100) % 100), d = (int)(ymd % 100);
-  if (ymd < 10101 || m < 1 || m > 12 || d < 1 || d > dim(y, m))
-    return mm_error("%s: invalid date %ld (use YYYYMMDD or \"d.m.yyyy\")", what, ymd);
-  *serial = civil_to_serial(y, m, d);
-  return 0;
-}
-
-long fin_serial_to_ymd(long serial) {
-  long y; int m, d;
-  serial_to_civil(serial, &y, &m, &d);
-  return y * 10000 + m * 100 + d;
-}
+#define is_leap       cal_is_leap
+#define dim           cal_days_in_month
+#define days_in_year  cal_days_in_year
+#define civil_to_serial cal_civil_to_serial
+#define serial_to_civil cal_serial_to_civil
 
 /* 30/360 day count; european = 1 for 30E/360, 0 for US/NASD */
 static long days_30_360(long y1, int m1, int d1, long y2, int m2, int d2, int european) {
