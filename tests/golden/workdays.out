@@ -1,0 +1,118 @@
+| 20260101 |
+| 20260119 |
+| 20260216 |
+| 20260525 |
+| 20260619 |
+| 20260703 |
+| 20260907 |
+| 20261012 |
+| 20261111 |
+| 20261126 |
+| 20261225 |
+| 20270101 |
+| 20270118 |
+| 20270215 |
+| 20270531 |
+| 20270618 |
+| 20270705 |
+| 20270906 |
+| 20271011 |
+| 20271111 |
+| 20271125 |
+| 20271224 |
+| 20271231 |
+| 20211231 |
+| 20220117 |
+| 20220221 |
+| 20220530 |
+| 20220620 |
+| 20220704 |
+| 20220905 |
+| 20221010 |
+| 20221111 |
+| 20221124 |
+| 20221226 |
+| 20260101 |
+| 20260102 |
+| 20260208 |
+| 20260406 |
+| 20260427 |
+| 20260501 |
+| 20260502 |
+| 20260625 |
+| 20260815 |
+| 20261031 |
+| 20261101 |
+| 20261225 |
+| 20261226 |
+| 20270101 |
+| 20270102 |
+| 20270208 |
+| 20270329 |
+| 20270427 |
+| 20270501 |
+| 20270502 |
+| 20270625 |
+| 20270815 |
+| 20271031 |
+| 20271101 |
+| 20271225 |
+| 20271226 |
+| 20261126 |
+| 20261225 |
+| 20261126 |
+| 20261225 |
+
+[0] ℝ : 261.000000
+[1] ℝ : 261.000000
+[2] ℝ : 2.000000
+[3] ℝ : 3.000000
+[4] ℝ : 0.000000
+[5] ℝ : -3.000000
+[6] ℝ : 1.000000
+[7] ℝ : 0.000000
+[8] Mℝ: 11 x 1 matrix
+[9] Mℝ: 12 x 1 matrix
+[10] Mℝ: 11 x 1 matrix
+[11] Mℝ: 13 x 1 matrix
+[12] Mℝ: 13 x 1 matrix
+[13] ℝ : 250.000000
+[14] 𝒮 : "08.01.2027"
+[15] ℝ : 20270108.000000
+[16] 𝒮 : "31.12.2026"
+[17] 𝒮 : "01.01.2027"
+[18] ℝ : 0.000000
+[19] ℝ : 1.000000
+[20] ℝ : 0.000000
+[21] Mℝ: 11 x 1 matrix
+[22] ℝ : 11.000000
+[23] ℝ : 1.000000
+[24] Mℝ: 2 x 1 matrix
+[25] Mℝ: 2 x 1 matrix
+[26] ℝ : 6.000000
+[27] ℝ : 7.000000
+[28] ℝ : 5.000000
+Error: holidays: no holiday calendar 'nosuchcalendar' (no holidays/nosuchcalendar.txt in the configuration directory, and the built-in rules are "us" and "si")
+Error: yholidays: no built-in rules for 'nosuchcalendar' (built in: "us", "si"); a file calendar has its own years
+Error: yholidays: the year must be a whole number from 1583
+Error: sethol: needs a real vector of dates YYYYMMDD (from holidays, yholidays or a literal)
+Error: sethol: invalid date 20261301 (use YYYYMMDD or "d.m.yyyy")
+Error: workdays: invalid date 31.2.2026
+Error: workdays: a numeric date is the whole number YYYYMMDD
+Error: workdayplus: the number of workdays must be a whole number
+
+[0] Mℝ: 2 x 1 matrix
+[1] 𝒮 : "nosuchcalendar"
+[2] ℝ : 2026.000000
+[3] 𝒮 : "nosuchcalendar"
+[4] ℝ : 1500.000000
+[5] 𝒮 : "us"
+[6] 𝒮 : "x"
+[7] Mℝ: 2 x 1 matrix
+[8] 𝒮 : "31.2.2026"
+[9] 𝒮 : "1.3.2026"
+[10] ℝ : 3.000000
+[11] ℝ : 4.000000
+[12] 𝒮 : "1.1.2026"
+[13] ℝ : 1.500000
+[exit 1]

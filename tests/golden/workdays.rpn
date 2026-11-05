@@ -1,0 +1,27 @@
+# workdays and holiday calendars (no config directory: weekends only at first)
+"1.1.2026" "31.12.2026" workdays 20260101 20261231 workdays
+"1.1.2026" "4.1.2026" workdays "1.1.2026" "5.1.2026" workdays "3.1.2026" "4.1.2026" workdays "5.1.2026" "1.1.2026" workdays
+"1.1.2026" "1.1.2026" workdays "3.1.2026" "3.1.2026" workdays
+2026 "us" yholidays pm
+2027 "us" yholidays pm
+2022 "us" yholidays pm
+2026 "si" yholidays pm
+2027 "si" yholidays pm
+2026 "us" yholidays sethol "1.1.2026" "31.12.2026" workdays
+"24.12.2026" 10 workdayplus 20261224 10 workdayplus "1.1.2027" -1 workdayplus "1.1.2027" 0 workdayplus
+20261126 isworkday 20261127 isworkday 20261128 isworkday
+hol dim
+"tests/golden/hol_test.txt" holidays pm
+"tests/golden/hol_test.txt" holidays sethol hol pm "20.11.2026" "30.11.2026" workdays
+clrhol "20.11.2026" "30.11.2026" workdays
+[2 1 $ 20261126 20261127] sethol "20.11.2026" "30.11.2026" workdays
+ps clst
+hol
+"nosuchcalendar" holidays
+2026 "nosuchcalendar" yholidays
+1500 "us" yholidays
+"x" sethol
+[2 1 $ 20261301 1] sethol
+"31.2.2026" "1.3.2026" workdays
+3 4 workdays
+"1.1.2026" 1.5 workdayplus

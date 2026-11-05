@@ -23,7 +23,7 @@
 #include <gsl/gsl_rng.h>
 #include "stack.h"
 
-#define MM41_VERSION "1.1"
+#define MM41_VERSION "1.2"
 #define MAX_PATH 2048
 
 #define HISTORY_FILE ".rpn_history"
@@ -46,6 +46,7 @@ const char *app_path(const char *file);
 
 extern gsl_rng * global_rng;
 
+extern char holiday_calendar[64];   /* "holidays = us" in config.txt; the dates module loads it on first use */
 extern bool fixed_point;
 extern bool verbose_mode;
 extern bool batch_mode;           /* set in main: -e, -f, or stdin not a terminal */

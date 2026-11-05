@@ -1,4 +1,4 @@
-.TH MM41 1 "November 2026" "MM-41 1.1" "User Commands"
+.TH MM41 1 "November 2026" "MM-41 1.2" "User Commands"
 .SH NAME
 mm41 \- programmable RPN calculator for real, complex and decimal scalars, strings and matrices
 .SH SYNOPSIS
@@ -20,7 +20,8 @@ scalars, strings, and real and complex matrices (GNU Scientific Library).
 It has 64 storage registers, user-defined words with conditionals and
 loops, numerical integration, root finding, minimisation and
 differentiation over those words, polynomial roots, dates and
-sunrise/sunset, a finance module (time value of money, amortisation,
+sunrise/sunset, workdays with holiday calendars, a finance module (time
+value of money, amortisation,
 NPV/IRR, bonds, depreciation, day counts) computing in 34-digit decimals,
 and HP-41 style programs loaded from files.
 .PP
@@ -297,6 +298,35 @@ report the evaluations used and the error estimate of the last integral.
 The function must leave exactly one real; an error inside it aborts the
 call. An integrable endpoint singularity converges to full precision when
 that endpoint is 0.
+.SS Workdays
+Dates are \(dqd.m.yyyy\(dq strings or YYYYMMDD numbers.
+.B d1 d2 workdays
+counts the workdays from d1 to d2, both inclusive (Excel NETWORKDAYS;
+negative when d2 precedes d1);
+.B date n workdayplus
+is the date n workdays later (WORKDAY; the start day is not counted);
+.B date isworkday
+tests one date. A workday is a Monday to Friday not in the holiday
+calendar, which is empty until
+.B \(dqus\(dq usehol
+(the federal holidays, observed), 
+.B \(dqsi\(dq usehol
+(Slovenia) or
+.B \(dqname\(dq usehol
+from
+.I ~/.config/mm41/holidays/name.txt
+(one date per line, # comments) installs one and records it in
+.IR config.txt .
+.B \(dqus\(dq holidays
+and
+.B year \(dqsi\(dq yholidays
+push a calendar as a vector of YYYYMMDD,
+.B H sethol
+installs any such vector for the session,
+.B hol
+shows the installed calendar and
+.B clrhol
+removes it.
 .SS Programs
 .B \(dqfile\(dq run
 loads and runs an HP-41 style program: one instruction per line, with
@@ -319,7 +349,15 @@ which defaults to
 .IR ~/.config/mm41/ :
 .TP
 .I config.txt
-print precision, fixed/scientific, number mode, tolerance; written at exit.
+print precision, fixed/scientific, number mode, holiday calendar,
+tolerance; written at exit.
+.TP
+.I holidays/*.txt
+holiday calendars; the shipped
+.I example.txt
+is replaced by
+.BR "make install" ,
+your own files are kept.
 .TP
 .I modules/*.mm, modules/*.so
 word modules and compiled modules, loaded at startup in name order.

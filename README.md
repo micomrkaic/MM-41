@@ -28,7 +28,7 @@ MM-41>> 2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
 [5] 𝔻 : -1798.65
 MM-41>> modules
 module       version  words  summary
-core         1.1         85  arithmetic, functions, logic, the stack, words and the session
+core         1.2         85  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.0         33  time value of money, cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -37,7 +37,7 @@ matrices     1.0         38  linear algebra, matrix construction and reduction, 
 numerics     1.0         12  integration, roots, minima, derivatives and sums over any word
 strings      1.0          7  string construction and manipulation
 registers    1.0          7  64 storage registers of any type
-dates        1.0         13  calendar arithmetic, time zones, sunrise and sunset
+dates        1.1         22  calendar arithmetic, workdays and holidays, time zones, sunrise and sunset
 programs     1.0          1  HP-41 style programs with labels, jumps and subroutines
 std          1.0         28  standard word module: powers, norms, storage arithmetic, locations
 ```
@@ -97,7 +97,10 @@ loads. `"name" usage` tells you which module a command comes from.
 - **Numerical methods** over any word or command: `integrate` (tanh-sinh),
   `romberg`, `fzero`, `solve`, `minimize`, `deriv`, `fsum`, `fprod`.
 - **Strings, registers, dates and the sun**: 64 registers of any type; date
-  arithmetic; sunrise, sunset and civil dawn/dusk with IANA time zones.
+  arithmetic; workdays with holiday calendars (`workdays`, `workdayplus`,
+  Excel's NETWORKDAYS/WORKDAY conventions; built-in US federal and Slovenian
+  rules, or your own file); sunrise, sunset and civil dawn/dusk with IANA
+  time zones.
 - **HP-41 style programs** from files (`LBL`, `GOTO`, `GOSUB`, `RTN`, tests).
 - **Batch mode**: `-e EXPR`, `-f FILE`, or piped stdin; exit status 1 on any
   error.
@@ -115,6 +118,7 @@ decimal 19.99 3 * 0.0825 1 + * 2 round   \ 64.92   exact, half-even
 [5 1 $ -5000 1500 1500 1500 1500] irr    \ 7.713847  (percent per period)
 20080215 20171115 5.75 6.5 100 2 0 xprice  \ 94.6344  (Excel's PRICE example)
 "1.1.2025" "31.12.2025" ddays            \ 364
+"us" usehol "1.1.2026" "31.12.2026" workdays   \ 250  (261 weekdays, 11 federal holidays)
 "21.6.2026" 46.24 14.36 "Europe/Ljubljana" sunset     \ "20:58"
 ```
 

@@ -56,7 +56,7 @@
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 
-\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 1.1}
+\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 1.2}
 \author{Mico Mrkaic}
 \date{November 2026}
 
@@ -244,7 +244,7 @@ The stack holds up to 100 items of any type. The classic FORTH words manipulate 
 
 \subsection{Display}
 
-\cmd{print} prints the top item (a matrix in full), \cmd{ps} prints the whole stack, \cmd{pm} prints the matrix on top in full. All three leave the stack unchanged.
+\cmd{print} prints the top item (a matrix in full), \cmd{ps} prints the whole stack, \cmd{pm} prints the matrix on top in full. All three leave the stack unchanged. A matrix prints with four decimals (scientific notation for very large or small entries), except that a matrix whose entries are all whole numbers---dates, counts, an integer cash-flow table---prints them as integers.
 
 Numbers are shown in fixed-point with six decimals by default. \cmd{setprec} sets the number of decimals (0--20), and \cmd{sfs} toggles between fixed-point and scientific notation, where the precision is the number of significant digits:
 \begin{rpn}
@@ -660,6 +660,7 @@ Dates are strings in the form \code{d.m.yyyy}; leading zeros are optional on inp
 \cmd{tz\_offset} & \stk{date zone -- h} & UTC offset in hours of an IANA zone on that date \\
 \cmd{sunrise}, \cmd{sunset} & \stk{date lat lon zone -- time} & local sunrise and sunset \\
 \cmd{dawn}, \cmd{dusk} & \stk{date lat lon zone -- time} & civil dawn and dusk (sun $6^\circ$ below the horizon) \\
+\cmd{workdays} \ldots & & workdays and holidays, Section~\ref{sec:workdays} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -677,6 +678,44 @@ today 100 dateplus durham dawn      \ civil dawn in Durham, NC, 100 days from no
 today kranj sunset dec_hr           \ sunset in Kranj as a decimal hour
 \end{rpn}
 Add your own with one line in \code{user\_words.txt} or in a word module of your own: \code{home 51.5 -0.12 "Europe/London"}.
+
+\subsection{Workdays and holidays}
+\label{sec:workdays}
+
+A workday is a Monday to Friday that is not in the \emph{holiday calendar}, a list of dates the dates module keeps for the session. These words take dates as strings \code{"d.m.yyyy"} or as numbers \code{YYYYMMDD}, like the finance words, and follow Excel's conventions so that the results can be checked against a spreadsheet.
+
+\begin{center}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.2\textwidth}>{\raggedright\arraybackslash}p{0.5\textwidth}@{}}
+\toprule
+\cmd{workdays}    & \stk{d1 d2 -- n}   & workdays from \code{d1} to \code{d2}, both ends inclusive (\code{NETWORKDAYS}); negative when \code{d2} precedes \code{d1} \\
+\cmd{workdayplus} & \stk{date n -- date2} & the date $n$ workdays after \code{date}, the start day itself not counted (\code{WORKDAY}); $n$ may be negative \\
+\cmd{isworkday}   & \stk{date -- flag} & 1 for a workday \\
+\cmd{holidays}    & \stk{name -- H}    & a calendar as a vector of \code{YYYYMMDD}: the file \code{holidays/name.txt} in the configuration directory, or the built-in rules for the years around today \\
+\cmd{yholidays}   & \stk{year name -- H} & the built-in rules for one year \\
+\cmd{sethol}      & \stk{H --}         & install a vector of dates as the calendar for this session \\
+\cmd{usehol}      & \stk{name --}      & install a calendar by name and remember it in \code{config.txt} \\
+\cmd{clrhol}      & \stk{--}           & no holidays (weekends only), and forget the name \\
+\cmd{hol}         & \stk{-- H}         & the installed calendar \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Until a calendar is installed only weekends are skipped:
+\begin{rpn}
+"1.1.2026" "31.12.2026" workdays     \ 261
+"5.1.2026" "1.1.2026" workdays       \ -3
+"us" usehol                          \ the federal holidays, kept in config.txt
+"1.1.2026" "31.12.2026" workdays     \ 250
+"24.12.2026" 10 workdayplus          \ "11.01.2027"   (25.12 and 1.1 skipped)
+20261126 isworkday                   \ 0              Thanksgiving
+2027 "si" yholidays pm               \ Slovenia's work-free days of 2027
+\end{rpn}
+
+Two calendars are built in. \code{"us"} is the eleven federal holidays with the federal observance rule (a holiday on a Saturday is taken on the Friday before, on a Sunday on the Monday after, so New Year's Day 2028 appears as 31 December 2027). \code{"si"} is Slovenia's work-free days---fixed dates plus Easter Monday---which are not shifted. Without a year, \cmd{holidays} and \cmd{usehol} generate the rules for last year through two years ahead, which covers what you compute day to day; \cmd{yholidays} gives any single year from 1583.
+
+Any other calendar is a file, \code{\textasciitilde/.config/mm41/holidays/\emph{name}.txt}, with one date per line, \code{d.m.yyyy} or \code{YYYYMMDD}, anything after the date a comment, and \code{\#} lines and blank lines ignored. \code{make install} puts an annotated example there, \code{holidays/example.txt}, which is an office calendar for one year (the federal holidays plus the day after Thanksgiving): copy it to \code{imf.txt}, edit, and \code{"imf" usehol}. A file calendar knows only the years you have typed into it; a date outside them is treated as having no holidays, so extend the file each year. A name containing a slash or ending in \code{.txt} is taken as a path, which is how a calendar can live anywhere.
+
+The calendar named in \code{config.txt} (\code{holidays = us}) is loaded on first use. If it cannot be loaded---a misspelt name, a deleted file---every workday word reports the problem until you fix it, \cmd{clrhol}, or \cmd{usehol} another: a silently wrong count would be worse than an error. A holiday that falls on a weekend changes nothing, duplicates are dropped, and the list is sorted, so \cmd{hol} is also a tidy way to look at a calendar.
 
 %======================================================================
 \section{Finance}
@@ -882,7 +921,7 @@ The HP-41 took plug-in ROMs; MM-41 takes modules. A module is a named set of com
 \begin{rpn}
 MM-41>> modules
 module       version  words  summary
-core         1.1         85  arithmetic, functions, logic, the stack, words and the session
+core         1.2         85  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.0         33  time value of money, cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -891,7 +930,7 @@ matrices     1.0         38  linear algebra, matrix construction and reduction, 
 numerics     1.0         12  integration, roots, minima, derivatives and sums over any word
 strings      1.0          7  string construction and manipulation
 registers    1.0          7  64 storage registers of any type
-dates        1.0         13  calendar arithmetic, time zones, sunrise and sunset
+dates        1.1         22  calendar arithmetic, workdays and holidays, time zones, sunrise and sunset
 programs     1.0          1  HP-41 style programs with labels, jumps and subroutines
 std          1.0         28  standard word module: powers, norms, storage arithmetic, locations
 \end{rpn}
@@ -1005,7 +1044,8 @@ Everything lives in \code{\$XDG\_CONFIG\_HOME/mm41/}, which defaults to \code{\t
 \begin{center}
 \begin{tabular}{@{}lp{0.65\textwidth}@{}}
 \toprule
-\code{config.txt} & \code{print\_precision}, \code{fixed\_point}, \code{number\_mode}, \code{verbose\_mode}, \code{tol}; written at exit \\
+\code{config.txt} & \code{print\_precision}, \code{fixed\_point}, \code{number\_mode}, \code{holidays}, \code{verbose\_mode}, \code{tol}; written at exit \\
+\code{holidays/*.txt} & holiday calendars (Section~\ref{sec:workdays}); the shipped \code{example.txt} is replaced by \code{make install}, your own files are kept \\
 \code{modules/*.mm} & word modules, loaded at startup in name order; the shipped ones are replaced by \code{make install} \\
 \code{modules/*.so} & compiled modules, loaded at startup \\
 \code{user\_words.txt} & words saved by \cmd{savewords}; loaded at startup \\
@@ -1089,7 +1129,7 @@ The following words are loaded from \code{modules/std.mm} in the configuration d
 \section{Coming from MM-15, MM-14, MM-11 or MM-B1}
 \label{app:changes}
 
-MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
+MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
 \begin{itemize}
   \item The binary is \code{mm41}, the configuration directory \code{\textasciitilde/.config/mm41/}. Copy \code{user\_words.txt}, \code{registers.txt} and \code{config.txt} across from \code{mm\_15} if you want them.
   \item \code{predefined\_macros.txt} is now the word module \code{modules/std.mm} and is installed there; the old file is not read. Your own additions belong in \code{user\_words.txt} or in a module of your own.

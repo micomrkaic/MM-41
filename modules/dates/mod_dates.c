@@ -12,6 +12,7 @@
 #include "stack.h"
 #include "my_date_fun.h"
 #include "my_astronomy.h"
+#include "workdays.h"
 
 
 static int op_today(Stack *stack) { (void)stack; (void)(push_today_date(stack)); return 0; }
@@ -42,9 +43,18 @@ static const Op table[] = {
   { "sunset", 4, op_sunset, "Dates", "date lat lon zone -- time", "local sunset HH:MM", "\"21.6.2025\" 38.9 -77.0 -4 sunset" },
   { "dawn", 4, op_dawn, "Dates", "date lat lon zone -- time", "civil dawn HH:MM (sun 6 degrees below the horizon)", "today 38.9 -77.0 \"America/New_York\" dawn" },
   { "dusk", 4, op_dusk, "Dates", "date lat lon zone -- time", "civil dusk HH:MM", "today 38.9 -77.0 \"America/New_York\" dusk" },
+  { "workdays", 2, op_workdays, "Workdays", "d1 d2 -- n", "workdays from d1 to d2, both inclusive (Excel NETWORKDAYS): Mondays to Fridays not in the holiday calendar; negative if d2 < d1", "\"1.1.2026\" \"31.12.2026\" workdays" },
+  { "workdayplus", 2, op_workdayplus, "Workdays", "date n -- date2", "the date n workdays after date (n may be negative; the start date is not counted, as Excel WORKDAY)", "\"24.12.2026\" 10 workdayplus" },
+  { "isworkday", 1, op_isworkday, "Workdays", "date -- flag", "1 if the date is a Monday to Friday and not a holiday", "20261126 isworkday" },
+  { "holidays", 1, op_holidays, "Workdays", "name -- H", "the holiday calendar as a vector of YYYYMMDD: the file holidays/name.txt in the config directory, or the built-in rules \"us\" (federal, observed) and \"si\" (Slovenia) for the years around today", "\"us\" holidays" },
+  { "yholidays", 2, op_yholidays, "Workdays", "year name -- H", "the built-in rules for one year", "2027 \"si\" yholidays" },
+  { "sethol", 1, op_sethol, "Workdays", "H --", "install a vector of dates YYYYMMDD as the holiday calendar for this session", "[2 1 $ 20261126 20261225] sethol" },
+  { "usehol", 1, op_usehol, "Workdays", "name --", "install the calendar `name` (file or rules) and remember it in config.txt", "\"us\" usehol" },
+  { "clrhol", 0, op_clrhol, "Workdays", "--", "remove the holiday calendar (weekends only) and forget it in config.txt", "clrhol" },
+  { "hol", 0, op_hol, "Workdays", "-- H", "the installed holiday calendar as a vector", "hol" },
 };
 
 const Module mm41_mod_dates = {
-  "dates", "1.0", "calendar arithmetic, time zones, sunrise and sunset",
-  table, (int)(sizeof table / sizeof table[0]), NULL, NULL, 0
+  "dates", "1.1", "calendar arithmetic, workdays and holidays, time zones, sunrise and sunset",
+  table, (int)(sizeof table / sizeof table[0]), NULL, workdays_shutdown, 0
 };

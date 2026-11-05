@@ -64,6 +64,7 @@ void help_menu(void) {
   printf("    x @f deriv   lo hi @f fsum   lo hi @f fprod   @f exec   x tol   nevals  interr\n");
   subtitle("Registers, dates, strings, programs");
   printf("    x n sto  n rcl  pr  ffr  saveregs loadregs      today now dow dateplus ddays sunrise ...\n");
+  printf("    d1 d2 workdays   date n workdayplus   \"us\" usehol  (holiday calendars: us, si, or holidays/*.txt)\n");
   printf("    scon substr s2u s2l slen srev int2str eval      \"file\" run   \"file\" batch   !shell command\n");
   subtitle("More help");
   printf("    listfcns            every command by module and category, with stack pictures\n");

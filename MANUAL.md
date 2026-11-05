@@ -81,7 +81,11 @@ vector) · `cumsum_r cumsum_c` · `roots pval` (coefficients highest degree firs
 `x n sto` · `n rcl` · `pr ffr saveregs loadregs clregs` (64 registers, any type).
 Dates are `"d.m.yyyy"`: `today now dateplus ddays dow edmy num2date days2eoy
 tz_offset` · `date lat lon zone sunrise|sunset|dawn|dusk` (zone: IANA name or
-UTC offset).
+UTC offset). Workdays (dates as `"d.m.yyyy"` or `YYYYMMDD`): `d1 d2 workdays`
+(inclusive, NETWORKDAYS) · `date n workdayplus` (WORKDAY) · `date isworkday` ·
+calendars `"us" usehol` / `"si" usehol` (built-in rules, saved in config) or
+`"name" usehol` from `~/.config/mm41/holidays/name.txt` · `"us" holidays`,
+`2027 "si" yholidays` (vectors) · `H sethol` · `hol` · `clrhol`.
 
 ## Words
 
@@ -122,6 +126,6 @@ the next line when false. `"file" batch` runs ordinary lines.
 
 ## Files
 
-`$XDG_CONFIG_HOME/mm41/` (default `~/.config/mm41/`): `config.txt` (precision, display, number mode, tolerance),
-`modules/*.mm`, `modules/*.so`, `user_words.txt`, `registers.txt`,
+`$XDG_CONFIG_HOME/mm41/` (default `~/.config/mm41/`): `config.txt` (precision, display, number mode, holiday calendar, tolerance),
+`modules/*.mm`, `modules/*.so`, `holidays/*.txt`, `user_words.txt`, `registers.txt`,
 `stack_backup.dat`, `.rpn_history`.

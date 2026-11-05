@@ -1,0 +1,21 @@
+# A holiday calendar for the dates module: one date per line, as d.m.yyyy or
+# YYYYMMDD; anything after the date is a comment. Copy this file to
+# ~/.config/mm41/holidays/<name>.txt and install it with "<name>" usehol
+# (or "<name>" holidays sethol for one session). Keep it current: a file
+# calendar knows only the years you put in it. The built-in rule calendars
+# "us" and "si" need no file.
+#
+# This example is the IMF-style office calendar for 2026: the US federal
+# holidays plus the day after Thanksgiving. Edit to taste.
+1.1.2026      New Year's Day
+19.1.2026     Martin Luther King, Jr. Day
+16.2.2026     Presidents' Day
+25.5.2026     Memorial Day
+19.6.2026     Juneteenth
+3.7.2026      Independence Day (observed)
+7.9.2026      Labor Day
+12.10.2026    Columbus Day
+11.11.2026    Veterans Day
+26.11.2026    Thanksgiving
+27.11.2026    Day after Thanksgiving
+25.12.2026    Christmas

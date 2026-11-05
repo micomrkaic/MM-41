@@ -1,0 +1,4 @@
+# a two-line calendar for the golden test
+20261126 Thanksgiving
+25.12.2026
+20261126 duplicate, dropped

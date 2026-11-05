@@ -24,6 +24,7 @@ DATA_DIR := data
 CONFIG_FILES := config.txt
 CONFIG_SRC  := $(addprefix $(DATA_DIR)/,$(CONFIG_FILES))
 WORD_MODULES := $(wildcard $(DATA_DIR)/modules/*.mm)
+HOLIDAY_FILES := $(wildcard $(DATA_DIR)/holidays/*.txt)
 
 # Compiler and base flags
 CC       ?= gcc
@@ -238,6 +239,12 @@ install: $(TARGET)
 	@for f in $(WORD_MODULES); do \
 	  echo "  -> modules/$$(basename "$$f")"; \
 	  $(INSTALL) -m 644 "$$f" "$(APP_CONF_DIR)/modules/"; \
+	done
+	@echo "Installing holiday calendars to $(APP_CONF_DIR)/holidays (shipped files are replaced; your own are kept)"
+	$(INSTALL) -d "$(APP_CONF_DIR)/holidays"
+	@for f in $(HOLIDAY_FILES); do \
+	  echo "  -> holidays/$$(basename "$$f")"; \
+	  $(INSTALL) -m 644 "$$f" "$(APP_CONF_DIR)/holidays/"; \
 	done
 	@if [ -f "$(APP_CONF_DIR)/predefined_macros.txt" ]; then \
 	  echo "  note: $(APP_CONF_DIR)/predefined_macros.txt is no longer read; its words are now modules/std.mm"; \

@@ -1,5 +1,30 @@
 # MM-41 changes
 
+## MM-41 1.2
+
+- **Workdays and holiday calendars** in the dates module: `d1 d2 workdays`
+  (both ends inclusive, negative when reversed: Excel's NETWORKDAYS),
+  `date n workdayplus` (WORKDAY), `date isworkday`. The holiday calendar is
+  a list of dates kept for the session: `"us" usehol` (the eleven federal
+  holidays with the Saturday->Friday / Sunday->Monday observance rule),
+  `"si" usehol` (Slovenia's work-free days, Easter Monday included), or
+  `"name" usehol` from `~/.config/mm41/holidays/name.txt` (one date per
+  line, comments allowed; `make install` ships an annotated `example.txt`).
+  `usehol` records the name in `config.txt` (`holidays = us`) and the
+  calendar is loaded on first use; `holidays` and `year name yholidays` push
+  a calendar as a vector of YYYYMMDD, `H sethol` installs any vector, `hol`
+  shows it, `clrhol` removes it. A calendar that cannot be loaded is an
+  error on every use rather than a silently wrong count.
+- The calendar core (serial days, Hinnant's civil/days algorithm, Easter,
+  the two date spellings) moved from the finance module to `src/calendar.c`
+  and is shared by the dates and finance modules.
+- A matrix whose entries are all whole numbers prints them as integers
+  (`pm`), so date vectors and cash-flow tables are readable; other matrices
+  print as before.
+- **Fixed:** `config.txt` was written as `key = value` but read with the
+  space left in the key, so no setting (precision, display mode, number
+  mode, tolerance) ever survived a restart. Keys and values are trimmed.
+
 ## MM-41 1.1
 
 MM-B1, the decimal business calculator, becomes two modules; with this
