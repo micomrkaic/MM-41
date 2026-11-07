@@ -11,6 +11,10 @@
   word, and `help text` searches names and descriptions (`help holiday`).
   `help` followed by a name is a line form: the name is looked up, not
   executed, and the stack is left alone. `"name" usage` shows the same page.
+  Concept pages introduce one part of the calculator before its listing:
+  `help modules` (the three kinds and how to add one), `help words`,
+  `help decimal`, `help finance`, `help workdays`, `help numerics`,
+  `help syntax`.
 - Stack pictures write multi-word results as one token (`mod(y,x)`,
   `lnΓ(x)`, `[A;B]`, `[A|B]`).
 

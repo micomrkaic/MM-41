@@ -66,6 +66,7 @@ nothing called "nosuchthing": no command, word, module or category, and no descr
 
 [1mhelp[0m
     help                 the overview
+    help <topic>         a short introduction: modules, words, decimal, finance, workdays, numerics, syntax
     help <command>       one command: stack entries, result, example (run when harmless)
     help <module>        every command of a module, e.g. help finance
     help <category>      every command of a category, e.g. help Stack
@@ -93,6 +94,25 @@ nothing called "nosuchthing": no command, word, module or category, and no descr
     clst         ... --                             clear the stack
     savestack    --                                 save the whole stack to stack_backup.dat in the config directory
     loadstack    -- ...                             push the stack saved by savestack
+
+
+[1mwords[0m
+A word is a command you define: : name body ;  e.g.  : sq dup * ;  then  5 sq  gives 25.
+Words run like built-in commands, can call other words and themselves, and are what the
+numerical methods take as functions (@sq pushes a token for it). Inside a word:
+  flag if ... else ... then      begin ... flag until      begin ... flag while ... repeat
+  limit start do ... loop        i (loop index)  j        n +loop
+listwords shows yours, "name" delword deletes one, clrwords all; savewords writes them
+to ~/.config/mm41/user_words.txt, which loads at startup. A word is one line; put a
+family of them in a word module instead (help modules). Manual: chapter Words.
+
+
+[1msyntax[0m
+Tokens are separated by spaces; numbers go on the stack, commands take their arguments
+from it (3 4 + is 7). Numbers 3 -1.2e-4 .5, decimals 0.1d, complex (1,2), strings "text",
+matrices [rows cols $ a11 a12 ...] or [rows, cols, "file"]. Comments start with \ or #.
+The stack prints after every line, [0] at the bottom; undo restores the previous stack,
+q quits. help <name> describes any command. Manual: chapter Entering data.
 
 
 commands mentioning "holiday":

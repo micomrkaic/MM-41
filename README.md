@@ -46,7 +46,8 @@ The **[user manual](doc/mm41-manual.pdf)** (PDF) covers everything
 with a complete command reference. `man mm41` and [COMMANDS.md](COMMANDS.md)
 are the short forms; inside the calculator, `help` for the overview, `help npv`
 for one command in full (what it takes, what it leaves, its example run),
-`help finance` for a module, `help holiday` to search, `listfcns` and `modules`.
+`help modules` for what modules are and how to add one (also `help words`,
+`help finance`, …), `help holiday` to search, `listfcns` and `modules`.
 
 ## Modules
 

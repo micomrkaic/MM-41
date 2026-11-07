@@ -147,7 +147,8 @@ The REPL has GNU Readline editing: arrow keys recall history (kept in \code{.rpn
 \begin{description}[style=nextline,leftmargin=1.5em]
   \item[\cmd{help}] a one-screen summary of the input syntax and the command families.
   \item[\code{help \emph{name}}] one command in full: what it takes from the stack, item by item, what it leaves, and its example---run on a scratch stack when that is harmless, so you see the result as well. \code{help} followed by a name is a line form, like \code{: ... ;}; the name is looked up, not executed, and the stack is untouched. \code{"name" usage} is the same page.
-  \item[\code{help \emph{module}}, \code{help \emph{category}}] every command of a module (\code{help finance}) or of a category (\code{help Stack}), one line each.
+  \item[\code{help \emph{topic}}] a short introduction to one part of the calculator---\code{help modules} (what modules are and how to add one), \code{help words}, \code{help decimal}, \code{help finance}, \code{help workdays}, \code{help numerics}, \code{help syntax}---followed, where there is one, by the listing of the module of that name.
+  \item[\code{help \emph{module}}, \code{help \emph{category}}] every command of a module (\code{help matrices}) or of a category (\code{help Stack}), one line each.
   \item[\code{help \emph{word}}] a user word's definition.
   \item[\code{help \emph{text}}] when the text is none of those, the commands whose name or description mentions it: \code{help holiday}, \code{help bond}.
   \item[\cmd{listfcns}] every command, grouped by module and category, with its stack picture.

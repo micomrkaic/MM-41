@@ -76,6 +76,8 @@ void help_menu(void) {
   printf("    modules             the loaded modules\n");
     printf("    help <name>         one command in full: what it takes, what it leaves, its example run;\n");
     printf("                        also help <module>, help <category>, help <text> (search), help help\n");
+    printf("    help modules        what modules are and how to add one; also help words, decimal, finance,\n");
+    printf("                        workdays, numerics, syntax\n");
   printf("    man mm41, and the manual mm41-manual.pdf in the share/doc directory\n");
   printf("\n");
   skip_stack_printing = true;
@@ -442,6 +444,97 @@ static int apropos(const char *text) {
   return shown;
 }
 
+
+/* ---- concept pages: what a thing is and how it is used, before the listings ---- */
+typedef struct { const char *name; const char *text; } Topic;
+static const Topic topics[] = {
+  { "modules",
+    "A module is a group of commands that plugs into the calculator, like a ROM in an HP-41.\n"
+    "Every command belongs to exactly one module (help <name> says which), no two modules may\n"
+    "define the same name, and from the stack all modules look the same. There are three kinds:\n"
+    "\n"
+    "  built in      compiled into mm41: core, decimal, finance, complex, special, matrices,\n"
+    "                numerics, strings, registers, dates, programs. `make MODULES=\"...\"` builds a\n"
+    "                calculator with a subset; core is always there.\n"
+    "  word modules  a text file of word definitions, NAME.mm, in ~/.config/mm41/modules/:\n"
+    "                first line  \\ module NAME VERSION SUMMARY\n"
+    "                then        name body         or   : name body ;   one word per line\n"
+    "                Every file there loads at startup; \"name\" use loads one now (by name,\n"
+    "                or a path), \"name\" unuse removes it. std.mm ships with mm41.\n"
+    "  shared objects   a compiled module, NAME.so, written in C against include/module.h:\n"
+    "                `make shared-module DIR=path` builds it, \"path/NAME.so\" load loads it,\n"
+    "                and ~/.config/mm41/modules/*.so load at startup. examples/modules/hello\n"
+    "                is a complete one (two commands, 40 lines).\n"
+    "\n"
+    "  modules            what is loaded, with versions and word counts\n"
+    "  help <module>      every command of one module, e.g. help finance\n"
+    "  listfcns           everything, by module and category\n"
+    "Manual: chapter Modules.\n" },
+  { "words",
+    "A word is a command you define: : name body ;  e.g.  : sq dup * ;  then  5 sq  gives 25.\n"
+    "Words run like built-in commands, can call other words and themselves, and are what the\n"
+    "numerical methods take as functions (@sq pushes a token for it). Inside a word:\n"
+    "  flag if ... else ... then      begin ... flag until      begin ... flag while ... repeat\n"
+    "  limit start do ... loop        i (loop index)  j        n +loop\n"
+    "listwords shows yours, \"name\" delword deletes one, clrwords all; savewords writes them\n"
+    "to ~/.config/mm41/user_words.txt, which loads at startup. A word is one line; put a\n"
+    "family of them in a word module instead (help modules). Manual: chapter Words.\n" },
+  { "decimal",
+    "A decimal is an exact 34-digit number for money (IBM decNumber, round half-even), the\n"
+    "fifth stack type, shown with the glyph 𝔻. 0.1d 0.2d + is exactly 0.3; 0.1 0.2 + is not.\n"
+    "  0.1d          a decimal literal;  2b forces a binary double\n"
+    "  decimal       number mode: every literal is a decimal until `binary` (prompt MM-41[dec]>>)\n"
+    "  >dec >bin     convert; x n round rounds half-even to n places\n"
+    "Decimal absorbs binary: a decimal combined with a real gives a decimal. Arithmetic,\n"
+    "percentages, comparisons, registers and the finance words take decimals; trigonometry,\n"
+    "complex numbers, matrices and the numerical methods are binary and ask for >bin. A decimal\n"
+    "used as a count, index, precision or flag is converted silently. Manual: chapter Decimal numbers.\n" },
+  { "finance",
+    "The finance module is MM-B1 rebuilt as a module. Three conventions throughout:\n"
+    "  every word computes in decimals and leaves a decimal (2 setprec shows cents);\n"
+    "  rates are in percent per period (0.5 i% is 6% a year paid monthly); the dated words\n"
+    "  (xnpv xirr xprice xyield) take annual rates;\n"
+    "  cash received is positive, cash paid is negative.\n"
+    "Time value of money: store with n i% pv pmt fv, solve with ?n ?i% ?pv ?pmt ?fv, beg/end\n"
+    "for the payment timing, tvm shows the registers, clrtvm clears them:\n"
+    "    clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt      -> -1798.65\n"
+    "Cash flows are vectors in time order, first at t = 0:  [5 1 $ -5000 1500 1500 1500 1500] irr\n"
+    "Dates are \"d.m.yyyy\" strings or YYYYMMDD numbers. Manual: chapter Finance.\n" },
+  { "workdays",
+    "A workday is a Monday to Friday not in the holiday calendar. Excel's conventions:\n"
+    "  d1 d2 workdays        both ends inclusive (NETWORKDAYS), negative if d2 < d1\n"
+    "  date n workdayplus    n workdays later, start day not counted (WORKDAY)\n"
+    "  date isworkday\n"
+    "The calendar is empty (weekends only) until you install one:\n"
+    "  \"us\" usehol           the US federal holidays (observed), remembered in config.txt\n"
+    "  \"si\" usehol           Slovenia\n"
+    "  \"name\" usehol         ~/.config/mm41/holidays/name.txt, one date per line (example.txt shows the format)\n"
+    "hol shows it, clrhol removes it, \"us\" holidays and 2027 \"si\" yholidays push one as a vector.\n"
+    "Manual: section Workdays and holidays.\n" },
+  { "numerics",
+    "The numerical methods take a function as an execution token: @name, for a word or a command.\n"
+    "  a b @f integrate     a b @f romberg      a b @f fzero       x @f solve\n"
+    "  a b @f minimize      x @f deriv          lo hi @f fsum      lo hi @f fprod     @f exec\n"
+    "The word takes x from the stack and leaves f(x):   : f dup * 2 - ;   0 3 @f fzero  -> 1.414214\n"
+    "x tol sets the tolerance (kept in config.txt); nevals and interr report the last call.\n"
+    "Manual: chapter Numerical methods.\n" },
+  { "syntax",
+    "Tokens are separated by spaces; numbers go on the stack, commands take their arguments\n"
+    "from it (3 4 + is 7). Numbers 3 -1.2e-4 .5, decimals 0.1d, complex (1,2), strings \"text\",\n"
+    "matrices [rows cols $ a11 a12 ...] or [rows, cols, \"file\"]. Comments start with \\ or #.\n"
+    "The stack prints after every line, [0] at the bottom; undo restores the previous stack,\n"
+    "q quits. help <name> describes any command. Manual: chapter Entering data.\n" },
+};
+
+static int describe_topic(const char *name) {
+  for (size_t i = 0; i < sizeof topics / sizeof topics[0]; i++) {
+    if (strcasecmp(topics[i].name, name) != 0) continue;
+    printf("\n" BOLD "%s" RESET "\n%s\n", topics[i].name, topics[i].text);
+    return 1;
+  }
+  return 0;
+}
+
 void help_topic(const char *topic) {
   skip_stack_printing = true;
   while (*topic == ' ' || *topic == '\t') topic++;
@@ -455,12 +548,18 @@ void help_topic(const char *topic) {
   if (!strcmp(t, "help")) {
     printf("\n" BOLD "help" RESET "\n");
     printf("    help                 the overview\n");
+    printf("    help <topic>         a short introduction: modules, words, decimal, finance, workdays, numerics, syntax\n");
     printf("    help <command>       one command: stack entries, result, example (run when harmless)\n");
     printf("    help <module>        every command of a module, e.g. help finance\n");
     printf("    help <category>      every command of a category, e.g. help Stack\n");
     printf("    help <word>          a user word's definition\n");
     printf("    help <text>          commands whose name or description mentions the text\n");
     printf("    listfcns  modules    the complete listings\n\n");
+    return;
+  }
+  if (describe_topic(t)) {                      /* the concept first, then the listing of the same name */
+    if (!strcmp(t, "modules")) list_modules();
+    else describe_module(t);
     return;
   }
   int idx = find_op(t);
