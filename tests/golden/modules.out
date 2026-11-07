@@ -1,5 +1,5 @@
 module       version  words  summary
-core         1.2         85  arithmetic, functions, logic, the stack, words and the session
+core         1.3         85  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.0         33  time value of money, cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -10,11 +10,31 @@ strings      1.0          7  string construction and manipulation
 registers    1.0          7  64 storage registers of any type
 dates        1.1         22  calendar arithmetic, workdays and holidays, time zones, sunrise and sunset
 programs     1.0          1  HP-41 style programs with labels, jumps and subroutines
-[1m"det" usage[0m: A -- det(A)   [matrices: Matrices]
+
+[1mdet[0m   A -- det(A)   [module matrices, Matrices]
     determinant of a square real or complex matrix
-    Example: [2 2 $ 4 7 2 6] det
-[1m"integrate" usage[0m: a b xt -- I   [numerics: Numerics]
+    takes 1 item (the last one named is on top):
+      A          a matrix (real or complex)
+    leaves 1 item:
+      det(A)     
+    example:  [2 2 $ 4 7 2 6] det
+    which leaves:
+[0] ℝ : 10.000000
+    see also: tran ' minv pinv eig chol svd kron dim reshape get_aij set_aij 
+              split_mat diag to_diag eye ones zeroes rand randn rrange join_v join_h cumsum_r 
+              cumsum_c cmean rmean csum rsum cvar rvar cmin rmin cmax rmax 
+
+
+[1mintegrate[0m   a b xt -- I   [module numerics, Numerics]
     integral of f over [a,b] (tanh-sinh with adaptive bisection; handles endpoint singularities)
-    Example: 0 pi @sin integrate
+    takes 3 items (the last one named is on top):
+      a          a real number
+      b          a real number
+      xt         an execution token: @word or @command (see the numerics module)
+    leaves 1 item:
+      I          a matrix
+    example:  0 pi @sin integrate
+    see also: exec romberg fzero solve minimize deriv fsum fprod tol nevals interr 
+
 {}
 [exit 0]

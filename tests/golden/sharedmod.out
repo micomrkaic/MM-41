@@ -1,6 +1,15 @@
-[1m"cube" usage[0m: x -- x^3   [hello: Example]
+
+[1mcube[0m   x -- x^3   [module hello, Example]
     cube of a real number
-    Example: 3 cube
+    takes 1 item (the last one named is on top):
+      x          a number: real, or complex, decimal or matrix where allowed
+    leaves 1 item:
+      x^3        
+    example:  3 cube
+    which leaves:
+[0] ℝ : 27.000000
+    see also: hello hyp 
+
 Error: module hello: already registered
 Error: load: /nonexistent.so: cannot open shared object file: No such file or directory
 

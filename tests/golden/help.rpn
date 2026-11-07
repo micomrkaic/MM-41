@@ -1,0 +1,14 @@
+# help <name> is a line form: the name is described, not run, and the stack is untouched
+1 2 3
+help mod
+help scon
+help det
+help +
+help sethol
+help nosuchthing
+help help
+: sq dup * ;
+help sq
+"sq" usage
+help Stack
+help holiday

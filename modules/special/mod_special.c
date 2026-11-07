@@ -26,9 +26,9 @@ static const Op table[] = {
   { "ncdf", 1, op_ncdf, "Special functions", "x -- Phi(x)", "standard normal cumulative distribution", "1.96 ncdf" },
   { "nquant", 1, op_nquant, "Special functions", "p -- x", "standard normal quantile (inverse of ncdf), 0 < p < 1", "0.975 nquant" },
   { "gamma", 1, op_gamma, "Special functions", "x -- Gamma(x)", "gamma function", "5 gamma" },
-  { "ln_gamma", 1, op_ln_gamma, "Special functions", "x -- ln Γ(x)", "log gamma function", "10 ln_gamma" },
+  { "ln_gamma", 1, op_ln_gamma, "Special functions", "x -- lnΓ(x)", "log gamma function", "10 ln_gamma" },
   { "beta", 2, op_beta, "Special functions", "a b -- B(a,b)", "beta function", "2 3 beta" },
-  { "ln_beta", 2, op_ln_beta, "Special functions", "a b -- ln B(a,b)", "log beta function", "2 3 ln_beta" },
+  { "ln_beta", 2, op_ln_beta, "Special functions", "a b -- lnB(a,b)", "log beta function", "2 3 ln_beta" },
 };
 
 const Module mm41_mod_special = {

@@ -56,7 +56,7 @@
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 
-\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 1.2}
+\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 1.3}
 \author{Mico Mrkaic}
 \date{November 2026}
 
@@ -128,14 +128,14 @@ make install      # into ~/.local: bin/mm41, the man page, this manual, and docs
 
 \begin{rpn}
 $ mm41
-MM_RPN>> 2 3 +
+MM-41>> 2 3 +
 [0] ℝ : 5.000000
-MM_RPN>> 4 *
+MM-41>> 4 *
 [0] ℝ : 20.000000
-MM_RPN>> dup sqrt
+MM-41>> dup sqrt
 [0] ℝ : 20.000000
 [1] ℝ : 4.472136
-MM_RPN>> q
+MM-41>> q
 \end{rpn}
 
 The prompt is \code{MM\_RPN>>}. After each line the whole stack is printed, one item per line, deepest first: the index in brackets, a type glyph (\g{ℝ} real, \g{ℂ} complex, \g{𝒮} string, M\g{ℝ} and M\g{ℂ} real and complex matrices), and the value. Position \code{[0]} is the \emph{bottom} of the stack; the highest index is the top, which is where commands take their arguments.
@@ -146,17 +146,29 @@ The REPL has GNU Readline editing: arrow keys recall history (kept in \code{.rpn
 
 \begin{description}[style=nextline,leftmargin=1.5em]
   \item[\cmd{help}] a one-screen summary of the input syntax and the command families.
+  \item[\code{help \emph{name}}] one command in full: what it takes from the stack, item by item, what it leaves, and its example---run on a scratch stack when that is harmless, so you see the result as well. \code{help} followed by a name is a line form, like \code{: ... ;}; the name is looked up, not executed, and the stack is untouched. \code{"name" usage} is the same page.
+  \item[\code{help \emph{module}}, \code{help \emph{category}}] every command of a module (\code{help finance}) or of a category (\code{help Stack}), one line each.
+  \item[\code{help \emph{word}}] a user word's definition.
+  \item[\code{help \emph{text}}] when the text is none of those, the commands whose name or description mentions it: \code{help holiday}, \code{help bond}.
   \item[\cmd{listfcns}] every command, grouped by module and category, with its stack picture.
   \item[\cmd{modules}] the loaded modules with their versions.
-  \item[\cmd{"name" usage}] the stack picture, description and an example for one command---or, for a user word, its definition:
 \end{description}
 \begin{rpn}
-MM_RPN>> "mod" usage
-"mod" usage: y x -- y mod x   [Arithmetic]
+MM-41>> help mod
+mod   y x -- mod(y,x)   [module core, Arithmetic]
     floored modulo (result has the sign of x)
-    Example: -7 3 mod
+    takes 2 items (the last one named is on top):
+      y          a number: real, or complex, decimal or matrix where allowed
+      x          a number: real, or complex, decimal or matrix where allowed
+    leaves 1 item:
+      mod(y,x)
+    example:  -7 3 mod
+    which leaves:
+[0] ℝ : 2.000000
+    see also: + - * / ^ pow .* ./ .^ chs inv abs
+              sqrt % %t %chg fact ncr npr frac intg
 \end{rpn}
-Outside the calculator there is \code{man mm41}, and \code{mm41 --commands} prints the complete reference as Markdown (it is also Appendix~\ref{app:commands} of this manual).
+The operand names in stack pictures are a small vocabulary (\code{x} and \code{y} numbers, \code{z} real or complex, \code{n} a whole number, \code{A} a matrix, \code{v} a vector, \code{s} a string, \code{date}, \code{cf} cash flows, \code{xt} an execution token, \ldots), and \code{help} spells each one out. Examples that would change the session---storing registers, switching modes, installing calendars, defining words---are shown but not run. Outside the calculator there is \code{man mm41}, and \code{mm41 --commands} prints the complete reference as Markdown (it is also Appendix~\ref{app:commands} of this manual).
 
 %======================================================================
 \section{Entering data}
@@ -271,7 +283,7 @@ Both settings are saved in \code{config.txt} when you quit.
 \cmd{sqrt} & \stk{x -- sqrt(x)} & square root \\
 \cmd{intg} & \stk{x -- int(x)}  & integer part, truncated toward zero (\code{-3.7 intg} is $-3$) \\
 \cmd{frac} & \stk{x -- frac(x)} & fractional part, $x - \mathrm{intg}(x)$ (\code{-3.7 frac} is $-0.7$) \\
-\cmd{mod}  & \stk{y x -- y mod x} & floored modulo; the result has the sign of $x$ (\code{-7 3 mod} is 2) \\
+\cmd{mod}  & \stk{y x -- mod(y,x)} & floored modulo; the result has the sign of $x$ (\code{-7 3 mod} is 2) \\
 \cmd{fact} & \stk{x -- x!}   & factorial, $\Gamma(x+1)$ for non-integers \\
 \cmd{ncr}  & \stk{n k -- C(n,k)} & combinations \\
 \cmd{npr}  & \stk{n k -- P(n,k)} & permutations \\
@@ -456,8 +468,8 @@ Indices are 0-based.
 \cmd{split\_mat} & \stk{A -- a11 a12 ...} & push every element as a scalar, row by row \\
 \cmd{diag}      & \stk{A -- v}    & the main diagonal as a row vector \\
 \cmd{to\_diag}  & \stk{v -- D}    & diagonal matrix from a row or column vector \\
-\cmd{join\_v}   & \stk{A B -- [A; B]} & stack vertically (same number of columns) \\
-\cmd{join\_h}   & \stk{A B -- [A B]}  & join side by side (same number of rows) \\
+\cmd{join\_v}   & \stk{A B -- [A;B]} & stack vertically (same number of columns) \\
+\cmd{join\_h}   & \stk{A B -- [A|B]}  & join side by side (same number of rows) \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -921,7 +933,7 @@ The HP-41 took plug-in ROMs; MM-41 takes modules. A module is a named set of com
 \begin{rpn}
 MM-41>> modules
 module       version  words  summary
-core         1.2         85  arithmetic, functions, logic, the stack, words and the session
+core         1.3         85  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.0         33  time value of money, cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -1064,7 +1076,7 @@ The configuration directory is per user; the \code{data/} directory in the sourc
 
 Every top-level token is atomic. When a command fails, the stack is restored to its state before that token, a message beginning with \code{Error:} is printed on standard error, and the rest of the line is skipped:
 \begin{rpn}
-MM_RPN>> 1 2 [2 2 $ 1 2 2 4] minv +
+MM-41>> 1 2 [2 2 $ 1 2 2 4] minv +
 Error: Matrix is singular, cannot invert
 [0] ℝ : 1.000000
 [1] ℝ : 2.000000
@@ -1129,7 +1141,7 @@ The following words are loaded from \code{modules/std.mm} in the configuration d
 \section{Coming from MM-15, MM-14, MM-11 or MM-B1}
 \label{app:changes}
 
-MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
+MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module; 1.3 added \code{help \emph{name}}. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
 \begin{itemize}
   \item The binary is \code{mm41}, the configuration directory \code{\textasciitilde/.config/mm41/}. Copy \code{user\_words.txt}, \code{registers.txt} and \code{config.txt} across from \code{mm\_15} if you want them.
   \item \code{predefined\_macros.txt} is now the word module \code{modules/std.mm} and is installed there; the old file is not read. Your own additions belong in \code{user\_words.txt} or in a module of your own.

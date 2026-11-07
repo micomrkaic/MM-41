@@ -40,6 +40,7 @@
 
 #include "errors.h"
 #include "eval_fun.h"          // for evaluate_line
+#include "help.h"              // for help_topic
 #include "ops.h"               // for print_ops_markdown
 #include "globals.h"           // for CONFIG_PATH, HISTORY_PATH, completed_...
 #include "print_fun.h"         // for print_stack
@@ -180,6 +181,12 @@ static bool handle_line(Stack *stack, Stack *old_stack, char *line) {
       free(out);
     }
     return true;
+  }
+
+  {                                           /* help <topic>: a line-level form, so the topic is not executed */
+    const char *p = line;
+    while (*p == ' ' || *p == '\t') p++;
+    if (!strncmp(p, "help", 4) && (p[4] == ' ' || p[4] == '\t')) { help_topic(p + 4); return true; }
   }
 
   if (!strcmp(line, "undo")) {

@@ -1,0 +1,111 @@
+
+[1mmod[0m   y x -- mod(y,x)   [module core, Arithmetic]
+    floored modulo (result has the sign of x)
+    takes 2 items (the last one named is on top):
+      y          a number: real, or complex, decimal or matrix where allowed
+      x          a number: real, or complex, decimal or matrix where allowed
+    leaves 1 item:
+      mod(y,x)   
+    example:  -7 3 mod
+    which leaves:
+[0] ℝ : 2.000000
+    see also: + - * / ^ pow .* ./ .^ chs inv abs 
+              sqrt % %t %chg fact ncr npr frac intg 
+
+
+[1mscon[0m   s1 s2 -- s1s2   [module strings, Strings]
+    concatenate two strings
+    takes 2 items (the last one named is on top):
+      s1         a string
+      s2         a string
+    leaves 1 item:
+      s1s2       
+    example:  "foo" "bar" scon
+    which leaves:
+[0] 𝒮 : "foobar"
+    see also: substr s2l s2u slen srev int2str 
+
+
+[1mdet[0m   A -- det(A)   [module matrices, Matrices]
+    determinant of a square real or complex matrix
+    takes 1 item (the last one named is on top):
+      A          a matrix (real or complex)
+    leaves 1 item:
+      det(A)     
+    example:  [2 2 $ 4 7 2 6] det
+    which leaves:
+[0] ℝ : 10.000000
+    see also: tran ' minv pinv eig chol svd kron dim reshape get_aij set_aij 
+              split_mat diag to_diag eye ones zeroes rand randn rrange join_v join_h cumsum_r 
+              cumsum_c cmean rmean csum rsum cvar rvar cmin rmin cmax rmax 
+
+
+[1m+[0m   y x -- y+x   [module core, Arithmetic]
+    add scalars or matrices; a scalar added to a matrix is added elementwise
+    takes 2 items (the last one named is on top):
+      y          a number: real, or complex, decimal or matrix where allowed
+      x          a number: real, or complex, decimal or matrix where allowed
+    leaves 1 item:
+      y+x        
+    example:  3 4 +
+    which leaves:
+[0] ℝ : 7.000000
+    see also: - * / ^ pow .* ./ .^ chs inv abs sqrt 
+              % %t %chg mod fact ncr npr frac intg 
+
+
+[1msethol[0m   H --   [module dates, Workdays]
+    install a vector of dates YYYYMMDD as the holiday calendar for this session
+    takes 1 item (the last one named is on top):
+      H          a vector of dates YYYYMMDD
+    leaves nothing
+    example:  [2 1 $ 20261126 20261225] sethol
+    see also: workdays workdayplus isworkday holidays yholidays usehol clrhol hol 
+
+nothing called "nosuchthing": no command, word, module or category, and no description mentions it
+
+[1mhelp[0m
+    help                 the overview
+    help <command>       one command: stack entries, result, example (run when harmless)
+    help <module>        every command of a module, e.g. help finance
+    help <category>      every command of a category, e.g. help Stack
+    help <word>          a user word's definition
+    help <text>          commands whose name or description mentions the text
+    listfcns  modules    the complete listings
+
+
+[1msq[0m   a user word (user_words.txt)
+    : sq dup * ;
+    (words have no declared stack picture; read the body right to left for what it consumes)
+
+: sq dup * ;
+
+[1mStack[0m
+    dup          x -- x x                           duplicate top of stack
+    drop         x --                               drop the top stack element
+    swap         a b -- b a                         swap top two elements
+    over         a b -- a b a                       copy second item to top
+    nip          a b -- b                           drop second-from-top element (keep top)
+    tuck         a b -- b a b                       duplicate second item and tuck below top
+    roll         ... n -- ...                       move the item at depth n to the top (1 roll = swap, 2 roll = rot)
+    pick         ... n -- ... v                     copy the item at depth n to the top (0 pick = dup)
+    depth        -- n                               number of items on the stack
+    clst         ... --                             clear the stack
+    savestack    --                                 save the whole stack to stack_backup.dat in the config directory
+    loadstack    -- ...                             push the stack saved by savestack
+
+
+commands mentioning "holiday":
+    workdays     d1 d2 -- n                         workdays from d1 to d2, both inclusive (Excel NETWORKDAYS): Mondays to Fridays not in the holiday calendar; negative if d2 < d1
+    isworkday    date -- flag                       1 if the date is a Monday to Friday and not a holiday
+    holidays     name -- H                          the holiday calendar as a vector of YYYYMMDD: the file holidays/name.txt in the config directory, or the built-in rules "us" (federal, observed) and "si" (Slovenia) for the years around today
+    yholidays    year name -- H                     the built-in rules for one year
+    sethol       H --                               install a vector of dates YYYYMMDD as the holiday calendar for this session
+    clrhol       --                                 remove the holiday calendar (weekends only) and forget it in config.txt
+    hol          -- H                               the installed holiday calendar as a vector
+
+
+[0] ℝ : 1.000000
+[1] ℝ : 2.000000
+[2] ℝ : 3.000000
+[exit 0]

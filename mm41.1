@@ -1,4 +1,4 @@
-.TH MM41 1 "November 2026" "MM-41 1.2" "User Commands"
+.TH MM41 1 "November 2026" "MM-41 1.3" "User Commands"
 .SH NAME
 mm41 \- programmable RPN calculator for real, complex and decimal scalars, strings and matrices
 .SH SYNOPSIS
@@ -129,8 +129,20 @@ by
 .B listfcns
 (grouped by category) and by
 .BR "mm41 \-\-commands" ;
-.B \(dqname\(dq usage
-describes one command or shows a word's definition. The categories are
+.B help name
+(or
+.BR "\(dqname\(dq usage" )
+describes one command in full: each stack entry it takes, what it leaves,
+and its example, run when harmless;
+.B help module
+and
+.B help category
+list a module or a category,
+.B help word
+shows a user word, and
+.B help text
+finds the commands whose name or description mentions the text. The
+categories are
 Arithmetic, Exp/Log, Trigonometry, Decimal, Finance, Complex, Special
 functions, Constants, Logic, Stack, Strings, Matrices, Polynomials,
 Numerics, Registers, Dates, Display, Words, Programs and Session.

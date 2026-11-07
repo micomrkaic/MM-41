@@ -32,7 +32,9 @@
  * mm_warn() prints "Warning: ..." and does not count. */
 int  mm_error(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 void mm_warn(const char *fmt, ...)  __attribute__((format(printf, 1, 2)));
+#include <stdbool.h>
 extern long error_count;
+extern bool errors_quiet;      /* suppress the message (help runs examples silently) */
 
 #include <errno.h>
 #include <string.h>

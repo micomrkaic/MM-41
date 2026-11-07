@@ -1,5 +1,19 @@
 # MM-41 changes
 
+## MM-41 1.3
+
+- **`help name`**: one command in full. The stack picture is unfolded into
+  the entries the command takes, each with what it must be (a date string
+  or YYYYMMDD, a cash-flow vector, a rate in percent, a whole number, ...),
+  what it leaves, and the example, which is run on a scratch stack when it
+  has no side effects so the result is shown too. `help module` and
+  `help category` list a module or a category, `help word` shows a user
+  word, and `help text` searches names and descriptions (`help holiday`).
+  `help` followed by a name is a line form: the name is looked up, not
+  executed, and the stack is left alone. `"name" usage` shows the same page.
+- Stack pictures write multi-word results as one token (`mod(y,x)`,
+  `lnΓ(x)`, `[A;B]`, `[A|B]`).
+
 ## MM-41 1.2
 
 - **Workdays and holiday calendars** in the dates module: `d1 d2 workdays`

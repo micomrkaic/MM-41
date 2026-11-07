@@ -28,7 +28,7 @@ MM-41>> 2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
 [5] 𝔻 : -1798.65
 MM-41>> modules
 module       version  words  summary
-core         1.2         85  arithmetic, functions, logic, the stack, words and the session
+core         1.3         85  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.0         33  time value of money, cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -44,8 +44,9 @@ std          1.0         28  standard word module: powers, norms, storage arithm
 
 The **[user manual](doc/mm41-manual.pdf)** (PDF) covers everything
 with a complete command reference. `man mm41` and [COMMANDS.md](COMMANDS.md)
-are the short forms; inside the calculator, `help`, `listfcns`, `modules` and
-`"name" usage`.
+are the short forms; inside the calculator, `help` for the overview, `help npv`
+for one command in full (what it takes, what it leaves, its example run),
+`help finance` for a module, `help holiday` to search, `listfcns` and `modules`.
 
 ## Modules
 

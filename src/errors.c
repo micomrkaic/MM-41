@@ -22,10 +22,12 @@
 #include <string.h>
 
 long error_count = 0;
+bool errors_quiet = false;
 
 int mm_error(const char *fmt, ...) {
   va_list ap;
   if (!fmt) fmt = "";          /* newer gcc otherwise warns "null format string" */
+  if (errors_quiet) { error_count++; return -1; }
   fflush(stdout);
   if (strncmp(fmt, "Error", 5) != 0 && strncmp(fmt, "GSL", 3) != 0) fputs("Error: ", stderr);
   va_start(ap, fmt);

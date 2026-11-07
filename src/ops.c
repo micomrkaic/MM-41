@@ -310,7 +310,7 @@ static const Op core_table[] = {
   { "%", 2, op_pct, "Arithmetic", "y x -- y y*x/100", "percent of y (HP %; keeps y)", "200 25 %" },
   { "%t", 2, op_pctt, "Arithmetic", "y x -- y 100*x/y", "x as a percent of the total y (HP %T; keeps y)", "200 50 %t" },
   { "%chg", 2, op_pctchg, "Arithmetic", "y x -- y 100*(x-y)/y", "percent change from y to x (HP delta%; keeps y)", "80 100 %chg" },
-  { "mod", 2, op_mod, "Arithmetic", "y x -- y mod x", "floored modulo (result has the sign of x)", "-7 3 mod" },
+  { "mod", 2, op_mod, "Arithmetic", "y x -- mod(y,x)", "floored modulo (result has the sign of x)", "-7 3 mod" },
   { "fact", 1, op_fact, "Arithmetic", "x -- x!", "factorial; Gamma(x+1) for non-integers", "5 fact" },
   { "ncr", 2, op_ncr, "Arithmetic", "n k -- C(n,k)", "combinations", "52 5 ncr" },
   { "npr", 2, op_npr, "Arithmetic", "n k -- P(n,k)", "permutations", "10 3 npr" },
