@@ -35,11 +35,21 @@ LDLIBS   ?= -lgsl -lgslcblas -lreadline -lm -ldl
 # Auto-deps: generate .d files per source (write alongside .o)
 DEPFLAGS = -MMD -MP -MF $(@:.o=.d) -MT $@
 
-UNAME_S := $(shell uname -s)
+# macOS: GSL comes from Homebrew (keg at `brew --prefix gsl`, /opt/homebrew on
+# Apple silicon, /usr/local on Intel), and a shared-object module may refer to
+# symbols of the calculator that only exist at load time.
+UNAME_S ?= $(shell uname -s)
+PLATFORM_CFLAGS  :=
+PLATFORM_LDFLAGS :=
+SHARED_LDFLAGS   :=
 ifeq ($(UNAME_S),Darwin)
-  CFLAGS  += -I/opt/homebrew/opt/gsl/include
-  LDFLAGS += -L/opt/homebrew/opt/gsl/lib
+  GSL_PREFIX       := $(shell brew --prefix gsl 2>/dev/null || echo /opt/homebrew/opt/gsl)
+  PLATFORM_CFLAGS  += -I$(GSL_PREFIX)/include
+  PLATFORM_LDFLAGS += -L$(GSL_PREFIX)/lib
+  SHARED_LDFLAGS   += -undefined dynamic_lookup
 endif
+CFLAGS  += $(PLATFORM_CFLAGS)
+LDFLAGS += $(PLATFORM_LDFLAGS)
 
 # Directories (mode-specific outputs)
 SRC_DIR = src
@@ -272,7 +282,7 @@ docs: $(TARGET)
 .PHONY: shared-module
 shared-module:
 	@test -n "$(DIR)" || { echo "usage: make shared-module DIR=path/to/module"; exit 2; }
-	$(CC) -std=c17 -Wall -Wextra -O2 -fPIC -shared -Iinclude -Ivendor/decNumber -o "$(DIR)/$$(basename "$(DIR)").so" $(DIR)/*.c -lm
+	$(CC) -std=c17 -Wall -Wextra -O2 -fPIC -shared $(SHARED_LDFLAGS) -Iinclude -Ivendor/decNumber $(PLATFORM_CFLAGS) -o "$(DIR)/$$(basename "$(DIR)").so" $(DIR)/*.c -lm
 
 # The user manual: doc/manual.tex + the generated command tables -> doc/mm41-manual.pdf.
 # Needs LuaLaTeX (or XeLaTeX: LATEX=xelatex) with fontspec, booktabs, longtable, tcolorbox.
