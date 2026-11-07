@@ -11,7 +11,7 @@
     see also: hello hyp 
 
 Error: module hello: already registered
-Error: load: /nonexistent.so: cannot open shared object file: No such file or directory
+Error: load: /nonexistent.so: no such file
 
 [0] ℝ : 27.000000
 [1] ℝ : 5.000000

@@ -123,6 +123,10 @@ void list_modules(void) {
 #include "globals.h"
 
 int load_shared_module(const char *path) {
+  /* A missing file gets the same message everywhere; dlerror()'s wording
+     differs between glibc and macOS and is kept for the other failures. */
+  if (strchr(path, '/') && access(path, F_OK) != 0)
+    return mm_error("load: %s: no such file", path);
   void *h = dlopen(path, RTLD_NOW | RTLD_LOCAL);
   if (!h) return mm_error("load: %s", dlerror());
   const Module *(*entry)(void) = (const Module *(*)(void))(uintptr_t)dlsym(h, "mm41_module");
