@@ -112,3 +112,5 @@ clst "1.1.2026" "31.12.2026" workdays "5.1.2026" "1.1.2026" workdays
 2026 "us" yholidays sethol "1.1.2026" "31.12.2026" workdays "24.12.2026" 10 workdayplus 20261126 isworkday
 2027 "si" yholidays pm
 clrhol
+"data/modules/const.mm" use
+c h G kB qe NA Msun

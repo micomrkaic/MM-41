@@ -66,7 +66,7 @@ nothing called "nosuchthing": no command, word, module or category, and no descr
 
 [1mhelp[0m
     help                 the overview
-    help <topic>         a short introduction: modules, words, decimal, finance, workdays, numerics, syntax
+    help <topic>         a short introduction: modules, words, decimal, finance, workdays, numerics, stat, ode, syntax
     help <command>       one command: stack entries, result, example (run when harmless)
     help <module>        every command of a module, e.g. help finance
     help <category>      every command of a category, e.g. help Stack

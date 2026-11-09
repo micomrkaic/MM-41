@@ -1,0 +1,54 @@
+| 0.0000 1.0000 |
+| 0.5000 0.6065 |
+| 1.0000 0.3679 |
+| 1.5000 0.2231 |
+| 2.0000 0.1353 |
+| -1.0000 -6.3144e-12 |
+| 0.0000      1.0000      0.0000 |
+| 1.5708  3.1405e-12     -1.0000 |
+| 3.1416     -1.0000 -6.3025e-12 |
+| 4.7124 -9.4625e-12      1.0000 |
+| 6.2832      1.0000  1.2623e-11 |
+
+[0] Mℝ: 5 x 2 matrix
+[1] ℝ : 1.000000
+[2] Mℝ: 1 x 2 matrix
+[3] Mℝ: 5 x 3 matrix
+[4] ℝ : 2.000000
+Error: odeint: needs 5 items on the stack (y0 t0 t1 n xt -- M)
+Error: odeint: the number of steps must be a whole number >= 1
+Error: odesol: y0 must be a real or a vector
+Error: bad1 must leave y' as one real (t y -- y'); it left 2 items
+Error: bad2 must leave y' as one real (t y -- y'); it left 1 item
+Error: @nosuch: no such command or word
+Error: odesol: the integrator failed at t = 1 (failure); the solution may blow up before t1, or tol is too tight
+
+[0] ℝ : 1.000000
+[1] ℝ : 0.000000
+[2] ℝ : 0.000000
+[3] ℝ : 1000000.000000
+[4] ℝ : 1.000000
+[5] ℝ : 0.000000
+[6] ℝ : 1.000000
+[7] ℝ : 0.000000
+[8] ℝ : 1000000.000000
+[9] 𝒮 : "x"
+[10] ℝ : 0.000000
+[11] ℝ : 1.000000
+[12] ℝ : 1000000.000000
+[13] ℝ : 1.000000
+[14] ℝ : 0.000000
+[15] ℝ : 1.000000
+[16] ℝ : 1000003.000000
+[17] ℝ : 1.000000
+[18] ℝ : 0.000000
+[19] ℝ : 1.000000
+[20] ℝ : 1000004.000000
+[21] ℝ : 1.000000
+[22] ℝ : 0.000000
+[23] ℝ : 1.000000
+[24] ℝ : 1.000000
+[25] ℝ : 0.000000
+[26] ℝ : 5.000000
+[27] ℝ : 1000005.000000
+[exit 1]

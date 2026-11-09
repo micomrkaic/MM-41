@@ -1,0 +1,50 @@
+
+[0] Mℝ: 1000 x 1 matrix
+[1] ℝ : 1.000000
+[2] ℝ : 1.000000
+[3] ℝ : 1.000000
+[4] ℝ : 1.000000
+[5] ℝ : 1.000000
+[6] ℝ : 1.000000
+[7] ℝ : 1.000000
+[8] ℝ : 1.000000
+[9] Mℝ: 1000 x 1 matrix
+[10] ℝ : 1.000000
+[11] ℝ : 1.000000
+[12] ℝ : 1.000000
+[13] ℝ : 1.000000
+[14] ℝ : 1.000000
+[15] ℝ : 1.000000
+[16] Mℝ: 5 x 1 matrix
+[17] ℝ : 1.000000
+[18] ℝ : 1.000000
+[19] ℝ : 1.000000
+[20] ℝ : 1.000000
+[21] ℝ : 1.000000
+Error: seed: needs a whole number >= 0
+Error: rnorm: sigma must be >= 0
+Error: normrnd: invalid parameters
+Error: poisrnd: the count must be a whole number from 1 to 50 million
+Error: normrnd: the count must be a whole number from 1 to 50 million
+Error: resample: needs a real vector
+Error: sims: bad must leave exactly one real each run ( -- x ); run 1 left 2 items
+Error: @nosuchword: no such command or word
+Error: mcstats: needs at least 2 values
+
+[0] ℝ : -1.000000
+[1] ℝ : 0.000000
+[2] ℝ : -1.000000
+[3] ℝ : 1000.000000
+[4] ℝ : 0.000000
+[5] ℝ : -1.000000
+[6] ℝ : 0.000000
+[7] ℝ : 3.000000
+[8] ℝ : 1000000000.000000
+[9] ℝ : 0.000000
+[10] ℝ : 1.000000
+[11] 𝒮 : "x"
+[12] ℝ : 5.000000
+[13] ℝ : 1000001.000000
+[14] ℝ : 5.000000
+[15] Mℝ: 1 x 1 matrix
+[exit 1]

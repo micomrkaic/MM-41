@@ -166,8 +166,10 @@ static int op_amortm(Stack *s) {
 
 /* ---- cash flows as matrices ---- */
 
-/* The matrix under the top k items must be real: a vector (amounts, one
-   period each) or N×2 (amount, repeat count). */
+/* The matrix under the top k items must be real: a column or row vector of
+   amounts (one period each), or a matrix with two columns: amount and repeat
+   count (an N×2 is always read this way, 1×2 included, so [1 2 $ 1000 100] is
+   100 payments of 1000; two single flows are the column [2 1 $ 1000 100]). */
 static int cash_flows_at(const Stack *stack, int depth, const char *what, CashFlow **out, int *n) {
   const stack_element *e = &stack->items[stack->top - depth];
   if (e->type != TYPE_MATRIX_REAL)
@@ -176,10 +178,10 @@ static int cash_flows_at(const Stack *stack, int depth, const char *what, CashFl
   size_t rows = m->size1, cols = m->size2;
   int with_counts = 0;
   size_t N;
-  if (cols == 1) N = rows;
+  if (cols == 2) { N = rows; with_counts = 1; }
+  else if (cols == 1) N = rows;
   else if (rows == 1) N = cols;
-  else if (cols == 2) { N = rows; with_counts = 1; }
-  else return mm_error("%s: cash flows are a vector or an N×2 matrix, not %zu×%zu", what, rows, cols);
+  else return mm_error("%s: cash flows are a vector or an N×2 matrix of amount and count, not %zu×%zu", what, rows, cols);
   CashFlow *cf = malloc(N * sizeof *cf);
   if (!cf) return mm_error("%s: out of memory", what);
   long total = 0;
@@ -404,8 +406,8 @@ static const Op table[] = {
   { "?fv",     0, op_solve_fv,  "Finance", "-- fv", "solve for the future value", "clrtvm 12 n 1 i% 0 pv -100 pmt ?fv" },
   { "amort",   0, op_amort,     "Finance", "--", "print the amortisation schedule of the TVM registers (n periods of pmt on pv at i%)", "clrtvm 12 n 1 i% 10000 pv 0 fv ?pmt drop amort" },
   { "amortm",  0, op_amortm,    "Finance", "-- M", "the amortisation schedule as an n×4 real matrix: payment, interest, principal, balance", "clrtvm 12 n 1 i% 10000 pv 0 fv ?pmt drop amortm" },
-  { "npv",     2, op_npv,       "Finance", "cf rate -- x", "net present value of cash flows (a vector in time order, first at t=0, or N×2 amount/count) at rate percent per period", "[6 1 $ -1000 300 300 300 300 300] 10 npv" },
-  { "irr",     1, op_irr,       "Finance", "cf -- x", "internal rate of return in percent per period of a cash-flow vector", "[2 2 $ -1000 1 300 5] irr" },
+  { "npv",     2, op_npv,       "Finance", "cf rate -- x", "net present value of cash flows at rate percent per period: a column vector in time order, first at t=0, or a matrix with two columns, amount and repeat count ([1 2 $ 1000 100] is 100 payments of 1000)", "[6 1 $ -1000 300 300 300 300 300] 10 npv" },
+  { "irr",     1, op_irr,       "Finance", "cf -- x", "internal rate of return in percent per period of cash flows (a column vector, or amount/count rows)", "[2 2 $ -1000 1 300 5] irr" },
   { "nom>eff", 2, op_nom2eff,   "Finance", "nom m -- eff", "nominal annual rate compounded m times a year to the effective annual rate (percent)", "12 12 nom>eff" },
   { "eff>nom", 2, op_eff2nom,   "Finance", "eff m -- nom", "effective annual rate to the nominal rate compounded m times a year", "12.6825 12 eff>nom" },
   { "sl",      3, op_sl,        "Finance", "cost salvage life -- d", "straight-line depreciation per period", "10000 1000 5 sl" },

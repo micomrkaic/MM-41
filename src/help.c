@@ -48,12 +48,18 @@ void help_menu(void) {
   printf("    + - * / ^  chs inv abs sqrt mod fact ncr npr  %% %%t %%chg   .* ./ .^ (elementwise)\n");
   printf("    exp ln log  sin cos tan asin acos atan  sinh cosh tanh asinh acosh atanh\n");
   printf("    re im arg conj re2c split_c j2r   npdf ncdf nquant gamma ln_gamma beta ln_beta\n");
+  printf("    erf erfc gammap gammaq betainc digamma zeta besselj bessely besseli besselk airyai airybi ellk elle expint lambertw\n");
   printf("    Real arguments outside the real domain promote to complex: -1 sqrt is (0,1).\n");
   subtitle("Decimals (34 digits, half-even; decimal absorbs binary: 0.1d 0.2 + is 0.3)");
   printf("    decimal binary (number mode)  >dec >bin  x n round  isdec decmode\n");
   subtitle("Finance (all decimal; rates in percent per period; cash received +)");
   printf("    n i%% pv pmt fv  ?n ?i%% ?pv ?pmt ?fv  beg end clrtvm tvm  amort amortm   cf rate npv  cf irr\n");
   printf("    nom>eff eff>nom  sl soyd db  bprice byield   xnpv xirr xprice xyield xaccr yearfrac  date>ymd ymd>date\n");
+  subtitle("Statistics, random draws, differential equations (vectors are N x 1 or 1 x N matrices)");
+  printf("    v mean sd sem median skew kurt  v p quantile  x y cov corr  v n movavg  v k hist   x y linfit expfit logfit powfit\n");
+  printf("    X y ols olstab   tcdf tinv chi2cdf chi2inv fcdf finv binompdf binomcdf poispdf poiscdf\n");
+  printf("    n seed  rnorm runif rpois rexp  n ... normrnd unifrnd poisrnd binomrnd exprnd trnd chi2rnd  resample shuffle  n @f sims  mcstats\n");
+  printf("    y0 t0 t1 n @f odeint   y0 t0 t1 @f odesol      (the word is  t y -- y')\n");
   subtitle("Matrices");
   printf("    tran ' minv pinv det eig chol svd kron  eye ones zeroes rand randn rrange\n");
   printf("    dim reshape get_aij set_aij split_mat diag to_diag join_v join_h\n");
@@ -77,7 +83,7 @@ void help_menu(void) {
     printf("    help <name>         one command in full: what it takes, what it leaves, its example run;\n");
     printf("                        also help <module>, help <category>, help <text> (search), help help\n");
     printf("    help modules        what modules are and how to add one; also help words, decimal, finance,\n");
-    printf("                        workdays, numerics, syntax\n");
+    printf("                        workdays, numerics, stat, ode, syntax\n");
   printf("    man mm41, and the manual mm41-manual.pdf in the share/doc directory\n");
   printf("\n");
   skip_stack_printing = true;
@@ -220,7 +226,20 @@ static const Legend legend[] = {
   { "I",        "a matrix" },
   { "V",        "a matrix" },
   { "v",        "a vector: an N x 1 or 1 x N real matrix" },
+  { "v2",       "a vector: an N x 1 or 1 x N real matrix" },
+  { "X",        "a real matrix, one observation per row" },
+  { "y0",       "the initial state: a real, or a row vector for a system" },
+  { "t0",       "a real number, the start" },
+  { "t1",       "a real number, the end" },
+  { "df",       "degrees of freedom (positive)" },
+  { "df1",      "degrees of freedom (positive)" },
+  { "df2",      "degrees of freedom (positive)" },
+  { "mu",       "a real number, the mean" },
+  { "sigma",    "a real number >= 0, the standard deviation" },
   { "coeffs",   "polynomial coefficients as a row vector, highest power first" },
+  { "[a,b,r2]", "a row vector: the two coefficients and R-squared" },
+  { "[mean,sd,q05,q50,q95]", "a row vector: mean, standard deviation, 5th, 50th and 95th percentiles" },
+  { "beta",     "a column vector of coefficients, the intercept first" },
   { "s",        "a string" },
   { "s1",       "a string" },
   { "s2",       "a string" },
@@ -242,7 +261,7 @@ static const Legend legend[] = {
   { "lat",      "latitude in decimal degrees, north positive" },
   { "lon",      "longitude in decimal degrees, east positive" },
   { "H",        "a vector of dates YYYYMMDD" },
-  { "cf",       "cash flows: a real vector in time order, the first at t = 0, or an N x 2 matrix of amount and repeat count" },
+  { "cf",       "cash flows: a column vector in time order, the first at t = 0, or a matrix with two columns, amount and repeat count" },
   { "rate",     "an interest rate in percent (per period; per year for the dated words)" },
   { "yld",      "a yield in percent" },
   { "cpn",      "a coupon rate in percent" },
@@ -302,6 +321,7 @@ static bool example_is_safe(const Op *op, const Module *m) {
   for (size_t i = 0; i < sizeof names / sizeof names[0]; i++) if (strcmp(op->name, names[i]) == 0) return false;
   if (m && strcmp(m->name, "programs") == 0) return false;
   if (strchr(op->example, '@')) return false;        /* needs a word the user may not have */
+  if (!strncmp(op->example, ": ", 2)) return false;  /* would define a word in the session */
   return true;
 }
 
@@ -341,8 +361,10 @@ static void describe_op(int idx) {
   if (nl == 0) printf("    takes nothing from the stack\n");
   else {
     printf("    takes %d item%s (the last one named is on top):\n", nl, nl == 1 ? "" : "s");
+    bool vectors = m && (!strcmp(m->name, "stat") || !strcmp(m->name, "random"));   /* x, y are data vectors there */
     for (int i = 0; i < nl; i++) {
       const char *lg = legend_for(left[i]);
+      if (vectors && (!strcmp(left[i], "x") || !strcmp(left[i], "y"))) lg = "a data vector: an N x 1 or 1 x N real matrix";
       printf("      %-10s %s\n", left[i], lg ? lg : "");
     }
   }
@@ -511,6 +533,26 @@ static const Topic topics[] = {
     "  \"name\" usehol         ~/.config/mm41/holidays/name.txt, one date per line (example.txt shows the format)\n"
     "hol shows it, clrhol removes it, \"us\" holidays and 2027 \"si\" yholidays push one as a vector.\n"
     "Manual: section Workdays and holidays.\n" },
+  { "stat",
+    "Statistics work on vectors, real matrices with one row or one column, and leave reals:\n"
+    "  v mean sd sem median skew kurt      v p quantile      x y cov      x y corr\n"
+    "  v n movavg      v k hist (bin centre, count)\n"
+    "Fits leave a row vector [a b r2]:  x y linfit (y=a+bx)  expfit (a e^bx)  logfit (a+b ln x)  powfit (a x^b)\n"
+    "  X y ols -- beta        multiple regression on the columns of X, intercept added\n"
+    "  X y olstab -- M r2     coefficient, standard error, t, p per row, and R^2\n"
+    "Distributions: x df tcdf, p df tinv, chi2cdf chi2inv, x df1 df2 fcdf, finv, k n p binompdf/binomcdf,\n"
+    "k mu poispdf/poiscdf; the normal is ncdf / nquant.\n"
+    "Random (module random): n seed; one draw mu sigma rnorm, a b runif, mu rpois, rate rexp;\n"
+    "n draws as a column n mu sigma normrnd, n a b unifrnd, n mu poisrnd, n m p binomrnd, n rate exprnd,\n"
+    "n df trnd, n df chi2rnd; v resample (bootstrap), v shuffle; n @f sims runs a word n times and\n"
+    "collects what it leaves; v mcstats -- [mean sd q05 q50 q95].  Manual: chapter Statistics and simulation.\n" },
+  { "ode",
+    "y' = f(t, y) with an adaptive Runge-Kutta-Fehlberg (4,5) driver, to the tolerance tol.\n"
+    "The word takes t and y and leaves y':   : f swap drop chs ;   is y' = -y.\n"
+    "  y0 t0 t1 n @f odeint -- M    the trajectory: n+1 rows of t and the state\n"
+    "  y0 t0 t1 @f odesol -- y      the state at t1\n"
+    "A system is the same with y a row vector: the word gets t and a 1 x k matrix and leaves a vector of k\n"
+    "(1 1 ones * makes a 1 x 1 matrix from a real; join_h assembles the row). Manual: chapter Differential equations.\n" },
   { "numerics",
     "The numerical methods take a function as an execution token: @name, for a word or a command.\n"
     "  a b @f integrate     a b @f romberg      a b @f fzero       x @f solve\n"
@@ -548,7 +590,7 @@ void help_topic(const char *topic) {
   if (!strcmp(t, "help")) {
     printf("\n" BOLD "help" RESET "\n");
     printf("    help                 the overview\n");
-    printf("    help <topic>         a short introduction: modules, words, decimal, finance, workdays, numerics, syntax\n");
+    printf("    help <topic>         a short introduction: modules, words, decimal, finance, workdays, numerics, stat, ode, syntax\n");
     printf("    help <command>       one command: stack entries, result, example (run when harmless)\n");
     printf("    help <module>        every command of a module, e.g. help finance\n");
     printf("    help <category>      every command of a category, e.g. help Stack\n");

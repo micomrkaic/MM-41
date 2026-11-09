@@ -59,7 +59,7 @@ Error: ?pmt: degenerate problem (n = 0)
 Error: ?pmt: degenerate problem (n = 0)
 Error: irr: no rate found between -99% and 1000% per period
 Error: npv: cash flows are a real vector in time order, or an N×2 matrix of amount and count
-Error: npv: cash flows are a vector or an N×2 matrix, not 2×3
+Error: npv: cash flows are a vector or an N×2 matrix of amount and count, not 2×3
 Error: xprice: coupon frequency must divide 12 (1, 2, 3, 4, 6, 12)
 Error: xprice: basis must be 0..4 (30/360, act/act, act/360, act/365, 30E/360)
 Error: xprice: settlement must precede maturity
@@ -103,4 +103,8 @@ Error: ymd>date: invalid date 20070132 (use YYYYMMDD or "d.m.yyyy")
 [33] ℝ : 20080101.0000
 [34] ℝ : 5.0000
 [35] ℝ : 20070132.0000
+[36] 𝔻 : 100000.0000
+[37] 𝔻 : 1100.0000
+[38] 𝔻 : 15.2382
+[39] 𝔻 : 6.0000
 [exit 1]

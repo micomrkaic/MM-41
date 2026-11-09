@@ -56,7 +56,7 @@
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 
-\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 1.3}
+\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 1.4}
 \author{Mico Mrkaic}
 \date{November 2026}
 
@@ -257,7 +257,7 @@ The stack holds up to 100 items of any type. The classic FORTH words manipulate 
 
 \subsection{Display}
 
-\cmd{print} prints the top item (a matrix in full), \cmd{ps} prints the whole stack, \cmd{pm} prints the matrix on top in full. All three leave the stack unchanged. A matrix prints with four decimals (scientific notation for very large or small entries), except that a matrix whose entries are all whole numbers---dates, counts, an integer cash-flow table---prints them as integers.
+\cmd{print} prints the top item (a matrix in full), \cmd{ps} prints the whole stack, \cmd{pm} prints the matrix on top in full. All three leave the stack unchanged. In fixed-point display a real that would show only as \code{0.000000}, or as a fifteen-digit integer, falls back to scientific notation (\code{6.626070e-34}), as a calculator does. A matrix prints with four decimals (scientific notation for very large or small entries), except that a matrix whose entries are all whole numbers---dates, counts, an integer cash-flow table---prints them as integers.
 
 Numbers are shown in fixed-point with six decimals by default. \cmd{setprec} sets the number of decimals (0--20), and \cmd{sfs} toggles between fixed-point and scientific notation, where the precision is the number of significant digits:
 \begin{rpn}
@@ -333,6 +333,29 @@ A real matrix with one such entry becomes a complex matrix: \code{[2 2 \$ 1 -2 3
 0.975 nquant     \ 1.959964
 5 gamma          \ 24
 2 3 beta         \ 0.083333
+\end{rpn}
+The rest of the Math Pac is here too, each through GSL's error-checked entry point, so an argument outside the domain is a calculator error rather than a \code{nan}; the one-argument functions apply elementwise to a real matrix.
+\begin{center}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.2\textwidth}>{\raggedright\arraybackslash}p{0.46\textwidth}@{}}
+\toprule
+\cmd{erf}, \cmd{erfc} & \stk{x -- y} & error function and its complement \\
+\cmd{gammap}, \cmd{gammaq} & \stk{a x -- P} & regularised incomplete gamma $P(a,x)$ and $Q = 1-P$ \\
+\cmd{betainc} & \stk{a b x -- I} & regularised incomplete beta $I_x(a,b)$ \\
+\cmd{digamma} & \stk{x -- psi(x)} & $\psi(x) = \Gamma'(x)/\Gamma(x)$ \\
+\cmd{zeta} & \stk{x -- zeta(x)} & Riemann zeta, $x \ne 1$ \\
+\cmd{besselj}, \cmd{bessely} & \stk{x n -- Jn(x)} & Bessel functions of integer order $n$ ($Y_n$ needs $x>0$) \\
+\cmd{besseli}, \cmd{besselk} & \stk{x n -- In(x)} & modified Bessel functions ($K_n$ needs $x>0$) \\
+\cmd{airyai}, \cmd{airybi} & \stk{x -- Ai(x)} & Airy functions \\
+\cmd{ellk}, \cmd{elle} & \stk{k -- K(k)} & complete elliptic integrals, modulus $|k|<1$ \\
+\cmd{expint} & \stk{x -- E1(x)} & exponential integral $E_1$ \\
+\cmd{lambertw} & \stk{x -- W(x)} & Lambert $W$, principal branch, $x \ge -1/e$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{rpn}
+2 3 0.5 betainc  \ 0.687500
+2.5 0 besselj    \ -0.048384
+1 lambertw       \ 0.567143   W e^W = 1
 \end{rpn}
 
 \subsection{Comparisons and logic}
@@ -501,6 +524,99 @@ A polynomial is a vector of coefficients, \emph{highest degree first}, as in Mat
 The \code{npv} and \code{irr} words of the \code{std} module are built on these two commands (Appendix~\ref{app:macros}).
 
 %======================================================================
+\section{Statistics and simulation}
+\label{sec:stat}
+
+The \code{stat} module is the HP-41 Stat Pac and the Advantage Pac's curve fitting; the \code{random} module is what the Stat Pac could not do: draws from named distributions and Monte Carlo over a word. Both work on \emph{vectors}, real matrices with one row or one column, and leave reals where the matrix reductions of Section~\ref{sec:matrices} would leave a $1\times 1$ matrix: \code{[1 5 \$ 2 4 4 4 6] mean} is 4, \code{cmean} would be \code{| 4 |}.
+
+\subsection{Describing a vector}
+
+\begin{center}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.18\textwidth}>{\raggedright\arraybackslash}p{0.52\textwidth}@{}}
+\toprule
+\cmd{mean}, \cmd{median}, \cmd{sd}, \cmd{sem} & \stk{v -- x} & mean, median, sample standard deviation, standard error of the mean \\
+\cmd{skew}, \cmd{kurt} & \stk{v -- x} & skewness and excess kurtosis \\
+\cmd{quantile} & \stk{v p -- q} & the $p$-quantile, interpolated between order statistics \\
+\cmd{cov}, \cmd{corr} & \stk{x y -- c} & sample covariance and Pearson correlation of two vectors \\
+\cmd{movavg} & \stk{v n -- v2} & trailing moving average over $n$ values \\
+\cmd{hist} & \stk{v k -- M} & histogram with $k$ equal bins: bin centre, count \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{rpn}
+[1 5 $ 2 4 4 4 6] mean               \ 4
+[1 5 $ 2 4 4 4 6] sd                 \ 1.414214
+[1 5 $ 5 1 4 2 3] 0.9 quantile       \ 4.6
+[1 4 $ 1 2 3 4] [1 4 $ 2 4 5 9] corr \ 0.964764
+\end{rpn}
+
+\subsection{Curve fitting and regression}
+
+The four fits of the Advantage Pac take $x$ and $y$ vectors and leave a row vector of the two coefficients and $R^2$ (on the transformed scale for the three non-linear ones, which are least squares on logarithms):
+\begin{center}
+\begin{tabular}{@{}llp{0.5\textwidth}@{}}
+\toprule
+\cmd{linfit} & \stk{x y -- [a,b,r2]} & $y = a + bx$ \\
+\cmd{expfit} & \stk{x y -- [a,b,r2]} & $y = a\,e^{bx}$, $y > 0$ \\
+\cmd{logfit} & \stk{x y -- [a,b,r2]} & $y = a + b\ln x$, $x > 0$ \\
+\cmd{powfit} & \stk{x y -- [a,b,r2]} & $y = a\,x^b$, $x, y > 0$ \\
+\cmd{ols}    & \stk{X y -- beta} & multiple regression of $y$ on the columns of $X$, intercept added; coefficients as a column, intercept first \\
+\cmd{olstab} & \stk{X y -- M r2} & the regression table: coefficient, standard error, $t$, two-sided $p$ per row, and $R^2$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{rpn}
+[1 4 $ 1 2 3 4] [1 4 $ 2 8 18 32] powfit pm          \ | 2.0000 2.0000 1.0000 |   y = 2 x^2
+[4 1 $ 1 2 3 4] [4 1 $ 2 4 5 9] olstab swap pm
+| -0.5000 1.1023 -0.4536 0.6946 |
+|  2.2000 0.4025  5.4659 0.0319 |
+[0] ℝ : 0.930769
+\end{rpn}
+\cmd{ols} with a $4\times 2$ matrix of $x$ and $x^2$ fits a quadratic; any transformation of the regressors is a matrix you build first.
+
+\subsection{Distributions}
+
+The cumulative distribution and its inverse for the test distributions, plus the binomial and Poisson probabilities; the normal ones are \cmd{ncdf} and \cmd{nquant} in the special module.
+\begin{center}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.34\textwidth}>{\raggedright\arraybackslash}p{0.3\textwidth}@{}}
+\toprule
+\cmd{tcdf}, \cmd{tinv} & \stk{x df -- p}, \stk{p df -- x} & Student $t$ \\
+\cmd{chi2cdf}, \cmd{chi2inv} & \stk{x df -- p}, \stk{p df -- x} & chi-square \\
+\cmd{fcdf}, \cmd{finv} & \stk{x df1 df2 -- p}, \stk{p df1 df2 -- x} & $F$ \\
+\cmd{binompdf}, \cmd{binomcdf} & \stk{k n p -- P} & binomial: exactly / at most $k$ successes in $n$ trials \\
+\cmd{poispdf}, \cmd{poiscdf} & \stk{k mu -- P} & Poisson: exactly / at most $k$ events \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{rpn}
+0.975 10 tinv        \ 2.228139
+0.95 1 chi2inv       \ 3.841459
+3 10 0.5 binomcdf    \ 0.171875
+\end{rpn}
+
+\subsection{Random draws and Monte Carlo}
+
+The \code{random} module draws from the calculator's Mersenne-twister generator, which \cmd{seed} makes reproducible. Scalar draws are for words that simulate one outcome; the \code{-rnd} words give $n$ draws as a column.
+\begin{center}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.24\textwidth}>{\raggedright\arraybackslash}p{0.28\textwidth}>{\raggedright\arraybackslash}p{0.4\textwidth}@{}}
+\toprule
+\cmd{seed} & \stk{n --} & seed the generator \\
+\cmd{rnorm}, \cmd{runif}, \cmd{rpois}, \cmd{rexp} & \stk{mu sigma -- x}, \stk{a b -- x}, \stk{mu -- k}, \stk{rate -- x} & one draw \\
+\cmd{normrnd}, \cmd{unifrnd}, \cmd{poisrnd}, \cmd{binomrnd}, \cmd{exprnd}, \cmd{trnd}, \cmd{chi2rnd} & \stk{n params -- v} & $n$ draws as a column; the parameters follow the count \\
+\cmd{resample}, \cmd{shuffle} & \stk{v -- v2} & a bootstrap resample (with replacement) / a random permutation \\
+\cmd{sims} & \stk{n xt -- v} & run a word $n$ times, collecting the one real it leaves each time \\
+\cmd{mcstats} & \stk{v -- [mean,sd,} \stk{q05,q50,q95]} & summary of simulated values \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{rpn}
+: pnl 0 1 rnorm 100 * 0 0.02 rnorm 1 + * ;   \ one simulated outcome
+42 seed 10000 @pnl sims mcstats pm           \ | 0.0054 ... 1.6451 |   mean sd q05 q50 q95
+[1 5 $ 1 2 3 4 5] resample mean              \ a bootstrap replicate of the mean
+\end{rpn}
+A word for \cmd{sims} takes nothing and leaves one real; everything it needs comes from the draws or from registers. Ten thousand runs of a short word take well under a second.
+
+%======================================================================
 \section{Strings}
 \label{sec:strings}
 
@@ -655,6 +771,37 @@ Some practical notes.
 The methods were cross-checked against SciPy on 62 cases with a worst relative error of $3.5\times10^{-11}$.
 
 %======================================================================
+\section{Differential equations}
+\label{sec:ode}
+
+The \code{ode} module integrates initial-value problems $y' = f(t, y)$ to the tolerance \cmd{tol}, using GSL's adaptive Runge--Kutta--Fehlberg driver of orders 4 and 5.  The right-hand side is a word that takes $t$ and $y$ and leaves $y'$:
+\begin{center}
+\begin{tabular}{@{}llp{0.5\textwidth}@{}}
+\toprule
+\cmd{odeint} & \stk{y0 t0 t1 n xt -- M} & the trajectory at $n+1$ equally spaced times: $t$ in the first column, the state in the rest \\
+\cmd{odesol} & \stk{y0 t0 t1 xt -- y} & the state at $t_1$ only \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{rpn}
+: f swap drop chs ;          \ y' = -y   (t is dropped)
+1 0 2 4 @f odeint pm
+| 0.0000 1.0000 |
+| 0.5000 0.6065 |
+| 1.0000 0.3679 |
+| 1.5000 0.2231 |
+| 2.0000 0.1353 |
+1 0 1 @f odesol              \ 0.367879 = e^-1
+\end{rpn}
+A system is the same with $y$ a row vector: the word receives $t$ and a $1\times k$ matrix and must leave a vector of $k$. The harmonic oscillator $y'' = -y$ as $(y, v)' = (v, -y)$:
+\begin{rpn}
+: ho nip dup 0 1 get_aij nip swap 0 0 get_aij nip chs
+     1 1 ones * swap 1 1 ones * swap join_h ;
+[1 2 $ 1 0] 0 pi @ho odesol pm          \ | -1.0000 -6.3e-12 |
+\end{rpn}
+(\code{1 1 ones *} turns a real into a $1\times 1$ matrix so that \cmd{join\_h} can assemble the row.) Parameters go in registers, as for the numerical methods. A problem that blows up before $t_1$, or one too stiff for an explicit method at the current \cmd{tol}, ends in an error naming the $t$ reached; \cmd{nevals} reports the evaluations of the last call.
+
+%======================================================================
 \section{Dates, time and the sun}
 
 Dates are strings in the form \code{d.m.yyyy}; leading zeros are optional on input and present on output (\code{"1.2.2025"} and \code{"01.02.2025"} are the same date). Times are strings \code{HH:MM}.
@@ -788,7 +935,7 @@ clrtvm 3 n 1 i% 1000 pv 0 fv ?pmt drop amort
 \subsection{Cash flows: NPV and IRR}
 \label{sec:cashflows}
 
-Cash flows are given as a vector in time order, the first element at $t=0$ (the outlay) and one element per period. When a flow repeats, an $N\times 2$ matrix gives the amounts in the first column and the repeat counts in the second.
+Cash flows are given as a column vector in time order, the first element at $t=0$ (the outlay) and one element per period. When a flow repeats, a matrix with two columns gives the amounts in the first column and the repeat counts in the second; the shape decides, so \code{[1 2 \$ 1000 100]} is one hundred payments of 1000 and two single flows are the column \code{[2 1 \$ 1000 100]}.
 \begin{center}
 \begin{tabular}{@{}llp{0.55\textwidth}@{}}
 \toprule
@@ -934,11 +1081,14 @@ The HP-41 took plug-in ROMs; MM-41 takes modules. A module is a named set of com
 \begin{rpn}
 MM-41>> modules
 module       version  words  summary
-core         1.3         85  arithmetic, functions, logic, the stack, words and the session
+core         1.4         85  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.0         33  time value of money, cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
-special      1.0          7  gamma, beta and the standard normal distribution
+special      1.1         24  gamma, beta, the normal distribution, error, Bessel, Airy, elliptic, zeta and more
+stat         1.0         27  descriptive statistics, curve fitting, regression, t/chi-square/F/binomial/Poisson distributions
+random       1.0         16  draws from named distributions, resampling and Monte Carlo over a word
+ode          1.0          2  initial-value problems y' = f(t, y) over a word, scalar or system (RKF45)
 matrices     1.0         38  linear algebra, matrix construction and reduction, polynomials
 numerics     1.0         12  integration, roots, minima, derivatives and sums over any word
 strings      1.0          7  string construction and manipulation
@@ -1111,7 +1261,7 @@ Generated from the dispatch table by \code{mm41 --commands-tex}; the same inform
 \section{The std word module}
 \label{app:macros}
 
-The following words are loaded from \code{modules/std.mm} in the configuration directory. The file is replaced at each \code{make install}; add your own words to \code{user\_words.txt} or to a word module of your own.
+The following words are loaded from \code{modules/std.mm} in the configuration directory. The file is replaced at each \code{make install}; add your own words to \code{user\_words.txt} or to a word module of your own. A second shipped word module, \code{const.mm}, holds the physical and astronomical constants (CODATA 2018, SI units): \code{c h hbar G kB qe NA Rgas eps0 mu0 me mp mn amu alpha a0 muB sigmaSB Ryd eV atm g0 au ly pc Msun Rsun Mearth Rearth}; \code{help const} lists them with their values, and \code{"const" unuse} frees the names.
 
 \begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.13\textwidth}>{\raggedright\arraybackslash}p{0.38\textwidth}>{\raggedright\arraybackslash}p{0.41\textwidth}@{}}
 \toprule \textbf{Word} & \textbf{Definition} & \textbf{Meaning} \\ \midrule \endfirsthead
@@ -1142,7 +1292,7 @@ The following words are loaded from \code{modules/std.mm} in the configuration d
 \section{Coming from MM-15, MM-14, MM-11 or MM-B1}
 \label{app:changes}
 
-MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module; 1.3 added \code{help \emph{name}}. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
+MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module; 1.3 added \code{help \emph{name}}; 1.4 added the \code{stat}, \code{random} and \code{ode} modules, the rest of the special functions and the \code{const} word module. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
 \begin{itemize}
   \item The binary is \code{mm41}, the configuration directory \code{\textasciitilde/.config/mm41/}. Copy \code{user\_words.txt}, \code{registers.txt} and \code{config.txt} across from \code{mm\_15} if you want them.
   \item \code{predefined\_macros.txt} is now the word module \code{modules/std.mm} and is installed there; the old file is not read. Your own additions belong in \code{user\_words.txt} or in a module of your own.

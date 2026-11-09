@@ -1,0 +1,20 @@
+# the ode module: y' = -y, and a two-state system (harmonic oscillator)
+: f swap drop chs ;
+1 0 2 4 @f odeint pm
+1 0 1 @f odesol 1 chs exp - abs 1e-8 lt
+: ho nip dup 0 1 get_aij nip swap 0 0 get_aij nip chs 1 1 ones * swap 1 1 ones * swap join_h ;
+[1 2 $ 1 0] 0 3.14159265358979 @ho odesol pm
+[1 2 $ 1 0] 0 6.28318530717959 4 @ho odeint pm
+: g nip dup * ;
+1 0 0.5 @g odesol
+ps clst
+1 0 0 @f odeint
+1 0 1 0 @f odeint
+"x" 0 1 @f odesol
+: bad1 drop drop 1 2 ;
+1 0 1 @bad1 odesol
+: bad2 drop drop "s" ;
+1 0 1 @bad2 odesol
+1 0 1 @nosuch odesol
+: blow dup * nip ;
+1 0 5 @blow odesol

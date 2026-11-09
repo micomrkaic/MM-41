@@ -1,0 +1,23 @@
+# the random module: with a seed the draws are reproducible; the checks here are
+# structural (every line should leave 1s) so the golden does not depend on GSL's generator
+42 seed
+1000 0 1 normrnd dup dim * 1000 eq swap dup mean abs 0.2 lt swap sd 0.8 gt
+1000 0 1 unifrnd dup median 0.4 gt swap 0.99 quantile 1 lt
+1000 3 poisrnd mean 2 gt 1000 10 0.5 binomrnd mean 4 gt 1000 2 exprnd mean 0.3 gt
+1000 5 trnd dim * 1000 eq 1000 3 chi2rnd 0 quantile 0 gt
+0 1 rnorm abs 6 lt 0 1 runif dup 0 geq swap 1 lt and 3 rpois 0 geq 2 rexp 0 geq
+[1 5 $ 1 2 3 4 5] resample dim * 5 eq [1 5 $ 1 2 3 4 5] shuffle mean 3 eq
+: pnl 0 1 rnorm 100 * ;
+2000 @pnl sims mcstats dup 0 0 get_aij nip abs 10 lt swap 0 1 get_aij nip 90 gt
+0 seed 3 0 1 normrnd 0 seed 3 0 1 normrnd - mean 0 eq
+ps clst
+-1 seed
+0 -1 rnorm
+1000 0 -1 normrnd
+0 3 poisrnd
+1e9 0 1 normrnd
+"x" resample
+: bad 1 2 ;
+5 @bad sims
+5 @nosuchword sims
+[1 1 $ 1] mcstats

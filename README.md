@@ -28,11 +28,14 @@ MM-41>> 2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
 [5] 𝔻 : -1798.65
 MM-41>> modules
 module       version  words  summary
-core         1.3         85  arithmetic, functions, logic, the stack, words and the session
+core         1.4         85  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.0         33  time value of money, cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
-special      1.0          7  gamma, beta and the standard normal distribution
+special      1.1         24  gamma, beta, the normal distribution, error, Bessel, Airy, elliptic, zeta and more
+stat         1.0         27  descriptive statistics, curve fitting, regression, t/chi-square/F/binomial/Poisson distributions
+random       1.0         16  draws from named distributions, resampling and Monte Carlo over a word
+ode          1.0          2  initial-value problems y' = f(t, y) over a word, scalar or system (RKF45)
 matrices     1.0         38  linear algebra, matrix construction and reduction, polynomials
 numerics     1.0         12  integration, roots, minima, derivatives and sums over any word
 strings      1.0          7  string construction and manipulation
@@ -96,6 +99,14 @@ loads. `"name" usage` tells you which module a command comes from.
   evaluation. Real and complex matrices mix.
 - **Words**, compiled at definition time, with `if/else/then`, `begin/until`,
   `begin/while/repeat`, `do/loop/+loop` and `i`/`j`; recursion allowed.
+- **Statistics and simulation**: `mean sd median quantile corr`, the Advantage
+  Pac's `linfit expfit logfit powfit`, multiple regression `ols`/`olstab` with
+  standard errors, t/chi-square/F/binomial/Poisson distributions; random
+  draws, bootstrap `resample`, and `n @word sims` Monte Carlo with `mcstats`.
+- **Differential equations**: `y0 t0 t1 n @f odeint` (RKF45), scalar or system.
+- **Special functions**: `erf`, incomplete gamma and beta, Bessel, Airy,
+  elliptic, zeta, digamma, Lambert W; the `const` word module has the physical
+  constants (`c h G kB qe NA ...`).
 - **Numerical methods** over any word or command: `integrate` (tanh-sinh),
   `romberg`, `fzero`, `solve`, `minimize`, `deriv`, `fsum`, `fprod`.
 - **Strings, registers, dates and the sun**: 64 registers of any type; date

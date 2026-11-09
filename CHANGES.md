@@ -1,5 +1,36 @@
 # MM-41 changes
 
+## MM-41 1.4
+
+The HP-41 application pacs that were still missing, as modules.
+
+- **stat** (built in): `mean sd sem median skew kurt`, `quantile`, `cov`,
+  `corr`, `movavg`, `hist`; the Advantage Pac's curve fits `linfit expfit
+  logfit powfit` (coefficients and R² as a row vector); multiple regression
+  `ols` (intercept added) and `olstab` (coefficient, standard error, t, p,
+  and R²); the t, chi-square, F, binomial and Poisson distributions
+  (`tcdf tinv chi2cdf chi2inv fcdf finv binompdf binomcdf poispdf poiscdf`).
+- **random** (built in): `seed`; one draw `rnorm runif rpois rexp`; n draws
+  as a column `normrnd unifrnd poisrnd binomrnd exprnd trnd chi2rnd`;
+  `resample` (bootstrap) and `shuffle`; `n @f sims` runs a word n times and
+  collects what it leaves; `mcstats` summarises a vector.
+- **ode** (built in): `y0 t0 t1 n @f odeint` and `y0 t0 t1 @f odesol`,
+  adaptive RKF45 to `tol`; the word is `t y -- y'`, scalar or a system with
+  y a row vector.
+- **special**: `erf erfc gammap gammaq betainc digamma zeta besselj bessely
+  besseli besselk airyai airybi ellk elle expint lambertw`, all through
+  GSL's error-checked entry points.
+- **const.mm**, a second shipped word module: the physical and astronomical
+  constants (CODATA 2018, SI).
+- Cash flows: a matrix with two columns is always amount and repeat count,
+  1×2 included, so `[1 2 $ 1000 100] 0 npv` is 100 000; two single flows are
+  the column `[2 1 $ 1000 100]`. (1.1–1.3 read a 1×2 as two flows.)
+- Fixed-point display falls back to scientific notation for a real it could
+  only show as 0.000000 or as a fifteen-digit integer (`h` is
+  `6.626070e-34`, not `0.000000`).
+- `help stat`, `help ode`; the help legend knows vectors, regressors, degrees
+  of freedom and the fit results.
+
 ## MM-41 1.3
 
 - **`help name`**: one command in full. The stack picture is unfolded into

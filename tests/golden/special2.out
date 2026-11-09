@@ -1,0 +1,46 @@
+| 0.0000 0.8427 0.9953 |
+
+[0] ℝ : 0.842701
+[1] ℝ : 0.157299
+[2] ℝ : 0.800852
+[3] ℝ : 0.199148
+[4] ℝ : 0.687500
+[5] ℝ : -0.577216
+[6] ℝ : 1.644934
+[7] ℝ : -0.048384
+[8] ℝ : 0.145918
+[9] ℝ : 1.266066
+[10] ℝ : 0.421024
+[11] ℝ : 0.355028
+[12] ℝ : 0.614927
+[13] ℝ : 1.685750
+[14] ℝ : 1.467462
+[15] ℝ : 0.219384
+[16] ℝ : 0.567143
+[17] Mℝ: 1 x 3 matrix
+GSL ERROR: domain error (bessel_Y1.c:83) [code=1]
+Error: bessely: 0 is outside the domain
+GSL ERROR: domain error (zeta.c:781) [code=1]
+Error: zeta: 1 is outside the domain
+Error: lambertw: -1 is outside the domain
+Error: betainc: needs a > 0, b > 0 and 0 <= x <= 1
+GSL ERROR: domain error (expint.c:329) [code=1]
+Error: expint: 0 is outside the domain
+GSL ERROR: domain error (ellint.c:505) [code=1]
+Error: ellk: 1.5 is outside the domain
+Error: erf: expected a real number
+Error: besselj: the order must be a whole number
+
+[0] ℝ : 0.000000
+[1] ℝ : 1.000000
+[2] ℝ : 1.000000
+[3] ℝ : -1.000000
+[4] ℝ : 2.000000
+[5] ℝ : 3.000000
+[6] ℝ : 1.500000
+[7] ℝ : 0.000000
+[8] ℝ : 1.500000
+[9] 𝒮 : "x"
+[10] ℝ : 2.500000
+[11] ℝ : 0.500000
+[exit 1]

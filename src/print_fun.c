@@ -47,6 +47,20 @@ static void print_decimal(int i, const mm_dec *d) {
 #include "print_fun.h"                      // for print_complex_matrix, pri...
 #include "stack.h"                          // for (anonymous struct)::(anon...
 
+/* A real in the current display mode. Fixed point falls back to scientific
+   notation for a number it could only show as 0.000000 or as a 20-digit
+   integer (|x| below 10^-precision or 1e15 and above), as a calculator does. */
+static const char *fmt_real(double x, char *buf, size_t n) {
+  double a = fabs(x);
+  if (fixed_point && !(a != 0 && (a < pow(10.0, -print_precision) || a >= 1e15)))
+    snprintf(buf, n, "%.*f", print_precision, nz(x));
+  else if (fixed_point)
+    snprintf(buf, n, "%.*e", print_precision, nz(x));
+  else
+    snprintf(buf, n, "%.*g", print_precision, nz(x));
+  return buf;
+}
+
 void print_top_scalar(const Stack* stack) {
   if (stack->top == -1) {
     printf("{}\n");
@@ -54,12 +68,11 @@ void print_top_scalar(const Stack* stack) {
   }
   int i = stack->top;
   switch (stack->items[i].type) {
-  case TYPE_REAL:
-    if (fixed_point)
-      printf("[%d] ℝ : %.*f\n", i, print_precision, nz(stack->items[i].real));
-    else
-      printf("[%d] ℝ : %.*g\n", i, print_precision, nz(stack->items[i].real));
+  case TYPE_REAL: {
+    char b[64];
+    printf("[%d] ℝ : %s\n", i, fmt_real(stack->items[i].real, b, sizeof b));
     break;
+  }
   case TYPE_COMPLEX:
     if (fixed_point)
       printf("[%d] ℂ : (%.*f, %.*fi)\n", i,
@@ -100,12 +113,11 @@ void print_stack(const Stack* stack, char *title) {
   printf("\n");
   for (int i = 0; i <= stack->top; i++) {
     switch (stack->items[i].type) {
-    case TYPE_REAL:
-      if (fixed_point)
-	printf("[%d] ℝ : %.*f\n", i, print_precision, nz(stack->items[i].real));
-      else
-	printf("[%d] ℝ : %.*g\n", i, print_precision, nz(stack->items[i].real));
+    case TYPE_REAL: {
+      char b[64];
+      printf("[%d] ℝ : %s\n", i, fmt_real(stack->items[i].real, b, sizeof b));
       break;
+    }
     case TYPE_COMPLEX:
       if (fixed_point)
 	printf("[%d] ℂ : (%.*f, %.*fi)\n", i,

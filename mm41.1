@@ -1,4 +1,4 @@
-.TH MM41 1 "November 2026" "MM-41 1.3" "User Commands"
+.TH MM41 1 "November 2026" "MM-41 1.4" "User Commands"
 .SH NAME
 mm41 \- programmable RPN calculator for real, complex and decimal scalars, strings and matrices
 .SH SYNOPSIS
@@ -310,6 +310,38 @@ report the evaluations used and the error estimate of the last integral.
 The function must leave exactly one real; an error inside it aborts the
 call. An integrable endpoint singularity converges to full precision when
 that endpoint is 0.
+.SS Statistics, random draws, differential equations
+Vectors are N x 1 or 1 x N real matrices.
+.B v mean sd sem median skew kurt ,
+.B v p quantile ,
+.B x y cov corr ,
+.B v n movavg ,
+.B v k hist ;
+fits
+.B x y linfit expfit logfit powfit
+leave [a b r2];
+.B X y ols
+(intercept added) and
+.B X y olstab
+(coefficient, standard error, t, p; R^2). Distributions
+.B tcdf tinv chi2cdf chi2inv fcdf finv binompdf binomcdf poispdf poiscdf .
+Random:
+.B n seed ,
+one draw
+.B rnorm runif rpois rexp ,
+n draws
+.B normrnd unifrnd poisrnd binomrnd exprnd trnd chi2rnd ,
+.B resample shuffle ,
+.B n @f sims
+(run a word n times, collect its result),
+.B v mcstats .
+Differential equations:
+.B y0 t0 t1 n @f odeint
+and
+.B y0 t0 t1 @f odesol
+with the word
+.BR "t y -- y'" ,
+scalar or system (y a row vector).
 .SS Workdays
 Dates are \(dqd.m.yyyy\(dq strings or YYYYMMDD numbers.
 .B d1 d2 workdays

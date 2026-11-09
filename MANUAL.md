@@ -33,6 +33,8 @@ is `A B⁻¹`, `A n ^` an integer matrix power); `.* ./ .^` elementwise.
 `chs inv abs sqrt intg frac mod fact ncr npr` · `% %t %chg` (HP, keep y) ·
 `exp ln log` · `sin cos tan asin acos atan sinh cosh tanh asinh acosh atanh` ·
 `re im arg conj re2c split_c j2r` · `npdf ncdf nquant gamma ln_gamma beta ln_beta` ·
+`erf erfc` · `a x gammap|gammaq` · `a b x betainc` · `digamma zeta` · `x n besselj|bessely|besseli|besselk` ·
+`airyai airybi` · `k ellk|elle` · `expint lambertw` · constants (`const.mm`): `c h hbar G kB qe NA Rgas eps0 mu0 me mp mn amu alpha a0 muB sigmaSB Ryd eV atm g0 au ly pc Msun Rsun Mearth Rearth` ·
 `pi e gravity inf nan` · `eq neq lt leq gt geq and or not` (flags 0/1).
 
 Promotion: `-1 sqrt` → `(0,1)`, `2 asin`, `0.5 acosh`, `2 atanh`, `-1 ln`,
@@ -108,6 +110,23 @@ Control words inside definitions: `flag if ... else ... then` ·
 Compiled modules: `"file.so" load`, or drop the `.so` into the same directory;
 `make shared-module DIR=...` builds one from `examples/modules/hello`-style
 source. `make MODULES="..."` chooses the built-in modules.
+
+## Statistics (`stat`) and simulation (`random`)
+
+Vectors (N×1 or 1×N): `mean sd sem median skew kurt` · `v p quantile` · `x y cov` ·
+`x y corr` · `v n movavg` · `v k hist`. Fits `x y linfit|expfit|logfit|powfit --
+[a,b,r2]`; `X y ols -- beta` (intercept added), `X y olstab -- M r2` (coef se t p).
+Distributions: `x df tcdf` `p df tinv` `x df chi2cdf` `p df chi2inv` `x df1 df2 fcdf`
+`p df1 df2 finv` `k n p binompdf|binomcdf` `k mu poispdf|poiscdf`.
+Random: `n seed` · `mu sigma rnorm` `a b runif` `mu rpois` `rate rexp` (one draw) ·
+`n mu sigma normrnd` `n a b unifrnd` `n mu poisrnd` `n m p binomrnd` `n rate exprnd`
+`n df trnd` `n df chi2rnd` (columns) · `v resample` `v shuffle` · `n @f sims -- v` ·
+`v mcstats -- [mean,sd,q05,q50,q95]`.
+
+## Differential equations (`ode`)
+
+`y0 t0 t1 n @f odeint -- M` (t and state per row, RKF45 to `tol`) · `y0 t0 t1 @f
+odesol -- y`. The word is `t y -- y'`; for a system y is a row vector.
 
 ## Numerical methods
 
