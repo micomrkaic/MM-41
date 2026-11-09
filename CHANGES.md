@@ -8,6 +8,8 @@
   hello.so` is `"hello.so" load`. Only that exact shape is rewritten; a
   quoted name, a second argument, or the command inside a word definition
   is evaluated as written. If the line fails, the stack is left untouched.
+- TAB after `help ` completes modules, topics and categories as well as
+  commands and words (`help st` offers `stat` and `strings` alongside `sto`).
 - TAB after `use ` completes the word modules in the config directory, after
   `unuse ` the loaded ones, after `usehol ` the rule sets and calendar
   files, after `load `, `run ` and `batch ` file names.

@@ -53,7 +53,8 @@ for one command in full (what it takes, what it leaves, its example run),
 `help finance`, …), `help holiday` to search, `listfcns` and `modules`.
 Commands that take a name take it as a string (`"const" use`, `"us" usehol`);
 at the prompt a line of just the command and a bare name does the same thing
-(`use const`, `usehol us`, `load hello.so`), and TAB completes the name.
+(`use const`, `usehol us`, `load hello.so`), and TAB completes the name —
+after `help `, modules, topics and categories too.
 
 ## Modules
 

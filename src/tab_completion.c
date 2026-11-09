@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <string.h>             // for strdup, strncmp, NULL, strlen
 #include "globals.h"            // for app_path
+#include "help.h"               // for help_topic_name
+#include "module.h"             // for modules_count, module_at
 #include "ops.h"                // for ops, n_ops
 #include "tab_completion.h"     // for function_name_completion
 #include "words.h"              // for user_word, word_modules
@@ -67,10 +69,29 @@ static void free_names(void) {
 /* After `use `: the word modules in the config directory. After `unuse `:
    the ones loaded. After `usehol `: the rule sets and the calendar files.
    After load, run and batch: file names (readline's own completion). */
+static void add_name(const char *n) {
+  for (int i = 0; i < n_names; i++) if (strcmp(names[i], n) == 0) return;
+  names = realloc(names, (size_t)(n_names + 1) * sizeof *names);
+  names[n_names++] = strdup(n);
+}
+
+/* After `help `: commands, words, modules, topics and categories. */
+static void help_candidates(void) {
+  for (int i = 0; i < n_ops; i++) add_name(ops[i].name);
+  for (int i = 0; i < word_count; i++) add_name(words[i].name);
+  for (int i = 0; i < macro_count; i++) add_name(macros[i].name);
+  for (int i = 0; i < modules_count(); i++) add_name(module_at(i)->name);
+  for (int i = 0; i < word_module_count; i++) add_name(word_modules[i].name);
+  for (int i = 0; help_topic_name(i); i++) add_name(help_topic_name(i));
+  for (int i = 0; i < n_ops; i++) if (ops[i].cat) add_name(ops[i].cat);
+}
+
 static char **argument_completion(const char *word, size_t wl, const char *text, int *handled) {
   free_names();
   *handled = 1;
-  if (!strncmp(word, "use", wl) && wl == 3) {
+  if (!strncmp(word, "help", wl) && wl == 4) {
+    help_candidates();
+  } else if (!strncmp(word, "use", wl) && wl == 3) {
     names = dir_names("modules", ".mm", &n_names);
   } else if (!strncmp(word, "unuse", wl) && wl == 5) {
     names = calloc((size_t)word_module_count + 1, sizeof *names);

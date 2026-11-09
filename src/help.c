@@ -70,7 +70,8 @@ void help_menu(void) {
   printf("    listwords  \"name\" usage  \"name\" delword  savewords  listmacros\n");
   subtitle("Modules");
   printf("    modules  \"name\" use  \"name\" unuse  \"file.so\" load     word modules: ~/.config/mm41/modules/*.mm\n");
-  printf("             (at the prompt: use name, unuse name, load file.so, usehol name -- TAB completes the name)\n");
+  printf("             (at the prompt: use name, unuse name, load file.so, usehol name -- TAB completes the name,\n");
+  printf("             and after help the modules, topics and categories too)\n");
   subtitle("Numerical methods (@name pushes a function token)");
   printf("    a b @f integrate   a b @f romberg   a b @f fzero   x @f solve   a b @f minimize\n");
   printf("    x @f deriv   lo hi @f fsum   lo hi @f fprod   @f exec   x tol   nevals  interr\n");
@@ -574,6 +575,10 @@ static const Topic topics[] = {
     "the same: use const, usehol us. Anything longer is evaluated as written.\n"
     "Manual: chapter Entering data.\n" },
 };
+
+const char *help_topic_name(int i) {
+  return i >= 0 && (size_t)i < sizeof topics / sizeof topics[0] ? topics[i].name : NULL;
+}
 
 static int describe_topic(const char *name) {
   for (size_t i = 0; i < sizeof topics / sizeof topics[0]; i++) {

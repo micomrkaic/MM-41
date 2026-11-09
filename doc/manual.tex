@@ -140,7 +140,7 @@ MM-41>> q
 
 The prompt is \code{MM\_RPN>>}. After each line the whole stack is printed, one item per line, deepest first: the index in brackets, a type glyph (\g{ℝ} real, \g{ℂ} complex, \g{𝒮} string, M\g{ℝ} and M\g{ℂ} real and complex matrices), and the value. Position \code{[0]} is the \emph{bottom} of the stack; the highest index is the top, which is where commands take their arguments.
 
-The REPL has GNU Readline editing: arrow keys recall history (kept in \code{.rpn\_history} between sessions), and \textsc{tab} completes command and word names---and, after \cmd{use}, \cmd{unuse} and \cmd{usehol}, the names of the modules and calendars they can take; after \cmd{load}, \cmd{run} and \cmd{batch}, file names. \cmd{q} exits, saving the configuration; \cmd{undo} restores the stack as it was before the previous line.
+The REPL has GNU Readline editing: arrow keys recall history (kept in \code{.rpn\_history} between sessions), and \textsc{tab} completes command and word names---and, after \cmd{help}, also module, topic and category names; after \cmd{use}, \cmd{unuse} and \cmd{usehol}, the names of the modules and calendars they can take; after \cmd{load}, \cmd{run} and \cmd{batch}, file names. \cmd{q} exits, saving the configuration; \cmd{undo} restores the stack as it was before the previous line.
 
 \subsection{Line forms: \code{help npv}, \code{use const}}
 
