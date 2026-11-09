@@ -70,6 +70,7 @@ void help_menu(void) {
   printf("    listwords  \"name\" usage  \"name\" delword  savewords  listmacros\n");
   subtitle("Modules");
   printf("    modules  \"name\" use  \"name\" unuse  \"file.so\" load     word modules: ~/.config/mm41/modules/*.mm\n");
+  printf("             (at the prompt: use name, unuse name, load file.so, usehol name -- TAB completes the name)\n");
   subtitle("Numerical methods (@name pushes a function token)");
   printf("    a b @f integrate   a b @f romberg   a b @f fzero   x @f solve   a b @f minimize\n");
   printf("    x @f deriv   lo hi @f fsum   lo hi @f fprod   @f exec   x tol   nevals  interr\n");
@@ -482,7 +483,9 @@ static const Topic topics[] = {
     "                first line  \\ module NAME VERSION SUMMARY\n"
     "                then        name body         or   : name body ;   one word per line\n"
     "                Every file there loads at startup; \"name\" use loads one now (by name,\n"
-    "                or a path), \"name\" unuse removes it. std.mm ships with mm41.\n"
+    "                or a path), \"name\" unuse removes it. At the prompt, use name and\n"
+    "                unuse name alone on a line mean the same (TAB completes the name).\n"
+    "                std.mm and const.mm ship with mm41.\n"
     "  shared objects   a compiled module, NAME.so, written in C against include/module.h:\n"
     "                `make shared-module DIR=path` builds it, \"path/NAME.so\" load loads it,\n"
     "                and ~/.config/mm41/modules/*.so load at startup. examples/modules/hello\n"
@@ -528,7 +531,7 @@ static const Topic topics[] = {
     "  date n workdayplus    n workdays later, start day not counted (WORKDAY)\n"
     "  date isworkday\n"
     "The calendar is empty (weekends only) until you install one:\n"
-    "  \"us\" usehol           the US federal holidays (observed), remembered in config.txt\n"
+    "  \"us\" usehol           the US federal holidays (observed), remembered in config.txt (or: usehol us)\n"
     "  \"si\" usehol           Slovenia\n"
     "  \"name\" usehol         ~/.config/mm41/holidays/name.txt, one date per line (example.txt shows the format)\n"
     "hol shows it, clrhol removes it, \"us\" holidays and 2027 \"si\" yholidays push one as a vector.\n"
@@ -565,7 +568,11 @@ static const Topic topics[] = {
     "from it (3 4 + is 7). Numbers 3 -1.2e-4 .5, decimals 0.1d, complex (1,2), strings \"text\",\n"
     "matrices [rows cols $ a11 a12 ...] or [rows, cols, \"file\"]. Comments start with \\ or #.\n"
     "The stack prints after every line, [0] at the bottom; undo restores the previous stack,\n"
-    "q quits. help <name> describes any command. Manual: chapter Entering data.\n" },
+    "q quits. help <name> describes any command.\n"
+    "Commands that take a name take a string: \"const\" use, \"us\" usehol, \"f.so\" load. A line\n"
+    "that is only such a command (use unuse load run batch usehol) and one bare name means\n"
+    "the same: use const, usehol us. Anything longer is evaluated as written.\n"
+    "Manual: chapter Entering data.\n" },
 };
 
 static int describe_topic(const char *name) {

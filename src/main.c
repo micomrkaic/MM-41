@@ -163,6 +163,35 @@ static void shutdown(Stack *stack, Stack *old_stack) {
   free_words();
 }
 
+/* The words that take a name as a string. At the line level `use const` is
+   the same as `"const" use`: a line that is exactly one of these words and
+   one bare name is rewritten, so the name is not looked up as a word.
+   Anything else -- a quoted name, more tokens, the word inside a definition
+   -- is evaluated as written. */
+static const char *const bare_name_words[] = { "use", "unuse", "load", "run", "batch", "usehol", NULL };
+
+static const char *bare_name_form(const char *line, char *out, size_t cap) {
+  const char *p = line;
+  while (*p == ' ' || *p == '\t') p++;
+  for (int i = 0; bare_name_words[i]; i++) {
+    size_t wl = strlen(bare_name_words[i]);
+    if (strncmp(p, bare_name_words[i], wl) != 0 || (p[wl] != ' ' && p[wl] != '\t')) continue;
+    const char *a = p + wl;
+    while (*a == ' ' || *a == '\t') a++;
+    if (*a == '\0' || *a == '"') return NULL;              /* nothing, or already a string */
+    const char *e = a;
+    while (*e && *e != ' ' && *e != '\t') e++;
+    const char *rest = e;
+    while (*rest == ' ' || *rest == '\t') rest++;
+    if (*rest != '\0') return NULL;                        /* more than one argument: leave it alone */
+    if (memchr(a, '"', (size_t)(e - a))) return NULL;
+    if ((size_t)(e - a) + wl + 4 >= cap) return NULL;
+    snprintf(out, cap, "\"%.*s\" %s", (int)(e - a), a, bare_name_words[i]);
+    return out;
+  }
+  return NULL;
+}
+
 /* One line of input, shared by the REPL and batch mode. Returns false on "q". */
 static bool handle_line(Stack *stack, Stack *old_stack, char *line) {
   if (strcmp(line, "q") == 0) return false;
@@ -189,11 +218,16 @@ static bool handle_line(Stack *stack, Stack *old_stack, char *line) {
     if (!strncmp(p, "help", 4) && (p[4] == ' ' || p[4] == '\t')) { help_topic(p + 4); return true; }
   }
 
+  char rewritten[1024];
+  const char *bare = bare_name_form(line, rewritten, sizeof rewritten);
+
   if (!strcmp(line, "undo")) {
     copy_stack(stack, old_stack);
   } else {
     copy_stack(old_stack, stack); // Preserve the stack
-    evaluate_line(stack, line);
+    long errs = error_count;
+    evaluate_line(stack, bare ? rewritten : line);
+    if (bare && error_count != errs) copy_stack(stack, old_stack);   /* a failed `use x` leaves no "x" behind */
   }
   return true;
 }

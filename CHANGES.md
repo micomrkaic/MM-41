@@ -1,5 +1,19 @@
 # MM-41 changes
 
+## MM-41 1.4.1
+
+- Bare-name line forms. A line that is only `use`, `unuse`, `load`, `run`,
+  `batch` or `usehol` and one unquoted name is read as the string form:
+  `use const` is `"const" use`, `usehol us` is `"us" usehol`, `load
+  hello.so` is `"hello.so" load`. Only that exact shape is rewritten; a
+  quoted name, a second argument, or the command inside a word definition
+  is evaluated as written. If the line fails, the stack is left untouched.
+- TAB after `use ` completes the word modules in the config directory, after
+  `unuse ` the loaded ones, after `usehol ` the rule sets and calendar
+  files, after `load `, `run ` and `batch ` file names.
+- Documented in the manual (Entering data, "Line forms"), `help`, `help
+  syntax`, `help modules`, README, MANUAL.md and the man page.
+
 ## MM-41 1.4
 
 The HP-41 application pacs that were still missing, as modules.

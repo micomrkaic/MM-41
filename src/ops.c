@@ -375,7 +375,7 @@ static const Op core_table[] = {
   { "savewords", 0, op_savewords, "Words", "--", "save all user-defined words to user_words.txt in the config directory", "savewords" },
   { "delword", 1, op_delword, "Words", "\"name\" --", "delete a user-defined word", "\"sq\" delword" },
   { "clrwords", 0, op_clrwords, "Words", "--", "delete all user-defined words", "clrwords" },
-  { "use", 1, op_use, "Words", "\"name\" --", "load a word module: modules/name.mm in the config directory, or a path", "\"finance\" use" },
+  { "use", 1, op_use, "Words", "\"name\" --", "load a word module: modules/name.mm in the config directory, or a path; `use name` alone on a line is the same", "\"const\" use" },
   { "unuse", 1, op_unuse, "Words", "\"name\" --", "unload a word module and its words", "\"finance\" unuse" },
   { "load", 1, op_load, "Session", "\"file.so\" --", "load a compiled module (a shared object exporting mm41_module); stays loaded", "\"hello.so\" load" },
   /* ---- Session ---- */

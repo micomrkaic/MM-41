@@ -112,7 +112,11 @@ Tokens are separated by spaces; numbers go on the stack, commands take their arg
 from it (3 4 + is 7). Numbers 3 -1.2e-4 .5, decimals 0.1d, complex (1,2), strings "text",
 matrices [rows cols $ a11 a12 ...] or [rows, cols, "file"]. Comments start with \ or #.
 The stack prints after every line, [0] at the bottom; undo restores the previous stack,
-q quits. help <name> describes any command. Manual: chapter Entering data.
+q quits. help <name> describes any command.
+Commands that take a name take a string: "const" use, "us" usehol, "f.so" load. A line
+that is only such a command (use unuse load run batch usehol) and one bare name means
+the same: use const, usehol us. Anything longer is evaluated as written.
+Manual: chapter Entering data.
 
 
 commands mentioning "holiday":
@@ -124,8 +128,15 @@ commands mentioning "holiday":
     clrhol       --                                 remove the holiday calendar (weekends only) and forget it in config.txt
     hol          -- H                               the installed holiday calendar as a vector
 
+Error: Unknown word: c
+Error: use: expected a string on the stack
+Error: load: nothing/x.so: no such file
 
 [0] ℝ : 1.000000
 [1] ℝ : 2.000000
 [2] ℝ : 3.000000
-[exit 0]
+[3] ℝ : 299792458.000000
+[4] ℝ : 299792458.000000
+[5] ℝ : 6.000000
+[6] ℝ : 6.000000
+[exit 1]

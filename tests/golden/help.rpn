@@ -14,3 +14,16 @@ help Stack
 help words
 help syntax
 help holiday
+\ bare-name line forms: use/unuse/usehol with one unquoted name
+"data/modules/const.mm" use
+c
+unuse const
+c
+use data/modules/const.mm
+c
+usehol us
+20261120 20261130 workdays
+clrhol
+use const extra
+load nothing/x.so
+depth

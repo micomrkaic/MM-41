@@ -99,13 +99,13 @@ calendars `"us" usehol` / `"si" usehol` (built-in rules, saved in config) or
 Control words inside definitions: `flag if ... else ... then` ·
 `begin ... flag until` · `begin ... flag while ... repeat` ·
 `limit start do ... loop` / `n +loop` with `i`, `j`.
-`listwords` · `help name` / `"name" usage` · `"name" delword` · `clrwords` · `savewords` /
+`listwords` · `help name` / `"name" usage` · line forms: `help name`, and `use name` / `unuse` / `load` / `run` / `batch` / `usehol name` for `"name" use` etc. when typed alone on a line · `"name" delword` · `clrwords` · `savewords` /
 `loadwords` (`user_words.txt`, loaded at startup) · `listmacros`.
 
 ## Modules
 
 `modules` lists what is loaded. Word modules: `~/.config/mm41/modules/*.mm`
-(loaded at startup), `"name" use`, `"name" unuse`; a file of `name body` or
+(loaded at startup), `"name" use` or just `use name` at the prompt, `"name" unuse`; a file of `name body` or
 `: name body ;` lines with an optional `\ module name version summary` header.
 Compiled modules: `"file.so" load`, or drop the `.so` into the same directory;
 `make shared-module DIR=...` builds one from `examples/modules/hello`-style

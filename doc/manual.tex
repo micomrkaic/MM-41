@@ -56,7 +56,7 @@
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 
-\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 1.4}
+\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 1.4.1}
 \author{Mico Mrkaic}
 \date{November 2026}
 
@@ -140,9 +140,19 @@ MM-41>> q
 
 The prompt is \code{MM\_RPN>>}. After each line the whole stack is printed, one item per line, deepest first: the index in brackets, a type glyph (\g{ℝ} real, \g{ℂ} complex, \g{𝒮} string, M\g{ℝ} and M\g{ℂ} real and complex matrices), and the value. Position \code{[0]} is the \emph{bottom} of the stack; the highest index is the top, which is where commands take their arguments.
 
-The REPL has GNU Readline editing: arrow keys recall history (kept in \code{.rpn\_history} between sessions), and \textsc{tab} completes command and word names. \cmd{q} exits, saving the configuration; \cmd{undo} restores the stack as it was before the previous line.
+The REPL has GNU Readline editing: arrow keys recall history (kept in \code{.rpn\_history} between sessions), and \textsc{tab} completes command and word names---and, after \cmd{use}, \cmd{unuse} and \cmd{usehol}, the names of the modules and calendars they can take; after \cmd{load}, \cmd{run} and \cmd{batch}, file names. \cmd{q} exits, saving the configuration; \cmd{undo} restores the stack as it was before the previous line.
+
+\subsection{Line forms: \code{help npv}, \code{use const}}
+
+Everything in MM-41 is postfix: a command takes its arguments from the stack, so a command that takes a name takes it as a string, \code{"const" use}. That is the form that works everywhere, inside a word definition included. At the prompt, though, such commands are typed far more often than they are programmed, and for them the line as a whole is read first:
+\begin{description}[style=nextline,leftmargin=1.5em]
+  \item[\code{help \emph{name}}] describes \emph{name} instead of executing it (section~\ref{sec:help}).
+  \item[\code{use \emph{name}}] and likewise \cmd{unuse}, \cmd{load}, \cmd{run}, \cmd{batch} and \cmd{usehol}: a line that is exactly one of these commands followed by one bare name is read as \code{"\emph{name}" \emph{command}}: \code{use const} is \code{"const" use}, \code{usehol us} is \code{"us" usehol}, \code{load examples/modules/hello/hello.so} is the same with the path quoted. If the line fails, the stack is left exactly as it was.
+\end{description}
+Only that exact shape is rewritten. A quoted name, a second argument, or the command inside a definition is evaluated as written, so \code{: setup "const" use "us" usehol ;} means what it says and \code{use const c} is still three tokens (and an error, since \cmd{use} finds no string on the stack). The rewriting is a convenience of the prompt and of \cmd{batch} files, which go through the same reader, not a change to the language.
 
 \subsection{Getting help inside the calculator}
+\label{sec:help}
 
 \begin{description}[style=nextline,leftmargin=1.5em]
   \item[\cmd{help}] a one-screen summary of the input syntax and the command families.
@@ -1081,7 +1091,7 @@ The HP-41 took plug-in ROMs; MM-41 takes modules. A module is a named set of com
 \begin{rpn}
 MM-41>> modules
 module       version  words  summary
-core         1.4         85  arithmetic, functions, logic, the stack, words and the session
+core         1.4.1       85  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.0         33  time value of money, cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -1119,6 +1129,7 @@ sphere dup * 4 * pi *          \ surface of a sphere (name body form)
 Save it as \code{geo.mm} in \code{\textasciitilde/.config/mm41/modules/} and it is loaded at every start, like a ROM left in its slot; the \code{std} module ships there. To load one by hand:
 \begin{rpn}
 "geo" use                  \ modules/geo.mm in the configuration directory
+use geo                    \ the same, typed at the prompt (section Line forms)
 "/tmp/draft.mm" use        \ or any path
 "geo" unuse                \ remove its words
 listmacros                 \ the words of every loaded word module, by module
@@ -1292,7 +1303,7 @@ The following words are loaded from \code{modules/std.mm} in the configuration d
 \section{Coming from MM-15, MM-14, MM-11 or MM-B1}
 \label{app:changes}
 
-MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module; 1.3 added \code{help \emph{name}}; 1.4 added the \code{stat}, \code{random} and \code{ode} modules, the rest of the special functions and the \code{const} word module. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
+MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module; 1.3 added \code{help \emph{name}}; 1.4 added the \code{stat}, \code{random} and \code{ode} modules, the rest of the special functions and the \code{const} word module; 1.4.1 the bare-name line forms \code{use const}, \code{usehol us}. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
 \begin{itemize}
   \item The binary is \code{mm41}, the configuration directory \code{\textasciitilde/.config/mm41/}. Copy \code{user\_words.txt}, \code{registers.txt} and \code{config.txt} across from \code{mm\_15} if you want them.
   \item \code{predefined\_macros.txt} is now the word module \code{modules/std.mm} and is installed there; the old file is not read. Your own additions belong in \code{user\_words.txt} or in a module of your own.

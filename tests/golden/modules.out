@@ -1,5 +1,5 @@
 module       version  words  summary
-core         1.4         85  arithmetic, functions, logic, the stack, words and the session
+core         1.4.1       85  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.0         33  time value of money, cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
