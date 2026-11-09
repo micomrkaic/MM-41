@@ -15,7 +15,12 @@ void splash_screen(void) {
   printf("╔══════════════════════════════════════════════╗\n");
   printf("║                                              ║\n");
   printf("║     Mico's Matrix & Scalar RPN Calculator    ║\n");
-  printf("║             Version %s (2026)               ║\n", MM41_VERSION);
+  {                                   /* centred whatever the length of the version */
+    char v[48];
+    int n = snprintf(v, sizeof v, "Version %s (2026)", MM41_VERSION);
+    int left = (46 - n) / 2, right = 46 - n - left;
+    printf("║%*s%s%*s║\n", left, "", v, right, "");
+  }
   printf("║                                              ║\n");
   printf("║  > Enter RPN expressions                     ║\n");
   printf("║  > Type 'help' for commands                  ║\n");
