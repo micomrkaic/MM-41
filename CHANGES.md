@@ -7,9 +7,10 @@
   pmt being the first. `?pv ?pmt ?fv ?n ?i%` honour it, `?g%` solves for
   it, `tvm` shows it, `clrtvm` resets it to 0 (the HP-12C level annuity).
   The annuity factor becomes ((1+r)^n − (1+g)^n)/(r − g), with the limits
-  n(1+r)^(n−1) at r = g and n at r = g = 0. `?n` with growth has no closed
-  form and is found by bracketing over 0..10000 periods and bisecting, like
-  `?i%`. `amort`/`amortm` grow the payment column, so a graduated-payment
+  n(1+r)^(n−1) at r = g and n at r = g = 0. `?n` stays a closed form when
+  fv = 0 (the level-annuity formula at the growth-adjusted rate
+  (1+i)/(1+g) − 1); with both g and fv non-zero there are two exponentials
+  in n and it is bracketed over 0..10000 periods and bisected, like `?i%`. `amort`/`amortm` grow the payment column, so a graduated-payment
   schedule is `g%` and `amort`.
 - The amortisation schedule's final balance no longer shows a 1E-31 residue
   of 34-digit arithmetic as `-1.0000e-31`; residues below 1E-20 of pv print

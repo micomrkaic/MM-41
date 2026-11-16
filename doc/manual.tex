@@ -937,7 +937,7 @@ clrtvm 30 n 5 i% 3 g% -12000 pmt 0 pv ?fv    \ 1136807.94 30 years of saving, 12
 clrtvm 10 n 6 i% -1000 pv 80 pmt 0 fv ?g%    \ 12.48      growth that makes 80 rising from 1000 at 6% break even
 clrtvm 360 n 0.5 i% 0.2 g% 300000 pv 0 fv ?pmt \ -1365.45  graduated mortgage: first payment, rising 0.2% a month
 \end{rpn}
-\cmd{?pv}, \cmd{?pmt} and \cmd{?fv} are closed forms, and so is \cmd{?n} when $g = 0$; \cmd{?i\%} and \cmd{?g\%} bracket the rate on a grid from $-99\,\%$ to $1000\,\%$ per period and bisect in decimal to 34 digits, so they are exact to the last displayed digit and report an error if no rate satisfies the equation; \cmd{?n} with growth does the same over 0 to 10\,000 periods. The registers are not saved between sessions.
+\cmd{?pv}, \cmd{?pmt} and \cmd{?fv} are closed forms, and so is \cmd{?n} whenever $g = 0$ or $fv = 0$: dividing the equation by $(1+r)^n$ leaves one exponential, $x^n$ with $x = (1+g)/(1+r)$, which is the level-annuity formula at the growth-adjusted rate. \cmd{?i\%} and \cmd{?g\%} bracket the rate on a grid from $-99\,\%$ to $1000\,\%$ per period and bisect in decimal to 34 digits, so they are exact to the last displayed digit and report an error if no rate satisfies the equation; \cmd{?n} with both $g$ and $fv$ non-zero (two exponentials, $x^n$ and $(1+r)^{-n}$) does the same over 0 to 10\,000 periods. The registers are not saved between sessions.
 
 \subsection{Amortisation}
 

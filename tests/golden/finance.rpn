@@ -71,3 +71,8 @@ tvm
 clrtvm 10 n 5 i% -1000 pv 0 pmt 0 fv ?g%
 clrtvm 0 n 5 i% -1000 pv 100 pmt 0 fv ?g%
 clrtvm 5 i% 50 g% 1000 pv 1 pmt 0 fv ?n
+\ ?n with growth: closed form when fv = 0 (incl. r = g, pmt too small), scan otherwise
+clrtvm 5 i% 5 g% -952.380952 pv 100 pmt 0 fv ?n
+clrtvm 5 i% 3 g% -2000 pv 10 pmt 0 fv ?n
+clrtvm 5 i% 3 g% 0 pv -100 pmt 1136.8079 fv ?n
+clrtvm 5 i% 3 g% -500 pv -100 pmt 2000 fv ?n

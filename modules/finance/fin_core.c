@@ -133,7 +133,28 @@ int fin_tvm_n(const mm_dec *ipct, const mm_dec *pv, const mm_dec *pmt, const mm_
   mm_dec r, gr;
   decContextZeroStatus(&dec_ctx);
   frac_of(&r, ipct); frac_of(&gr, gpct);
-  if (!is_smallrate(&gr)) return solve_n_growing(ipct, pv, pmt, fv, gpct, begin, out);
+  if (!is_smallrate(&gr)) {
+    /* Divided by (1+r)^n the equation is pv + pmt k (1 - x^n)/(r-g) + fv/(1+r)^n = 0
+       with x = (1+g)/(1+r). With fv = 0 that is one exponential: the level-annuity
+       formula at the growth-adjusted rate. With fv != 0 there are two, so scan. */
+    if (!ISZERO(fv)) return solve_n_growing(ipct, pv, pmt, fv, gpct, begin, out);
+    if (ISZERO(pmt)) return mm_error("?n: pmt is zero");
+    mm_dec k, d, one, o, og, x, q, t, lnt, lnx;
+    INT(&one, 1);
+    due_factor(&k, &r, begin); onep(&o, ipct); onep(&og, gpct);
+    SUB(&d, &r, &gr);
+    if (is_smallrate(&d)) {                                /* r = g: pv + pmt k n/(1+r) = 0 */
+      MUL(&t, pv, &o); NEG(&t, &t); MUL(&q, pmt, &k); DIV(out, &t, &q);
+      return dec_check("?n");
+    }
+    MUL(&q, pmt, &k); DIV(&q, &q, &d);                     /* q = pmt k/(r-g) */
+    ADD(&t, pv, &q); DIV(&t, &t, &q);                      /* x^n = (pv+q)/q */
+    if (ISNEG(&t) || ISZERO(&t)) { decContextZeroStatus(&dec_ctx); return mm_error("?n: no solution (the payments never repay pv at this growth)"); }
+    DIV(&x, &og, &o);
+    LN(&lnt, &t); LN(&lnx, &x);
+    DIV(out, &lnt, &lnx);
+    return dec_check("?n");
+  }
   if (is_smallrate(&r)) {                                 /* n = -(pv+fv)/pmt */
     if (ISZERO(pmt)) return mm_error("?n: pmt is zero");
     mm_dec s; ADD(&s, pv, fv); NEG(&s, &s); DIV(out, &s, pmt);
@@ -252,7 +273,7 @@ int fin_tvm_g(const mm_dec *n, const mm_dec *ipct, const mm_dec *pv, const mm_de
   return solve_rate("?g%", tvm_residual_g, &a, out);
 }
 
-/* n for a growing payment: no closed form, so scan whole periods up to 10000 and bisect */
+/* n for a growing payment with fv != 0: two exponentials in n, so scan whole periods up to 10000 and bisect */
 static int solve_n_growing(const mm_dec *ipct, const mm_dec *pv, const mm_dec *pmt, const mm_dec *fv, const mm_dec *gpct, int begin, mm_dec *out) {
   struct tvm_args a = { NULL, ipct, pv, pmt, fv, gpct, begin };
   if (ISZERO(pmt)) return mm_error("?n: pmt is zero");

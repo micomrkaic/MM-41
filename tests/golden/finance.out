@@ -83,7 +83,8 @@ Error: ymd>date: invalid date 20070132 (use YYYYMMDD or "d.m.yyyy")
   mode = end (payments at the end of the period)
 Error: ?g%: pmt is zero, so growth has nothing to act on
 Error: ?g%: n is zero
-Error: ?n: no number of periods found between 0 and 10000
+Error: ?n: no solution (the payments never repay pv at this growth)
+Error: ?n: no solution (the payments never repay pv at this growth)
 
 [0] 𝒮 : "x"
 [1] Mℝ: 2 x 1 matrix
@@ -135,4 +136,7 @@ Error: ?n: no number of periods found between 0 and 10000
 [47] 𝔻 : 10.0000
 [48] 𝔻 : 5.0000
 [49] 𝔻 : 100.0000
+[50] 𝔻 : 10.0000
+[51] 𝔻 : 8.4735
+[52] 𝔻 : 8.9622
 [exit 1]
