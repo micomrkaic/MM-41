@@ -19,12 +19,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-mm_dec T_n, T_i, T_pv, T_pmt, T_fv;
+mm_dec T_n, T_i, T_pv, T_pmt, T_fv, T_g;
 int    T_begin = 0;
 
 void fin_tvm_reset(void) {
   decNumberZero(&T_n); decNumberZero(&T_i); decNumberZero(&T_pv);
-  decNumberZero(&T_pmt); decNumberZero(&T_fv);
+  decNumberZero(&T_pmt); decNumberZero(&T_fv); decNumberZero(&T_g);
   T_begin = 0;
 }
 
@@ -58,12 +58,24 @@ static int is_smallrate(const mm_dec *r) {               /* |r| < 1e-20 -> treat
   return dec_compare(&a, &eps) < 0;
 }
 
-/* future-value annuity factor A = ((1+r)^n - 1)/r, limit n as r -> 0 */
-static void ann_factor(mm_dec *A, const mm_dec *g, const mm_dec *rfrac, const mm_dec *n) {
-  if (is_smallrate(rfrac)) { CPY(A, n); return; }
-  mm_dec one, gm1; INT(&one, 1);
-  SUB(&gm1, g, &one);
-  DIV(A, &gm1, rfrac);
+/* Future-value factor of an annuity whose payment grows at g per period:
+   pmt_t = pmt (1+g)^(t-1), t = 1..n, so
+     A = sum (1+g)^(t-1) (1+r)^(n-t) = ((1+r)^n - (1+g)^n) / (r - g),
+   with the limits n (1+r)^(n-1) when r = g and n when both are 0. With
+   g = 0 it is the ordinary ((1+r)^n - 1)/r. `rn` is (1+r)^n, `o` is 1+r. */
+static void ann_factor(mm_dec *A, const mm_dec *rn, const mm_dec *o, const mm_dec *rfrac, const mm_dec *gfrac, const mm_dec *n) {
+  mm_dec d, one; INT(&one, 1);
+  SUB(&d, rfrac, gfrac);
+  if (is_smallrate(&d)) {
+    if (is_smallrate(rfrac)) { CPY(A, n); return; }
+    mm_dec t; DIV(&t, rn, o); MUL(A, n, &t);              /* n (1+r)^(n-1) */
+    return;
+  }
+  if (is_smallrate(gfrac)) { mm_dec gm1; SUB(&gm1, rn, &one); DIV(A, &gm1, rfrac); return; }
+  mm_dec og, gn, num;
+  ADD(&og, &one, gfrac); POW(&gn, &og, n);
+  SUB(&num, rn, &gn);
+  DIV(A, &num, &d);
 }
 /* present-value annuity factor A = (1 - 1/g)/r, limit n */
 static void pv_ann_factor(mm_dec *A, const mm_dec *g, const mm_dec *rfrac, const mm_dec *n) {
@@ -81,33 +93,33 @@ static void due_factor(mm_dec *k, const mm_dec *rfrac, int begin) {
 }
 
 /* ---- TVM closed forms ---- */
-int fin_tvm_fv(const mm_dec *n, const mm_dec *ipct, const mm_dec *pv, const mm_dec *pmt, int begin, mm_dec *out) {
-  mm_dec r, g, A, k, t1, t2, k_A, o;
+int fin_tvm_fv(const mm_dec *n, const mm_dec *ipct, const mm_dec *pv, const mm_dec *pmt, const mm_dec *gpct, int begin, mm_dec *out) {
+  mm_dec r, g, A, k, t1, t2, k_A, o, gr;
   decContextZeroStatus(&dec_ctx);
-  frac_of(&r, ipct); onep(&o, ipct); POW(&g, &o, n);
-  ann_factor(&A, &g, &r, n); due_factor(&k, &r, begin);
+  frac_of(&r, ipct); frac_of(&gr, gpct); onep(&o, ipct); POW(&g, &o, n);
+  ann_factor(&A, &g, &o, &r, &gr, n); due_factor(&k, &r, begin);
   MUL(&t1, pv, &g);
   MUL(&k_A, &k, &A); MUL(&t2, pmt, &k_A);
   ADD(out, &t1, &t2); NEG(out, out);
   return dec_check("?fv");
 }
 
-int fin_tvm_pv(const mm_dec *n, const mm_dec *ipct, const mm_dec *pmt, const mm_dec *fv, int begin, mm_dec *out) {
-  mm_dec r, g, A, k, k_A, t, o;
+int fin_tvm_pv(const mm_dec *n, const mm_dec *ipct, const mm_dec *pmt, const mm_dec *fv, const mm_dec *gpct, int begin, mm_dec *out) {
+  mm_dec r, g, A, k, k_A, t, o, gr;
   decContextZeroStatus(&dec_ctx);
-  frac_of(&r, ipct); onep(&o, ipct); POW(&g, &o, n);
-  ann_factor(&A, &g, &r, n); due_factor(&k, &r, begin);
+  frac_of(&r, ipct); frac_of(&gr, gpct); onep(&o, ipct); POW(&g, &o, n);
+  ann_factor(&A, &g, &o, &r, &gr, n); due_factor(&k, &r, begin);
   MUL(&k_A, &k, &A); MUL(&t, pmt, &k_A);
   ADD(&t, &t, fv); NEG(&t, &t);
   DIV(out, &t, &g);
   return dec_check("?pv");
 }
 
-int fin_tvm_pmt(const mm_dec *n, const mm_dec *ipct, const mm_dec *pv, const mm_dec *fv, int begin, mm_dec *out) {
-  mm_dec r, g, A, k, k_A, num, o;
+int fin_tvm_pmt(const mm_dec *n, const mm_dec *ipct, const mm_dec *pv, const mm_dec *fv, const mm_dec *gpct, int begin, mm_dec *out) {
+  mm_dec r, g, A, k, k_A, num, o, gr;
   decContextZeroStatus(&dec_ctx);
-  frac_of(&r, ipct); onep(&o, ipct); POW(&g, &o, n);
-  ann_factor(&A, &g, &r, n); due_factor(&k, &r, begin);
+  frac_of(&r, ipct); frac_of(&gr, gpct); onep(&o, ipct); POW(&g, &o, n);
+  ann_factor(&A, &g, &o, &r, &gr, n); due_factor(&k, &r, begin);
   MUL(&k_A, &k, &A);
   if (ISZERO(&k_A)) { decContextZeroStatus(&dec_ctx); return mm_error("?pmt: degenerate problem (n = 0)"); }
   MUL(&num, pv, &g); ADD(&num, &num, fv); NEG(&num, &num);
@@ -115,10 +127,13 @@ int fin_tvm_pmt(const mm_dec *n, const mm_dec *ipct, const mm_dec *pv, const mm_
   return dec_check("?pmt");
 }
 
-int fin_tvm_n(const mm_dec *ipct, const mm_dec *pv, const mm_dec *pmt, const mm_dec *fv, int begin, mm_dec *out) {
-  mm_dec r;
+static int solve_n_growing(const mm_dec *ipct, const mm_dec *pv, const mm_dec *pmt, const mm_dec *fv, const mm_dec *gpct, int begin, mm_dec *out);
+
+int fin_tvm_n(const mm_dec *ipct, const mm_dec *pv, const mm_dec *pmt, const mm_dec *fv, const mm_dec *gpct, int begin, mm_dec *out) {
+  mm_dec r, gr;
   decContextZeroStatus(&dec_ctx);
-  frac_of(&r, ipct);
+  frac_of(&r, ipct); frac_of(&gr, gpct);
+  if (!is_smallrate(&gr)) return solve_n_growing(ipct, pv, pmt, fv, gpct, begin, out);
   if (is_smallrate(&r)) {                                 /* n = -(pv+fv)/pmt */
     if (ISZERO(pmt)) return mm_error("?n: pmt is zero");
     mm_dec s; ADD(&s, pv, fv); NEG(&s, &s); DIV(out, &s, pmt);
@@ -141,17 +156,25 @@ int fin_tvm_n(const mm_dec *ipct, const mm_dec *pv, const mm_dec *pmt, const mm_
    then bisect in decimal ---- */
 typedef int (*resfn)(const mm_dec *ipct, mm_dec *out, void *ud);
 
-struct tvm_args { const mm_dec *n, *pv, *pmt, *fv; int begin; };
+struct tvm_args { const mm_dec *n, *ipct, *pv, *pmt, *fv, *gpct; int begin; };
 
-static int tvm_residual(const mm_dec *ipct, mm_dec *out, void *ud) {
-  struct tvm_args *a = ud;
-  mm_dec r, g, A, k, t1, t2, k_A, o;
-  frac_of(&r, ipct); onep(&o, ipct); POW(&g, &o, a->n);
-  ann_factor(&A, &g, &r, a->n); due_factor(&k, &r, a->begin);
+/* pv (1+r)^n + pmt k A + fv, the TVM equation with growth */
+static void tvm_eq(const struct tvm_args *a, const mm_dec *n, const mm_dec *ipct, const mm_dec *gpct, mm_dec *out) {
+  mm_dec r, g, A, k, t1, t2, k_A, o, gr;
+  frac_of(&r, ipct); frac_of(&gr, gpct); onep(&o, ipct); POW(&g, &o, n);
+  ann_factor(&A, &g, &o, &r, &gr, n); due_factor(&k, &r, a->begin);
   MUL(&t1, a->pv, &g);
   MUL(&k_A, &k, &A); MUL(&t2, a->pmt, &k_A);
   ADD(out, &t1, &t2); ADD(out, out, a->fv);
-  return 0;
+}
+static int tvm_residual(const mm_dec *ipct, mm_dec *out, void *ud) {
+  struct tvm_args *a = ud; tvm_eq(a, a->n, ipct, a->gpct, out); return 0;
+}
+static int tvm_residual_g(const mm_dec *gpct, mm_dec *out, void *ud) {
+  struct tvm_args *a = ud; tvm_eq(a, a->n, a->ipct, gpct, out); return 0;
+}
+static int tvm_residual_n(const mm_dec *n, mm_dec *out, void *ud) {
+  struct tvm_args *a = ud; tvm_eq(a, n, a->ipct, a->gpct, out); return 0;
 }
 
 struct cf_args { const CashFlow *cf; int ncf; };
@@ -179,26 +202,26 @@ static int sign_of(resfn f, void *ud, const mm_dec *x) {
   return decNumberIsNegative(&r) ? -1 : 1;
 }
 
-static int solve_rate(const char *what, resfn f, void *ud, mm_dec *root_pct) {
-  const double lo = -99.0, hi = 1000.0, step = 0.25;
+/* Scan [lo, hi] in steps for a sign change of f, then bisect. */
+static int scan_bisect(const char *what, resfn f, void *ud, double lo, double hi, double step, const char *range, mm_dec *root) {
   mm_dec xa, xb;
   char buf[32];
   decContextZeroStatus(&dec_ctx);
   snprintf(buf, sizeof buf, "%.6f", lo);
   decNumberFromString(&xa, buf, &dec_ctx);
   int sa = sign_of(f, ud, &xa);
-  if (sa == 0) { CPY(root_pct, &xa); decContextZeroStatus(&dec_ctx); return 0; }
+  if (sa == 0) { CPY(root, &xa); decContextZeroStatus(&dec_ctx); return 0; }
   int found = 0;
   for (double b = lo + step; b <= hi + 1e-9; b += step) {
     snprintf(buf, sizeof buf, "%.6f", b);
     decNumberFromString(&xb, buf, &dec_ctx);
     int sb = sign_of(f, ud, &xb);
-    if (sb == 0) { CPY(root_pct, &xb); decContextZeroStatus(&dec_ctx); return 0; }
+    if (sb == 0) { CPY(root, &xb); decContextZeroStatus(&dec_ctx); return 0; }
     if (sb == 2) continue;                                 /* undefined here: keep scanning */
     if (sa != 2 && sb != sa) { found = 1; break; }
     CPY(&xa, &xb); sa = sb;
   }
-  if (!found) { decContextZeroStatus(&dec_ctx); return mm_error("%s: no rate found between -99%% and 1000%% per period", what); }
+  if (!found) { decContextZeroStatus(&dec_ctx); return mm_error("%s: no %s", what, range); }
   mm_dec mid, half;
   decNumberFromString(&half, "0.5", &dec_ctx);
   for (int it = 0; it < 200; it++) {
@@ -207,15 +230,33 @@ static int solve_rate(const char *what, resfn f, void *ud, mm_dec *root_pct) {
     if (sm == 0 || sm == 2) break;
     if (sm == sa) CPY(&xa, &mid); else CPY(&xb, &mid);
   }
-  ADD(root_pct, &xa, &xb); MUL(root_pct, root_pct, &half);
+  ADD(root, &xa, &xb); MUL(root, root, &half);
   decContextZeroStatus(&dec_ctx);           /* the scan may have raised flags at extreme rates */
   return 0;
 }
 
-int fin_tvm_i(const mm_dec *n, const mm_dec *pv, const mm_dec *pmt, const mm_dec *fv, int begin, mm_dec *out) {
-  struct tvm_args a = { n, pv, pmt, fv, begin };
+static int solve_rate(const char *what, resfn f, void *ud, mm_dec *root_pct) {
+  return scan_bisect(what, f, ud, -99.0, 1000.0, 0.25, "rate found between -99% and 1000% per period", root_pct);
+}
+
+int fin_tvm_i(const mm_dec *n, const mm_dec *pv, const mm_dec *pmt, const mm_dec *fv, const mm_dec *gpct, int begin, mm_dec *out) {
+  struct tvm_args a = { n, NULL, pv, pmt, fv, gpct, begin };
   if (ISZERO(n)) return mm_error("?i%%: n is zero");
   return solve_rate("?i%", tvm_residual, &a, out);
+}
+
+int fin_tvm_g(const mm_dec *n, const mm_dec *ipct, const mm_dec *pv, const mm_dec *pmt, const mm_dec *fv, int begin, mm_dec *out) {
+  struct tvm_args a = { n, ipct, pv, pmt, fv, NULL, begin };
+  if (ISZERO(n)) return mm_error("?g%%: n is zero");
+  if (ISZERO(pmt)) return mm_error("?g%%: pmt is zero, so growth has nothing to act on");
+  return solve_rate("?g%", tvm_residual_g, &a, out);
+}
+
+/* n for a growing payment: no closed form, so scan whole periods up to 10000 and bisect */
+static int solve_n_growing(const mm_dec *ipct, const mm_dec *pv, const mm_dec *pmt, const mm_dec *fv, const mm_dec *gpct, int begin, mm_dec *out) {
+  struct tvm_args a = { NULL, ipct, pv, pmt, fv, gpct, begin };
+  if (ISZERO(pmt)) return mm_error("?n: pmt is zero");
+  return scan_bisect("?n", tvm_residual_n, &a, 0.0, 10000.0, 1.0, "number of periods found between 0 and 10000", out);
 }
 
 /* ---- NPV / IRR ---- */
@@ -235,6 +276,15 @@ int fin_irr(const CashFlow *cf, int ncf, mm_dec *out) {
   return solve_rate("irr", npv_residual, &a, out);
 }
 
+/* |x| < 1E-20 |ref|: a residue of 34-digit arithmetic, not a balance */
+static int dec_compare_abs_tiny(const mm_dec *x, const mm_dec *ref) {
+  mm_dec ax, ar, eps, lim;
+  ABS(&ax, x); ABS(&ar, ref);
+  decNumberFromString(&eps, "1E-20", &dec_ctx);
+  MUL(&lim, &ar, &eps);
+  return dec_compare(&ax, &lim) < 0;
+}
+
 /* ---- amortisation: end-of-period, magnitudes ---- */
 int fin_amort_rows(AmortRow **rows, long *nrows, mm_dec *tot_interest, mm_dec *tot_principal) {
   bool ok;
@@ -244,14 +294,16 @@ int fin_amort_rows(AmortRow **rows, long *nrows, mm_dec *tot_interest, mm_dec *t
   if (ISZERO(&T_pmt)) return mm_error("amort: set pmt first (or solve it with ?pmt)");
   AmortRow *r = malloc((size_t)N * sizeof *r);
   if (!r) return mm_error("amort: out of memory");
-  mm_dec bal, rate, pay, interest, principal, totI, totP;
+  mm_dec bal, rate, pay, interest, principal, totI, totP, grow;
   decContextZeroStatus(&dec_ctx);
-  ABS(&bal, &T_pv); frac_of(&rate, &T_i); ABS(&pay, &T_pmt);
+  ABS(&bal, &T_pv); frac_of(&rate, &T_i); ABS(&pay, &T_pmt); onep(&grow, &T_g);
   INT(&totI, 0); INT(&totP, 0);
   for (long p = 0; p < N; p++) {
+    if (p > 0) MUL(&pay, &pay, &grow);                     /* pmt (1+g)^(p) */
     MUL(&interest, &bal, &rate);
     SUB(&principal, &pay, &interest);
     SUB(&bal, &bal, &principal);
+    if (dec_compare_abs_tiny(&bal, &T_pv)) decNumberZero(&bal);   /* 1E-31 left by a rounded pmt is zero */
     ADD(&totI, &totI, &interest);
     ADD(&totP, &totP, &principal);
     r[p].payment = pay; r[p].interest = interest; r[p].principal = principal; r[p].balance = bal;

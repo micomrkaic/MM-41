@@ -1,4 +1,4 @@
-.TH MM41 1 "November 2026" "MM-41 1.4.1" "User Commands"
+.TH MM41 1 "November 2026" "MM-41 1.5" "User Commands"
 .SH NAME
 mm41 \- programmable RPN calculator for real, complex and decimal scalars, strings and matrices
 .SH SYNOPSIS
@@ -205,9 +205,11 @@ places; scientific display shows a decimal as stored.
 .SS Finance
 Every finance word computes in decimals and leaves a decimal; rates are in
 percent per period; cash received is positive. Time value of money:
-.B n i% pv pmt fv
-store the registers,
-.B ?n ?i% ?pv ?pmt ?fv
+.B n i% pv pmt fv g%
+store the registers
+.RB ( g%
+is the growth of the payment per period: payment t is pmt(1+g)^(t-1), 0 for a level annuity),
+.B ?n ?i% ?pv ?pmt ?fv ?g%
 solve for one of them,
 .BR beg / end
 set the payment timing,

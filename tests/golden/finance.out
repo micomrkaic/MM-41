@@ -3,6 +3,7 @@
   pv   = 10000.00
   pmt  = -888.49
   fv   = 0.00
+  g%   = 0.00 per period (growth of pmt)
   mode = end (payments at the end of the period)
   per        payment       interest      principal        balance
   --- -------------- -------------- -------------- --------------
@@ -66,6 +67,23 @@ Error: xprice: settlement must precede maturity
 Error: xaccr: invalid date 31.2.2008
 Error: yearfrac: basis must be 0..4 (30/360, act/act, act/360, act/365, 30E/360)
 Error: ymd>date: invalid date 20070132 (use YYYYMMDD or "d.m.yyyy")
+  per        payment       interest      principal        balance
+  --- -------------- -------------- -------------- --------------
+    1       366.6667       100.0000       266.6667       733.3333
+    2       403.3333        73.3333       330.0000       403.3333
+    3       443.6667        40.3333       403.3333         0.0000
+  --- -------------- -------------- -------------- --------------
+  tot                      213.6667      1000.0000
+  n    = 3.0000
+  i%   = 10.0000 per period
+  pv   = 1000.0000
+  pmt  = -366.6667
+  fv   = 0.0000
+  g%   = 10.0000 per period (growth of pmt)
+  mode = end (payments at the end of the period)
+Error: ?g%: pmt is zero, so growth has nothing to act on
+Error: ?g%: n is zero
+Error: ?n: no number of periods found between 0 and 10000
 
 [0] 𝒮 : "x"
 [1] Mℝ: 2 x 1 matrix
@@ -107,4 +125,14 @@ Error: ymd>date: invalid date 20070132 (use YYYYMMDD or "d.m.yyyy")
 [37] 𝔻 : 1100.0000
 [38] 𝔻 : 15.2382
 [39] 𝔻 : 6.0000
+[40] 𝔻 : 576871.6884
+[41] 𝔻 : 468662.3983
+[42] 𝔻 : 1136807.9424
+[43] 𝔻 : 12.4782
+[44] 𝔻 : -1365.4505
+[45] 𝔻 : -1551.3282
+[46] 𝔻 : -1146.3879
+[47] 𝔻 : 10.0000
+[48] 𝔻 : 5.0000
+[49] 𝔻 : 100.0000
 [exit 1]

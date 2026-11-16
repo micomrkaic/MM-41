@@ -52,7 +52,7 @@ Fixed display rounds to `setprec` places; `sfs` shows a decimal as stored.
 
 ## Finance (all decimal; rates in percent per period; cash received +)
 
-TVM: `n i% pv pmt fv` store · `?n ?i% ?pv ?pmt ?fv` solve · `beg end` ·
+TVM: `n i% pv pmt fv g%` store (`g%`: growth of the payment per period, payment t = pmt·(1+g)^(t−1)) · `?n ?i% ?pv ?pmt ?fv ?g%` solve · `beg end` ·
 `clrtvm tvm` · `amort` (prints) · `amortm` (n×4 matrix).
 `cf rate npv` · `cf irr` — `cf` a vector in time order or N×2 amount/count.
 `nom m nom>eff` · `eff m eff>nom` · `cost salvage life sl` · `… year soyd` ·
@@ -65,6 +65,7 @@ basis xaccr` · `d1 d2 basis yearfrac` (0 30/360, 1 act/act, 2 act/360,
 
 ```
 clrtvm 12 n 1 i% 10000 pv 0 fv ?pmt          \ -888.49
+clrtvm 25 n 4 i% 2 g% -30000 pmt 0 fv ?pv    \ 576871.69  25 years of 30000 indexed at 2%
 [6 1 $ -1000 300 300 300 300 300] 10 npv      \ 137.24
 20080215 20171115 5.75 6.5 100 2 0 xprice     \ 94.6344
 ```

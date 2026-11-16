@@ -24,16 +24,18 @@
 #include "decimal.h"
 
 /* ---- TVM registers (module state) ---- */
-extern mm_dec T_n, T_i, T_pv, T_pmt, T_fv;
+extern mm_dec T_n, T_i, T_pv, T_pmt, T_fv, T_g;   /* T_g: growth of pmt per period, in percent */
 extern int    T_begin;
 void fin_tvm_reset(void);
 
 /* ---- TVM closed forms and the rate solver; 0 ok, -1 error reported ---- */
-int fin_tvm_fv (const mm_dec *n, const mm_dec *ipct, const mm_dec *pv,  const mm_dec *pmt, int begin, mm_dec *out);
-int fin_tvm_pv (const mm_dec *n, const mm_dec *ipct, const mm_dec *pmt, const mm_dec *fv,  int begin, mm_dec *out);
-int fin_tvm_pmt(const mm_dec *n, const mm_dec *ipct, const mm_dec *pv,  const mm_dec *fv,  int begin, mm_dec *out);
-int fin_tvm_n  (const mm_dec *ipct, const mm_dec *pv, const mm_dec *pmt, const mm_dec *fv, int begin, mm_dec *out);
-int fin_tvm_i  (const mm_dec *n, const mm_dec *pv, const mm_dec *pmt, const mm_dec *fv,   int begin, mm_dec *out);
+/* pmt is the first payment; payment t is pmt (1+gpct/100)^(t-1) */
+int fin_tvm_fv (const mm_dec *n, const mm_dec *ipct, const mm_dec *pv,  const mm_dec *pmt, const mm_dec *gpct, int begin, mm_dec *out);
+int fin_tvm_pv (const mm_dec *n, const mm_dec *ipct, const mm_dec *pmt, const mm_dec *fv,  const mm_dec *gpct, int begin, mm_dec *out);
+int fin_tvm_pmt(const mm_dec *n, const mm_dec *ipct, const mm_dec *pv,  const mm_dec *fv,  const mm_dec *gpct, int begin, mm_dec *out);
+int fin_tvm_n  (const mm_dec *ipct, const mm_dec *pv, const mm_dec *pmt, const mm_dec *fv, const mm_dec *gpct, int begin, mm_dec *out);
+int fin_tvm_i  (const mm_dec *n, const mm_dec *pv, const mm_dec *pmt, const mm_dec *fv,   const mm_dec *gpct, int begin, mm_dec *out);
+int fin_tvm_g  (const mm_dec *n, const mm_dec *ipct, const mm_dec *pv, const mm_dec *pmt, const mm_dec *fv, int begin, mm_dec *out);
 
 /* ---- cash flows: amounts in time order, each repeated count times ---- */
 typedef struct { mm_dec amt; long count; } CashFlow;

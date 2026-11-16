@@ -1,5 +1,23 @@
 # MM-41 changes
 
+## MM-41 1.5
+
+- **Growing annuities.** A sixth TVM register, `g%`, the growth of the
+  payment from one period to the next: payment t is pmt·(1+g%/100)^(t−1),
+  pmt being the first. `?pv ?pmt ?fv ?n ?i%` honour it, `?g%` solves for
+  it, `tvm` shows it, `clrtvm` resets it to 0 (the HP-12C level annuity).
+  The annuity factor becomes ((1+r)^n − (1+g)^n)/(r − g), with the limits
+  n(1+r)^(n−1) at r = g and n at r = g = 0. `?n` with growth has no closed
+  form and is found by bracketing over 0..10000 periods and bisecting, like
+  `?i%`. `amort`/`amortm` grow the payment column, so a graduated-payment
+  schedule is `g%` and `amort`.
+- The amortisation schedule's final balance no longer shows a 1E-31 residue
+  of 34-digit arithmetic as `-1.0000e-31`; residues below 1E-20 of pv print
+  as 0.
+- Manual: Time value of money rewritten around the general equation, with
+  indexed-pension, savings, break-even-growth and graduated-mortgage
+  examples; `help finance`, README, MANUAL.md and the man page updated.
+
 ## MM-41 1.4.1
 
 - Bare-name line forms. A line that is only `use`, `unuse`, `load`, `run`,

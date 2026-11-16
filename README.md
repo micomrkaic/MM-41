@@ -28,9 +28,9 @@ MM-41>> 2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
 [5] 𝔻 : -1798.65
 MM-41>> modules
 module       version  words  summary
-core         1.4.1       85  arithmetic, functions, logic, the stack, words and the session
+core         1.5         85  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
-finance      1.0         33  time value of money, cash flows, depreciation, bonds, day counts
+finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
 special      1.1         24  gamma, beta, the normal distribution, error, Bessel, Airy, elliptic, zeta and more
 stat         1.0         27  descriptive statistics, curve fitting, regression, t/chi-square/F/binomial/Poisson distributions
@@ -93,7 +93,8 @@ loads. `"name" usage` tells you which module a command comes from.
   arithmetic, percentages, comparisons and registers understand them; anything
   that would lose digits (`>bin`) is explicit.
 - **Finance**, MM-B1 as a module, all in decimals: TVM registers `n i% pv pmt
-  fv` with `?n ?i% ?pv ?pmt ?fv`, `beg`/`end`, `amort`/`amortm`; `npv`/`irr`
+  fv g%` (growth of the payment per period) with `?n ?i% ?pv ?pmt ?fv ?g%`,
+  `beg`/`end`, `amort`/`amortm`; `npv`/`irr`
   over cash-flow vectors; `nom>eff`, `eff>nom`; `sl`, `soyd`, `db`; `bprice`,
   `byield`; dated `xnpv`, `xirr`, `xprice`, `xyield`, `xaccr`, `yearfrac` with
   Excel's five day-count bases.

@@ -524,6 +524,9 @@ static const Topic topics[] = {
     "Time value of money: store with n i% pv pmt fv, solve with ?n ?i% ?pv ?pmt ?fv, beg/end\n"
     "for the payment timing, tvm shows the registers, clrtvm clears them:\n"
     "    clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt      -> -1798.65\n"
+    "g% makes the payment grow: payment t is pmt (1+g%/100)^(t-1), pmt being the first one;\n"
+    "?g% solves for the growth. 0 (the default) is the level annuity of the HP-12C:\n"
+    "    clrtvm 25 n 4 i% 2 g% -30000 pmt 0 fv ?pv    -> 576871.69  (30000 a year, indexed 2%)\n"
     "Cash flows are vectors in time order, first at t = 0:  [5 1 $ -5000 1500 1500 1500 1500] irr\n"
     "Dates are \"d.m.yyyy\" strings or YYYYMMDD numbers. Manual: chapter Finance.\n" },
   { "workdays",

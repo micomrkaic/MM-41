@@ -85,34 +85,41 @@ static int op_set_i(Stack *s)   { return store_reg(s, "i%", &T_i); }
 static int op_set_pv(Stack *s)  { return store_reg(s, "pv", &T_pv); }
 static int op_set_pmt(Stack *s) { return store_reg(s, "pmt", &T_pmt); }
 static int op_set_fv(Stack *s)  { return store_reg(s, "fv", &T_fv); }
+static int op_set_g(Stack *s)   { return store_reg(s, "g%", &T_g); }
 static int op_beg(Stack *s)     { (void)s; T_begin = 1; return 0; }
 static int op_end(Stack *s)     { (void)s; T_begin = 0; return 0; }
 static int op_clrtvm(Stack *s)  { (void)s; fin_tvm_reset(); return 0; }
 
 static int op_solve_n(Stack *s) {
   mm_dec r;
-  if (fin_tvm_n(&T_i, &T_pv, &T_pmt, &T_fv, T_begin, &r) != 0) return -1;
+  if (fin_tvm_n(&T_i, &T_pv, &T_pmt, &T_fv, &T_g, T_begin, &r) != 0) return -1;
   T_n = r; push_dec_result(s, &r); return 0;
 }
 static int op_solve_i(Stack *s) {
   mm_dec r;
-  if (fin_tvm_i(&T_n, &T_pv, &T_pmt, &T_fv, T_begin, &r) != 0) return -1;
+  if (fin_tvm_i(&T_n, &T_pv, &T_pmt, &T_fv, &T_g, T_begin, &r) != 0) return -1;
   T_i = r; push_dec_result(s, &r); return 0;
 }
 static int op_solve_pv(Stack *s) {
   mm_dec r;
-  if (fin_tvm_pv(&T_n, &T_i, &T_pmt, &T_fv, T_begin, &r) != 0) return -1;
+  if (fin_tvm_pv(&T_n, &T_i, &T_pmt, &T_fv, &T_g, T_begin, &r) != 0) return -1;
   T_pv = r; push_dec_result(s, &r); return 0;
 }
 static int op_solve_pmt(Stack *s) {
   mm_dec r;
-  if (fin_tvm_pmt(&T_n, &T_i, &T_pv, &T_fv, T_begin, &r) != 0) return -1;
+  if (fin_tvm_pmt(&T_n, &T_i, &T_pv, &T_fv, &T_g, T_begin, &r) != 0) return -1;
   T_pmt = r; push_dec_result(s, &r); return 0;
 }
 static int op_solve_fv(Stack *s) {
   mm_dec r;
-  if (fin_tvm_fv(&T_n, &T_i, &T_pv, &T_pmt, T_begin, &r) != 0) return -1;
+  if (fin_tvm_fv(&T_n, &T_i, &T_pv, &T_pmt, &T_g, T_begin, &r) != 0) return -1;
   T_fv = r; push_dec_result(s, &r); return 0;
+}
+
+static int op_solve_g(Stack *s) {
+  mm_dec r;
+  if (fin_tvm_g(&T_n, &T_i, &T_pv, &T_pmt, &T_fv, T_begin, &r) != 0) return -1;
+  T_g = r; push_dec_result(s, &r); return 0;
 }
 
 static int op_tvm(Stack *s) {
@@ -123,6 +130,7 @@ static int op_tvm(Stack *s) {
   fixed_str(&T_pv, b, sizeof b);  printf("  pv   = %s\n", b);
   fixed_str(&T_pmt, b, sizeof b); printf("  pmt  = %s\n", b);
   fixed_str(&T_fv, b, sizeof b);  printf("  fv   = %s\n", b);
+  fixed_str(&T_g, b, sizeof b);   printf("  g%%   = %s per period (growth of pmt)\n", b);
   printf("  mode = %s\n", T_begin ? "beg (payments at the start of the period)" : "end (payments at the end of the period)");
   return 0;
 }
@@ -395,16 +403,18 @@ static const Op table[] = {
   { "pv",      1, op_set_pv,    "Finance", "x --", "store the present value (cash received +, paid -)", "10000 pv" },
   { "pmt",     1, op_set_pmt,   "Finance", "x --", "store the periodic payment", "-888.49 pmt" },
   { "fv",      1, op_set_fv,    "Finance", "x --", "store the future value", "0 fv" },
+  { "g%",      1, op_set_g,     "Finance", "x --", "store the growth of the payment, percent per period: payment t is pmt (1+g%/100)^(t-1); 0 for a level annuity", "3 g%" },
   { "beg",     0, op_beg,       "Finance", "--", "payments fall at the beginning of each period (annuity due)", "beg" },
   { "end",     0, op_end,       "Finance", "--", "payments fall at the end of each period (the default)", "end" },
-  { "clrtvm",  0, op_clrtvm,    "Finance", "--", "clear the five TVM registers and select `end`", "clrtvm" },
+  { "clrtvm",  0, op_clrtvm,    "Finance", "--", "clear the TVM registers (n i% pv pmt fv g%) and select `end`", "clrtvm" },
   { "tvm",     0, op_tvm,       "Finance", "--", "show the TVM registers", "tvm" },
   { "?n",      0, op_solve_n,   "Finance", "-- n", "solve for the number of periods; the result is stored and pushed (a decimal)", "clrtvm 1 i% 10000 pv -888.49 pmt 0 fv ?n" },
   { "?i%",     0, op_solve_i,   "Finance", "-- i", "solve for the rate per period in percent (bracketing scan, then bisection)", "clrtvm 12 n 10000 pv -888.49 pmt 0 fv ?i%" },
   { "?pv",     0, op_solve_pv,  "Finance", "-- pv", "solve for the present value", "clrtvm 12 n 1 i% -888.49 pmt 0 fv ?pv" },
-  { "?pmt",    0, op_solve_pmt, "Finance", "-- pmt", "solve for the periodic payment", "clrtvm 12 n 1 i% 10000 pv 0 fv ?pmt" },
+  { "?pmt",    0, op_solve_pmt, "Finance", "-- pmt", "solve for the payment (the first one, when g% is set)", "clrtvm 12 n 1 i% 10000 pv 0 fv ?pmt" },
   { "?fv",     0, op_solve_fv,  "Finance", "-- fv", "solve for the future value", "clrtvm 12 n 1 i% 0 pv -100 pmt ?fv" },
-  { "amort",   0, op_amort,     "Finance", "--", "print the amortisation schedule of the TVM registers (n periods of pmt on pv at i%)", "clrtvm 12 n 1 i% 10000 pv 0 fv ?pmt drop amort" },
+  { "?g%",     0, op_solve_g,   "Finance", "-- g", "solve for the growth of the payment, percent per period, that makes the registers balance", "clrtvm 10 n 5 i% -1000 pv 100 pmt 0 fv ?g%" },
+  { "amort",   0, op_amort,     "Finance", "--", "print the amortisation schedule of the TVM registers (n periods of pmt on pv at i%, the payment growing at g%)", "clrtvm 12 n 1 i% 10000 pv 0 fv ?pmt drop amort" },
   { "amortm",  0, op_amortm,    "Finance", "-- M", "the amortisation schedule as an n×4 real matrix: payment, interest, principal, balance", "clrtvm 12 n 1 i% 10000 pv 0 fv ?pmt drop amortm" },
   { "npv",     2, op_npv,       "Finance", "cf rate -- x", "net present value of cash flows at rate percent per period: a column vector in time order, first at t=0, or a matrix with two columns, amount and repeat count ([1 2 $ 1000 100] is 100 payments of 1000)", "[6 1 $ -1000 300 300 300 300 300] 10 npv" },
   { "irr",     1, op_irr,       "Finance", "cf -- x", "internal rate of return in percent per period of cash flows (a column vector, or amount/count rows)", "[2 2 $ -1000 1 300 5] irr" },
@@ -426,6 +436,6 @@ static const Op table[] = {
 };
 
 const Module mm41_mod_finance = {
-  "finance", "1.0", "time value of money, cash flows, depreciation, bonds, day counts",
+  "finance", "1.1", "time value of money (level or growing payments), cash flows, depreciation, bonds, day counts",
   table, (int)(sizeof table / sizeof table[0]), init, NULL, 0
 };

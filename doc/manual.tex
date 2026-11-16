@@ -56,7 +56,7 @@
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 
-\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 1.4.1}
+\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 1.5}
 \author{Mico Mrkaic}
 \date{November 2026}
 
@@ -901,19 +901,22 @@ The \code{finance} module is MM-B1, the decimal business calculator, rebuilt as 
 \subsection{Time value of money}
 \label{sec:tvm}
 
-Like the HP-12C, the module keeps five registers---$n$ (periods), $i\%$ (rate per period), $pv$, $pmt$ and $fv$---tied together by
+Like the HP-12C, the module keeps the registers $n$ (periods), $i\%$ (rate per period), $pv$, $pmt$ and $fv$---and one the 12C lacks, $g\%$, the growth of the payment from one period to the next. They are tied together by
 \[
-  pv\,(1+r)^n + pmt\,(1 + r\,\tau)\,\frac{(1+r)^n - 1}{r} + fv = 0, \qquad r = \frac{i\%}{100},
+  pv\,(1+r)^n + pmt\,(1 + r\,\tau)\,A_n + fv = 0, \qquad r = \frac{i\%}{100},\; g = \frac{g\%}{100},
 \]
-where $\tau$ is 0 when payments fall at the end of each period (\cmd{end}, the default) and 1 when they fall at the beginning (\cmd{beg}). Store a value with the register's name, solve for the unknown with a question mark:
+\[
+  A_n = \sum_{t=1}^{n} (1+g)^{t-1}(1+r)^{n-t} = \frac{(1+r)^n - (1+g)^n}{r - g},
+\]
+where $\tau$ is 0 when payments fall at the end of each period (\cmd{end}, the default) and 1 when they fall at the beginning (\cmd{beg}), and $pmt$ is the first payment: payment $t$ is $pmt\,(1+g)^{t-1}$. With $g = 0$ (the default, and what \cmd{clrtvm} restores) $A_n$ is the ordinary annuity factor $((1+r)^n-1)/r$ and the equation is the 12C's; with $r = g$ it is $n(1+r)^{n-1}$. Store a value with the register's name, solve for the unknown with a question mark:
 
 \begin{center}
 \begin{tabular}{@{}llp{0.55\textwidth}@{}}
 \toprule
-\cmd{n} \cmd{i\%} \cmd{pv} \cmd{pmt} \cmd{fv} & \stk{x --} & store into the register \\
-\cmd{?n} \cmd{?i\%} \cmd{?pv} \cmd{?pmt} \cmd{?fv} & \stk{-- x} & solve for that register from the other four; the result is stored and pushed \\
+\cmd{n} \cmd{i\%} \cmd{pv} \cmd{pmt} \cmd{fv} \cmd{g\%} & \stk{x --} & store into the register \\
+\cmd{?n} \cmd{?i\%} \cmd{?pv} \cmd{?pmt} \cmd{?fv} \cmd{?g\%} & \stk{-- x} & solve for that register from the others; the result is stored and pushed \\
 \cmd{beg}, \cmd{end} & \stk{--} & payments at the beginning or the end of the period \\
-\cmd{clrtvm} & \stk{--} & clear the registers and select \cmd{end} \\
+\cmd{clrtvm} & \stk{--} & clear the registers (\code{g\%} to 0) and select \cmd{end} \\
 \cmd{tvm} & \stk{--} & show the registers \\
 \bottomrule
 \end{tabular}
@@ -926,11 +929,19 @@ clrtvm 120 n 0.4 i% 0 pv -200 pmt ?fv        \ 30726.39   200 a month for 10 yea
 clrtvm 6 12 / i% 250000 pv -1500 pmt 0 fv ?n \ 359.25     months to repay
 clrtvm 48 n 20000 pv -450 pmt 0 fv ?i% 12 *  \ 3.82       annual rate of a car loan
 \end{rpn}
-\cmd{?n}, \cmd{?pv}, \cmd{?pmt} and \cmd{?fv} are closed forms; \cmd{?i\%} brackets the rate on a grid from $-99\,\%$ to $1000\,\%$ per period and bisects in decimal to 34 digits, so it is exact to the last displayed digit and reports an error if no rate satisfies the equation. The registers are not saved between sessions.
+Growing payments cover the cases a level annuity cannot: a pension indexed to inflation, a graduated-payment mortgage, a dividend stream growing at $g$, a salary rising 3\,\% a year paid into a fund. The rates are per period, so for monthly payments growing once a year convert $g$ the way you convert $i$.
+\begin{rpn}
+clrtvm 25 n 4 i% 2 g% -30000 pmt 0 fv ?pv    \ 576871.69  what funds 25 years of 30000 indexed at 2%
+clrtvm 25 n 4 i% 0 g% -30000 pmt 0 fv ?pv    \ 468662.40  the same without indexation
+clrtvm 30 n 5 i% 3 g% -12000 pmt 0 pv ?fv    \ 1136807.94 30 years of saving, 12000 rising 3% a year
+clrtvm 10 n 6 i% -1000 pv 80 pmt 0 fv ?g%    \ 12.48      growth that makes 80 rising from 1000 at 6% break even
+clrtvm 360 n 0.5 i% 0.2 g% 300000 pv 0 fv ?pmt \ -1365.45  graduated mortgage: first payment, rising 0.2% a month
+\end{rpn}
+\cmd{?pv}, \cmd{?pmt} and \cmd{?fv} are closed forms, and so is \cmd{?n} when $g = 0$; \cmd{?i\%} and \cmd{?g\%} bracket the rate on a grid from $-99\,\%$ to $1000\,\%$ per period and bisect in decimal to 34 digits, so they are exact to the last displayed digit and report an error if no rate satisfies the equation; \cmd{?n} with growth does the same over 0 to 10\,000 periods. The registers are not saved between sessions.
 
 \subsection{Amortisation}
 
-\cmd{amort} prints the schedule of the loan in the registers, period by period: payment, interest, principal and remaining balance, with totals, all to the current display precision. \cmd{amortm} pushes the same schedule as an $n\times 4$ real matrix, for \cmd{csum}, \cmd{getrow} or saving to a file. Both use the magnitudes of \code{pv} and \code{pmt} and the \cmd{end} convention.
+\cmd{amort} prints the schedule of the loan in the registers, period by period: payment, interest, principal and remaining balance, with totals, all to the current display precision. \cmd{amortm} pushes the same schedule as an $n\times 4$ real matrix, for \cmd{csum}, \cmd{getrow} or saving to a file. Both use the magnitudes of \code{pv} and \code{pmt} and the \cmd{end} convention; when \code{g\%} is set the payment column grows accordingly, so the schedule of a graduated-payment loan is \code{g\%} and \cmd{amort}.
 \begin{rpn}
 clrtvm 3 n 1 i% 1000 pv 0 fv ?pmt drop amort
   per        payment       interest      principal        balance
@@ -1091,9 +1102,9 @@ The HP-41 took plug-in ROMs; MM-41 takes modules. A module is a named set of com
 \begin{rpn}
 MM-41>> modules
 module       version  words  summary
-core         1.4.1       85  arithmetic, functions, logic, the stack, words and the session
+core         1.5         85  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
-finance      1.0         33  time value of money, cash flows, depreciation, bonds, day counts
+finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
 special      1.1         24  gamma, beta, the normal distribution, error, Bessel, Airy, elliptic, zeta and more
 stat         1.0         27  descriptive statistics, curve fitting, regression, t/chi-square/F/binomial/Poisson distributions
@@ -1303,7 +1314,7 @@ The following words are loaded from \code{modules/std.mm} in the configuration d
 \section{Coming from MM-15, MM-14, MM-11 or MM-B1}
 \label{app:changes}
 
-MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module; 1.3 added \code{help \emph{name}}; 1.4 added the \code{stat}, \code{random} and \code{ode} modules, the rest of the special functions and the \code{const} word module; 1.4.1 the bare-name line forms \code{use const}, \code{usehol us}. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
+MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module; 1.3 added \code{help \emph{name}}; 1.4 added the \code{stat}, \code{random} and \code{ode} modules, the rest of the special functions and the \code{const} word module; 1.4.1 the bare-name line forms \code{use const}, \code{usehol us}; 1.5 the \code{g\%} register for growing payments. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
 \begin{itemize}
   \item The binary is \code{mm41}, the configuration directory \code{\textasciitilde/.config/mm41/}. Copy \code{user\_words.txt}, \code{registers.txt} and \code{config.txt} across from \code{mm\_15} if you want them.
   \item \code{predefined\_macros.txt} is now the word module \code{modules/std.mm} and is installed there; the old file is not read. Your own additions belong in \code{user\_words.txt} or in a module of your own.
