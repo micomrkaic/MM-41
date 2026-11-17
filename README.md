@@ -53,7 +53,8 @@ for one command in full (what it takes, what it leaves, its example run),
 `help finance`, …), `help holiday` to search, `listfcns` and `modules`.
 `skin hp41`, `skin hp12c` or `skin hp48` draws the stack as that calculator's
 display would have (twelve-character LCD with annunciators, seven-segment,
-dot-matrix in block pixels); `skin plain` is MM-41's own listing.
+the 48's screen; `skin hp48px` the 48 as a dot matrix); `skin plain` is
+MM-41's own listing.
 Commands that take a name take it as a string (`"const" use`, `"us" usehol`);
 at the prompt a line of just the command and a bare name does the same thing
 (`use const`, `usehol us`, `load hello.so`), and TAB completes the name —

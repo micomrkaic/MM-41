@@ -13,9 +13,10 @@
  *          with the 41C's annunciators; numbers in the 41's FIX/SCI
  *          format (ten-digit mantissa, comma separators, the exponent
  *          after a space or a minus, as in 1.234568-03)
- *   hp12c  a seven-segment display in block elements, four rows per
+ *   hp12c  a seven-segment display in block elements, two rows per
  *          level, the same ten-digit arithmetic and the BEGIN annunciator
- *   hp48   a dot-matrix screen: a 5 x 7 font rendered in quadrant blocks,
+ *   hp48   the 48's screen at text size, and hp48px the same as a dot
+ *          matrix: a 5 x 7 font rendered in quadrant blocks,
  *          the { HOME } line, levels numbered from the top as the 48 did,
  *          values right-justified, 22 characters a line
  *
@@ -42,7 +43,7 @@
 int skin = SKIN_PLAIN;
 int ann_begin = 0;
 
-static const char *const names[SKIN_COUNT] = { "plain", "hp41", "hp12c", "hp48" };
+static const char *const names[SKIN_COUNT] = { "plain", "hp41", "hp12c", "hp48", "hp48px" };
 
 const char *skin_name(int s) { return s >= 0 && s < SKIN_COUNT ? names[s] : "plain"; }
 
@@ -189,37 +190,36 @@ static unsigned char seg7(char c) {
 }
 
 /* Draw `text` as 11 positions (sign and ten digits) of seven-segment
-   glyphs, four rows high, four columns wide, in block elements: the
-   verticals are half blocks, the horizontals half-height bars. Punctuation
+   glyphs in block elements, three cells wide and two high -- at the 1:2
+   shape of a terminal cell that is the proportion of a real digit. The
+   top bar is the upper half of the middle cell, the middle bar its lower
+   half (both lit: the whole cell), the bottom bar the lower half of the
+   cell below; the verticals are left and right half blocks. Punctuation
    sits in the gap after a digit. Block elements are drawn by the terminal
-   itself, so the strokes meet whatever the font. */
-#define SEG_ROWS 4
+   itself, so the strokes are solid whatever the font. */
+#define SEG_ROWS 2
 static void seg_rows(const char *text, char rows[SEG_ROWS][256]) {
-  char cells[SEG_ROWS][512] = { "", "", "", "" };
+  char cells[SEG_ROWS][512] = { "", "" };
   int positions = 0;
   for (const char *p = text; *p; p++) {
     if (*p == '.' || *p == ',') {                   /* the gap after the previous glyph, bottom row */
-      size_t l = strlen(cells[3]);
-      if (l) cells[3][l - 1] = *p;
+      size_t l = strlen(cells[1]);
+      if (l) cells[1][l - 1] = *p;
       continue;
     }
     unsigned char g = *p == ' ' ? 0 : seg7(*p);
-    const char *f = g & 0x20 ? "▌" : " ", *b = g & 0x02 ? "▐" : " ";
-    const char *e = g & 0x10 ? "▌" : " ", *c = g & 0x04 ? "▐" : " ";
-    const char *a = g & 0x01 ? "▀▀" : "  ", *gg = g & 0x40 ? "▄▄" : "  ", *d = g & 0x08 ? "▄▄" : "  ";
-    snprintf(cells[0] + strlen(cells[0]), 64, "%s%s%s ", f, a, b);
-    snprintf(cells[1] + strlen(cells[1]), 64, "%s%s%s ", f, gg, b);
-    snprintf(cells[2] + strlen(cells[2]), 64, "%s%s%s ", e, "  ", c);
-    snprintf(cells[3] + strlen(cells[3]), 64, "%s%s%s ", e, d, c);
+    int a = g & 0x01, b = g & 0x02, c = g & 0x04, d = g & 0x08, e = g & 0x10, f = g & 0x20, m = g & 0x40;
+    snprintf(cells[0] + strlen(cells[0]), 64, "%s%s%s ", f ? "▌" : " ", a && m ? "█" : a ? "▀" : m ? "▄" : " ", b ? "▐" : " ");
+    snprintf(cells[1] + strlen(cells[1]), 64, "%s%s%s ", e ? "▌" : " ", d ? "▄" : " ", c ? "▐" : " ");
     positions++;
   }
   /* right-justify in 11 positions: the 12C lights digits from the right */
   int pad = 11 - positions;
   if (pad < 0) pad = 0;
   for (int r = 0; r < SEG_ROWS; r++) {
-    memset(rows[r], ' ', (size_t)pad * 5);
-    rows[r][pad * 5] = '\0';
-    strncat(rows[r], cells[r], 255 - (size_t)pad * 5);
+    memset(rows[r], ' ', (size_t)pad * 4);
+    rows[r][pad * 4] = '\0';
+    strncat(rows[r], cells[r], 255 - (size_t)pad * 4);
   }
 }
 
@@ -231,16 +231,14 @@ static void level_text_12c(const stack_element *e, char *out, size_t cap) {
   }
 }
 
-#define LCD12 55
+#define LCD12 44
 
 static void frame12c(const char *text) {
   char rows[SEG_ROWS][256];
   seg_rows(text, rows);
   printf("      ┌─%.*s─┐\n", LCD12 * 3, bar);
-  printf("      │ %s │\n", rows[0]);
-  printf("%4s  │ %s │\n", "X", rows[1]);
-  printf("      │ %s │\n", rows[2]);
-  printf("      │ %s │\n", rows[3]);
+  printf("%4s  │ %s │\n", "X", rows[0]);
+  printf("      │ %s │\n", rows[1]);
   printf("      │ %-*s │\n", LCD12, ann_begin ? "BEGIN" : "");
   printf("      └─%.*s─┘\n", LCD12 * 3, bar);
 }
@@ -251,7 +249,7 @@ static void print_hp12c(const Stack *s) {
     level_label(s->top - i, label, sizeof label);
     level_text_12c(&s->items[i], text, sizeof text);
     seg_rows(text, rows);
-    printf("        %s\n%4s    %s\n        %s\n        %s\n", rows[0], label, rows[1], rows[2], rows[3]);
+    printf("%4s    %s\n        %s\n\n", label, rows[0], rows[1]);
   }
   level_text_12c(&s->items[s->top], text, sizeof text);
   frame12c(text);
@@ -454,11 +452,13 @@ static void level_text_48(const stack_element *e, char *out, size_t cap) {
   }
 }
 
-static void print_hp48(const Stack *s) {   /* NULL: an empty stack */
+/* The 48's screen, at text size (pixels = 0) or as a dot matrix (1). */
+static void print_hp48(const Stack *s, int pixels) {   /* s NULL: an empty stack */
   char line[64], text[256];
-  printf("   ┌%.*s┐\n", HP48_PX / 2 * 3, bar);
+  int inner = pixels ? HP48_PX / 2 : HP48_COLS + 2;
+  printf("   ┌%.*s┐\n", inner * 3, bar);
   snprintf(line, sizeof line, "%-*s", HP48_COLS, "RAD       { HOME }");
-  pixel_line(line);
+  if (pixels) pixel_line(line); else printf("   │ %s │\n", line);
   for (int i = 0; s && i <= s->top; i++) {
     int level = s->top - i + 1;                              /* the 48 counts 1 from the top */
     level_text_48(&s->items[i], text, sizeof text);
@@ -468,9 +468,9 @@ static void print_hp48(const Stack *s) {   /* NULL: an empty stack */
     if ((int)strlen(text) > room) text[room] = '\0';         /* clipped on the right, as the 48 did */
     if (room > HP48_COLS) room = HP48_COLS;
     snprintf(line, sizeof line, "%s%*.*s", label, room, room, text);
-    pixel_line(line);
+    if (pixels) pixel_line(line); else printf("   │ %s │\n", line);
   }
-  printf("   └%.*s┘\n", HP48_PX / 2 * 3, bar);
+  printf("   └%.*s┘\n", inner * 3, bar);
 }
 
 /* ------------------------------------------------------------------ */
@@ -481,14 +481,16 @@ void skin_print_stack(const Stack *s) {
     switch (skin) {
     case SKIN_HP41:  frame41(zero, NULL); return;
     case SKIN_HP12C: frame12c(zero); return;
-    case SKIN_HP48:  print_hp48(NULL); return;
+    case SKIN_HP48:  print_hp48(NULL, 0); return;
+    case SKIN_HP48PX: print_hp48(NULL, 1); return;
     }
     return;
   }
   switch (skin) {
   case SKIN_HP41:  print_hp41(s); break;
   case SKIN_HP12C: print_hp12c(s); break;
-  case SKIN_HP48:  print_hp48(s); break;
+  case SKIN_HP48:  print_hp48(s, 0); break;
+  case SKIN_HP48PX: print_hp48(s, 1); break;
   default: break;
   }
 }
@@ -496,9 +498,9 @@ void skin_print_stack(const Stack *s) {
 /* "name" skin */
 int op_skin(Stack *s) {
   stack_element *e = &s->items[s->top];
-  if (e->type != TYPE_STRING) return mm_error("skin: needs a name: \"plain\", \"hp41\", \"hp12c\" or \"hp48\"");
+  if (e->type != TYPE_STRING) return mm_error("skin: needs a name: \"plain\", \"hp41\", \"hp12c\", \"hp48\" or \"hp48px\"");
   int k = skin_from_name(e->string);
-  if (k < 0) return mm_error("skin: no skin '%s'; the skins are plain, hp41, hp12c and hp48", e->string);
+  if (k < 0) return mm_error("skin: no skin '%s'; the skins are plain, hp41, hp12c, hp48 and hp48px", e->string);
   stack_element t = pop(s); stack_element_free(&t);
   skin = k;
   return 0;

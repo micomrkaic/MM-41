@@ -24,7 +24,7 @@ before the previous line; `q` quits.
 
 `dup drop swap over nip tuck` · `n pick` (copy depth n) · `n roll` (move depth
 n to top; `1 roll` = swap, `2 roll` = rot) · `depth` · `clst` · `print ps pm` ·
-`setprec` · `sfs` (fixed ↔ scientific) · `skin plain|hp41|hp12c|hp48` (draw the stack as that calculator's display; saved in config) · `savestack loadstack`
+`setprec` · `sfs` (fixed ↔ scientific) · `skin plain|hp41|hp12c|hp48|hp48px` (draw the stack as that calculator's display; saved in config) · `savestack loadstack`
 
 ## Arithmetic and functions
 

@@ -6,9 +6,9 @@
   the stack listing the way that calculator's display would have: one
   twelve-character LCD line per level with the 41C's annunciators and its
   FIX/SCI number format (ten-digit mantissa, `6.02 23`, `1.00-05`); a
-  seven-segment display in block elements with BEGIN; a dot-matrix screen
-  in quadrant-block pixels with the 48's `{ HOME }` line, level numbering
-  and STD/FIX formats. Every level is drawn, the top framed. `skin plain`
+  seven-segment display in block elements with BEGIN; the 48's screen
+  with its `{ HOME }` line, level numbering and STD/FIX formats, at text
+  size (`hp48`) or as a dot matrix in quadrant-block pixels (`hp48px`). Every level is drawn, the top framed. `skin plain`
   restores the listing. Only the listing changes; pm, help, tables and
   errors are untouched. Saved in config.txt; TAB completes the names.
 - `src/skins.c` is new; `print_stack` defers to it when a skin is on.

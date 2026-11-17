@@ -369,7 +369,7 @@ static const Op core_table[] = {
   { "ps", 0, op_ps, "Display", "--", "print the whole stack", "ps" },
   { "setprec", 1, op_setprec, "Display", "n --", "digits after the decimal point (fixed) or significant digits (scientific), 0-20", "10 setprec" },
   { "sfs", 0, op_sfs, "Display", "--", "toggle between fixed-point and scientific display", "sfs" },
-  { "skin", 1, op_skin, "Display", "\"name\" --", "draw the stack like a classic calculator: plain (MM-41's own listing), hp41 (twelve-character LCD with annunciators), hp12c (seven-segment display), hp48 (dot-matrix screen); only the stack listing changes; remembered in config.txt (at the prompt: skin hp41)", "\"plain\" skin" },
+  { "skin", 1, op_skin, "Display", "\"name\" --", "draw the stack like a classic calculator: plain (MM-41's own listing), hp41 (twelve-character LCD with annunciators), hp12c (seven-segment display), hp48 (the 48's screen), hp48px (the same as a dot matrix); only the stack listing changes; remembered in config.txt (at the prompt: skin hp41)", "\"plain\" skin" },
   /* ---- Words ---- */
   { "listwords", 0, op_listwords, "Words", "--", "list the user-defined words", "listwords" },
   { "listmacros", 0, op_listmacros, "Words", "--", "list the words of the loaded word modules", "listmacros" },

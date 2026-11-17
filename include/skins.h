@@ -18,12 +18,12 @@
 
 #include "stack.h"
 
-enum { SKIN_PLAIN, SKIN_HP41, SKIN_HP12C, SKIN_HP48, SKIN_COUNT };
+enum { SKIN_PLAIN, SKIN_HP41, SKIN_HP12C, SKIN_HP48, SKIN_HP48PX, SKIN_COUNT };
 
 extern int skin;                               /* saved in config.txt as skin = name */
 extern int ann_begin;                          /* finance: payments at the beginning (the 12C's BEGIN) */
 
-const char *skin_name(int s);                  /* "plain" "hp41" "hp12c" "hp48" */
+const char *skin_name(int s);                  /* "plain" "hp41" "hp12c" "hp48" "hp48px" */
 int         skin_from_name(const char *name);  /* -1 if unknown */
 void        skin_print_stack(const Stack *s);  /* the stack in the current skin (not plain) */
 
