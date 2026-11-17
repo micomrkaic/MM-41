@@ -23,7 +23,7 @@
 #include <gsl/gsl_rng.h>
 #include "stack.h"
 
-#define MM41_VERSION "2.0"
+#define MM41_VERSION "2.1"
 #define MAX_PATH 2048
 
 #define HISTORY_FILE ".rpn_history"
@@ -59,6 +59,10 @@ extern double num_last_err;       /* error estimate of the last integrate */
 extern bool completed_batch;
 extern bool test_flag;
 extern bool skip_stack_printing;
+extern bool stop_on_error;        /* -x: the first error ends the run */
+extern bool quiet_mode;           /* -q: no final stack */
+extern bool print_top_mode;       /* -p: print the top plainly at the end */
+extern int  exit_status;          /* set by `n exit`; -1 if not */
 extern int print_precision;
 extern char path_to_data_and_programs[MAX_PATH];
 

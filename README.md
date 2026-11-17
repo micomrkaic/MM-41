@@ -28,7 +28,7 @@ MM-41>> 2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
 [5] 𝔻 : -1798.65
 MM-41>> modules
 module       version  words  summary
-core         2.0         86  arithmetic, functions, logic, the stack, words and the session
+core         2.1         89  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -60,6 +60,10 @@ chapter, `manual npv` at the first mention (`n` next, `q` back).
 display would have (twelve-character LCD with annunciators, seven-segment,
 the 48's screen; `skin hp48px` the 48 as a dot matrix); `skin plain` is
 MM-41's own listing.
+From the shell: `mm41 -e "2 10 ^"`, `mm41 -p -e "[1 2; 3 4] det"` (the top,
+plainly), `echo "2 3 + ." | mm41 -q -`, or a script with `#!/usr/bin/env mm41`
+on its first line that takes arguments (`./loan 300000 6 30`) and prints with
+`.`; `-x` stops at the first error, the exit status is 0/1/2.
 Commands that take a name take it as a string (`"const" use`, `"us" usehol`);
 at the prompt a line of just the command and a bare name does the same thing
 (`use const`, `usehol us`, `load hello.so`), and TAB completes the name —

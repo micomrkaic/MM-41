@@ -154,6 +154,7 @@ test-asan: asan
 test: asan examples/modules/hello/hello.so
 	@bash tests/run_tests.sh
 	@ASAN_OPTIONS=detect_leaks=0 sh tests/run_golden.sh bin/asan/mm41
+	@ASAN_OPTIONS=detect_leaks=0 sh tests/run_scripts.sh bin/asan/mm41
 
 golden: all examples/modules/hello/hello.so
 	@sh tests/run_golden.sh $(TARGET)

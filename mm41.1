@@ -1,16 +1,21 @@
-.TH MM41 1 "November 2026" "MM-41 2.0" "User Commands"
+.TH MM41 1 "November 2026" "MM-41 2.1" "User Commands"
 .SH NAME
 mm41 \- programmable RPN calculator for real, complex and decimal scalars, strings and matrices
 .SH SYNOPSIS
 .B mm41
 .RB [ \-n ]
+.RB [ \-q ]
+.RB [ \-p ]
+.RB [ \-x ]
 .RB [ \-e
 .IR EXPR ]...
 .RB [ \-f
 .IR FILE ]...
+.RI [ SCRIPT
+.RI [ ARG ]...]
 .br
 .B mm41
-.BR \-\-modules " | " \-\-commands " | " \-\-commands\-tex " | " \-\-version " | " \-h
+.BR \-\-modules " | " \-\-commands " | " \-\-commands-tex " | " \-\-version " | " \-h
 .SH DESCRIPTION
 .B mm41
 is a modular stack-based reverse Polish notation calculator in the spirit
@@ -31,6 +36,25 @@ printed after every line. Otherwise it runs in batch mode: the given
 expressions and files, or standard input, are evaluated, the final stack is
 printed, and the exit status is 1 if any error occurred.
 .SH OPTIONS
+.TP
+.BI SCRIPT " [ARG]..."
+run the lines of SCRIPT (a first line #!/usr/bin/env mm41 makes it a
+program); the arguments are pushed first, numbers as numbers, the rest as
+strings; quiet unless -p: a script prints what it wants with
+.BR . .
+.TP
+.B \-
+read the script from standard input.
+.TP
+.B \-q
+quiet: do not print the final stack.
+.TP
+.B \-p
+print the top of the stack plainly at the end (a number as a number, a
+matrix as rows of numbers); implies -q.
+.TP
+.B \-x
+stop at the first error.
 .TP
 .BI \-e " EXPR"
 Evaluate

@@ -234,7 +234,9 @@ static bool handle_line(Stack *stack, Stack *old_stack, char *line) {
     long errs = error_count;
     evaluate_line(stack, bare ? rewritten : line);
     if (bare && error_count != errs) copy_stack(stack, old_stack);   /* a failed `use x` leaves no "x" behind */
+    if (stop_on_error && error_count != errs) return false;          /* -x: the first error ends the run */
   }
+  if (exit_status >= 0) return false;                                /* n exit */
   return true;
 }
 
@@ -276,6 +278,7 @@ static int run_lines_from(Stack *stack, Stack *old_stack, FILE *f) {
   bool go_on = true;
   while (go_on && (n = getline(&line, &cap, f)) != -1) {
     while (n > 0 && (line[n - 1] == '\n' || line[n - 1] == '\r')) line[--n] = '\0';
+    { const char *q = line; while (*q == ' ' || *q == '\t') q++; if (*q == '#') continue; }   /* a comment, or #! */
     go_on = handle_line(stack, old_stack, line);
     skip_stack_printing = false;
     completed_batch = false;
@@ -286,16 +289,25 @@ static int run_lines_from(Stack *stack, Stack *old_stack, FILE *f) {
 
 static void usage_text(FILE *f) {
   fprintf(f,
-    "usage: mm41 [-n] [-e EXPR]... [-f FILE]...\n"
+    "usage: mm41 [-n] [-q] [-p] [-x] [-e EXPR]... [-f FILE]... [SCRIPT [ARG]...]\n"
     "       mm41 --modules | --commands | --commands-tex | --version | -h\n"
     "\n"
     "  (no args)   interactive calculator (reads stdin when it is not a terminal)\n"
     "  -e EXPR     evaluate EXPR as one line; may be repeated\n"
     "  -f FILE     run the lines of FILE ('-' is stdin); may be repeated\n"
-    "  -n          do not load the saved macros and config\n"
+    "  SCRIPT      run the lines of SCRIPT (so #!/usr/bin/env mm41 works); the ARGs\n"
+    "              after it are pushed first, numbers as numbers, the rest as strings;\n"
+    "              quiet unless -p: a script prints what it wants with .\n"
+    "  -           read the script from stdin\n"
+    "  -q          quiet: do not print the final stack\n"
+    "  -p          print the top of the stack plainly at the end (a number, rows of a matrix)\n"
+    "  -x          stop at the first error\n"
+    "  -n          do not load the saved words and config\n"
+    "  --          end of options; what follows is a script name and its arguments\n"
     "\n"
-    "Non-interactive runs print the final stack and exit with status 1 if\n"
-    "any error occurred.\n");
+    "In a script, # at the start of a line is a comment; `x .` prints a value plainly,\n"
+    "`n exit` ends it with that status. Exit status: 0, or 1 if any error occurred,\n"
+    "2 for a usage error or a file that cannot be opened.\n");
 }
 
 int main(int argc, char **argv) {
@@ -303,14 +315,20 @@ int main(int argc, char **argv) {
   struct { char kind; const char *arg; } jobs[MAXJOBS];
   int njobs = 0;
 
+  const char *script = NULL; int first_arg = argc;
   for (int i = 1; i < argc; i++) {
     const char *a = argv[i];
+    if (!strcmp(a, "--")) { if (i + 1 < argc) { script = argv[i + 1]; first_arg = i + 2; } break; }
+    if (a[0] != '-' || !strcmp(a, "-")) { script = a; first_arg = i + 1; break; }   /* a script and its arguments */
     if (!strcmp(a, "-h") || !strcmp(a, "--help")) { usage_text(stdout); return 0; }
     if (!strcmp(a, "--commands")) { load_modules(); print_ops_markdown(); return 0; }
     if (!strcmp(a, "--commands-tex")) { load_modules(); print_ops_latex(); return 0; }
     if (!strcmp(a, "--modules")) { load_modules(); list_modules(); return 0; }
     if (!strcmp(a, "--version")) { printf("MM-41 %s (%s)\n", MM41_VERSION, VERSION); return 0; }
     if (!strcmp(a, "-n")) { autoload = false; continue; }
+    if (!strcmp(a, "-q")) { quiet_mode = true; continue; }
+    if (!strcmp(a, "-p")) { print_top_mode = true; quiet_mode = true; continue; }
+    if (!strcmp(a, "-x")) { stop_on_error = true; continue; }
     if ((!strcmp(a, "-e") || !strcmp(a, "-f")) && i + 1 < argc && njobs < MAXJOBS) {
       jobs[njobs].kind = a[1];
       jobs[njobs].arg = argv[++i];
@@ -324,6 +342,7 @@ int main(int argc, char **argv) {
   global_rng = gsl_rng_alloc(gsl_rng_mt19937); // Init random number generation
   gsl_set_error_handler(&my_error_handler);
 
+  if (script && njobs < MAXJOBS) { jobs[njobs].kind = 'f'; jobs[njobs].arg = script; njobs++; if (!print_top_mode) quiet_mode = true; }   /* a script prints what it wants with . */
   batch_mode = (njobs > 0) || !isatty(STDIN_FILENO);
   /* Line-buffer stdout in batch mode so output and error messages interleave
      in order and nothing is lost if a sanitizer aborts the process at exit. */
@@ -337,6 +356,11 @@ int main(int argc, char **argv) {
   Stack stack, old_stack;
   startup(&stack, &old_stack);
   bool go_on = true;
+  for (int i = first_arg; i < argc; i++) {                 /* the script's arguments, pushed in order */
+    char *end; double v = strtod(argv[i], &end);
+    if (*argv[i] && *end == '\0') push_real(&stack, v); else push_string(&stack, argv[i]);
+  }
+  int open_failed = 0;
   if (njobs == 0) {
     go_on = run_lines_from(&stack, &old_stack, stdin);
   } else {
@@ -347,14 +371,17 @@ int main(int argc, char **argv) {
         free(copy);
       } else {
         FILE *f = strcmp(jobs[j].arg, "-") ? fopen(jobs[j].arg, "r") : stdin;
-        if (!f) { mm_perror(jobs[j].arg); continue; }
+        if (!f) { mm_perror(jobs[j].arg); open_failed = 1; if (stop_on_error) break; continue; }
         go_on = run_lines_from(&stack, &old_stack, f);
         if (f != stdin) fclose(f);
       }
     }
   }
-  print_stack_display(&stack);
+  if (print_top_mode) print_top_plain(&stack);
+  else if (!quiet_mode) print_stack_display(&stack);
   shutdown(&stack, &old_stack);
   gsl_rng_free(global_rng);
+  if (exit_status >= 0) return exit_status;
+  if (open_failed) return 2;
   return error_count ? 1 : 0;
 }

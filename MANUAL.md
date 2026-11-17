@@ -159,6 +159,14 @@ against the first) · `a b xt fplot` (a word over [a,b]) · `hold nohold` · `sh
 `"s" ptitle pxlabel pylabel plegend` · `pxlog pylog plin` · `pgrid` · `a b pxrange pyrange` · `pauto` ·
 `w h psize` · `"f.svg" psvg` (vector export) · `"f.txt" ptxt`.
 
+## Scripts
+
+`mm41 script.mm41 args...` runs the file (`#!/usr/bin/env mm41` works), pushes the
+arguments first, prints nothing but what the script prints with `x .`; `mm41 -p -e "..."`
+prints the top plainly; `-q` no final stack; `-x` stop at the first error; `-` reads the
+script from stdin; `n exit` sets the status; `"NAME" env`. Exit status 0 / 1 (an error) / 2
+(usage, file not found).
+
 ## Numerical methods
 
 `a b @f integrate` · `a b @f romberg` · `a b @f fzero` · `g @f solve` ·

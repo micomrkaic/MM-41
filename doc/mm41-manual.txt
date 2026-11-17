@@ -1,4 +1,4 @@
-MM-41 USER MANUAL, version 2.0
+MM-41 USER MANUAL, version 2.1
 
 Type  manual <chapter or word>  at the prompt to open this file there; in the pager, n finds the next match, q returns.
 
@@ -1784,7 +1784,7 @@ user would call a feature is a module alongside it. modules shows what is plugge
 
     MM-41>> modules
     module       version  words  summary
-    core         2.0         86  arithmetic, functions, logic, the stack, words and the session
+    core         2.1         89  arithmetic, functions, logic, the stack, words and the session
     decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
     finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
     complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -1918,24 +1918,46 @@ When MM-41 is given expressions or files on the command line, or when its standa
 is not a terminal, it runs in batch mode: no banner, no per-line echo, the final stack
 is printed, and the exit status is 1 if any error occurred.
 
--n starts with a clean slate: no saved words, modules or configuration, and nothing is
-written at exit. Use it in scripts so that their behaviour does not depend on the state
-of your configuration directory. Scripts may define words, and \ or # comments are
-allowed. The project’s own tests are batch runs compared against golden output files
-(tests/golden/).
+mm41 -e "2 10 ^" # one line mm41 -e "[2 2 $4 7 2 6] det" -e "sqrt"  # several, in order
+mm41 -f script.rpn                       # a file; '-' means stdin
+echo "1 3 /" | mm41 -n                   # a pipeline
+mm41 -n -e ': f dup * 2 - ;' -e '0 3 @f fzero'
+\end{shell}
+\texttt{-n} starts with a clean slate: no saved words, modules or configuration, and nothing is written at exit. Use it in scripts so that their behaviour does not depend on the state of your configuration directory. Scripts may define words, and \texttt{\textbackslash} or \texttt{\#} comments are allowed. The project's own tests are batch runs compared against golden output files (\texttt{tests/golden/}).
 
-  --------------- ----------------------------------------------------------------------------------------
-  -e EXPR         evaluate one line; may be repeated
-  -f FILE         run the lines of a file; - is standard input; may be repeated and mixed with -e
-  -n              do not load the saved words, the modules in the config directory, or the configuration
-  –modules        list the built-in modules and exit
-  –commands       print the command reference as Markdown
-  –commands-tex   the same as LaTeX tables (used to build this manual)
-  –version, -h    version; usage
-  --------------- ----------------------------------------------------------------------------------------
+\subsection{Scripts}
 
-Exit status: 0 on success, 1 if any error was reported in batch mode, 2 for a usage
-error.
+A file named on the command line without an option is a script: its lines run, and whatever follows its name on the command line is pushed onto the stack first---numbers as numbers, anything else as a string. A script is quiet: nothing is printed but what it prints itself, which it does with \texttt{\textbf{.}} (print the top of the stack plainly and drop it: a number as a number, a string without quotes, a matrix as rows of numbers). The first line may be \texttt{\#!/usr/bin/env mm41}, so a script is a program:
+\begin{shell}$ cat loan #!/usr/bin/env mm41 # amount rate years – the monthly payment
+clrtvm 12 * n 12 / i chmod + xloan ./loan 300000 6 30 1798.65
+$echo "2 3 + ." | mm41 -q -           # the script from standard input
+5.000000$ mm41 -p -e "[1 2; 3 4] det" # -p: print the top plainly at the end -2.000000
+
+In a Makefile or a cron job the exit status is what matters: 0 if all went well, 1 if
+any error was reported (or what n exit says), 2 if a file could not be opened or an
+option was wrong. With -x the first error ends the run, so a script cannot carry on with
+a half result:
+
+"NAME" env reads an environment variable, and n exit ends the script with that status.
+
+  ----------------- ----------------------------------------------------------------------------------------
+  SCRIPT [ARG]...   run the script, its arguments pushed first; quiet unless -p
+  -                 the script from standard input
+  -e EXPR           evaluate one line; may be repeated
+  -f FILE           run the lines of a file; may be repeated and mixed with -e
+  -q                quiet: do not print the final stack
+  -p                print the top of the stack plainly at the end (implies -q)
+  -x                stop at the first error
+  -n                do not load the saved words, the modules in the config directory, or the configuration
+  –                 end of options: what follows is a script and its arguments
+  –modules          list the built-in modules and exit
+  –commands         print the command reference as Markdown
+  –commands-tex     the same as LaTeX tables (used to build this manual)
+  –version, -h      version; usage
+  ----------------- ----------------------------------------------------------------------------------------
+
+Exit status: 0 on success, 1 if any error was reported (or the status given to exit), 2
+for a usage error or a file that could not be opened.
 
 ========================================================================================
 22  CONFIGURATION AND FILES
@@ -2048,8 +2070,9 @@ modules, the rest of the special functions and the const word module; 1.4.1 the
 bare-name line forms use const, usehol us; 1.5 the g% register for growing payments; 1.6
 the display skins; 1.7 the survival and income modules and the bracket-only matrix
 literal; 1.8 reading tables from files and fitting published life tables and income
-shares; 1.9 the manual at the prompt; 2.0 graphs. Every MM-15 command, word and program
-runs unchanged, with one exception noted below. What is different:
+shares; 1.9 the manual at the prompt; 2.0 graphs; 2.1 scripts from the shell. Every
+MM-15 command, word and program runs unchanged, with one exception noted below. What is
+different:
 
 -   The binary is mm41, the configuration directory ~/.config/mm41/. Copy
     user_words.txt, registers.txt and config.txt across from mm_15 if you want them.

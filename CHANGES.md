@@ -1,5 +1,20 @@
 # MM-41 changes
 
+## MM-41 2.1
+
+- **Scripts.** `mm41 script args...` runs a file given without an option
+  (so `#!/usr/bin/env mm41` makes a script a program), pushing the
+  arguments first -- numbers as numbers, the rest as strings -- and prints
+  nothing but what the script prints with the new word `.` (the top of the
+  stack plainly, dropped: a number as a number, a string without quotes, a
+  matrix as rows). `-` reads the script from stdin. `-q` suppresses the
+  final stack, `-p` prints the top plainly at the end, `-x` stops at the
+  first error. `n exit` ends a run with that status, `"NAME" env` reads an
+  environment variable. Lines starting with `#` are comments in batch
+  input. Exit status 0; 1 if any error was reported or what `exit` said; 2
+  for a usage error or a file that cannot be opened.
+- `tests/run_scripts.sh` (14 cases) runs under `make test`.
+
 ## MM-41 2.0
 
 - **plot** module (25 words): graphs in the terminal, two pixels to a cell

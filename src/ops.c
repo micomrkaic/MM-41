@@ -290,6 +290,22 @@ static int op_savewords(Stack *stack) { (void)stack; (void)(save_words_to_file()
 static int op_delword(Stack *stack) { (void)stack; (void)(delete_word(stack)); return 0; }
 static int op_clrwords(Stack *stack) { (void)stack; (void)(clear_words()); return 0; }
 static int op_manual(Stack *stack) { (void)stack; manual_open(NULL); return 0; }
+static int op_dot(Stack *stack) { print_top_plain(stack); stack_element e = pop(stack); stack_element_free(&e); return 0; }
+static int op_exit(Stack *stack) {
+  double n;
+  if (pop_real_arg(stack, "exit", &n) != 0) return -1;
+  if (n < 0 || n > 255 || n != floor(n)) return mm_error("exit: the status must be a whole number from 0 to 255");
+  exit_status = (int)n;
+  return 0;
+}
+static int op_env(Stack *stack) {
+  if (stack->items[stack->top].type != TYPE_STRING) return mm_error("env: needs the variable's name as a string");
+  const char *v = getenv(stack->items[stack->top].string);
+  if (!v) return mm_error("env: %s is not set", stack->items[stack->top].string);
+  stack_element e = pop(stack); stack_element_free(&e);
+  push_string(stack, v);
+  return 0;
+}
 static int op_help(Stack *stack) { (void)stack; (void)(help_menu()); return 0; }
 static int op_listfcns(Stack *stack) { (void)stack; (void)(list_all_functions_sorted()); return 0; }
 static int op_clrhist(Stack *stack) { (void)stack; (void)(clear_history()); return 0; }
@@ -385,6 +401,9 @@ static const Op core_table[] = {
   { "eval", 1, op_eval, "Session", "s --", "evaluate the string s as a line of input", "\"1 2 +\" eval" },
   { "batch", 1, op_batch, "Session", "s --", "run the lines of file s as input", "\"calc.txt\" batch" },
   { "help", 0, op_help, "Session", "--", "print the quick-start help screen", "help" },
+  { ".", 1, op_dot, "Session", "x --", "print the top of the stack plainly and drop it: a number as a number, a string without quotes, a matrix as rows of numbers; what a script pipes on", "2 3 + ." },
+  { "exit", 1, op_exit, "Session", "n --", "end a script with exit status n (0 to 255); at the prompt, quits", "0 exit" },
+  { "env", 1, op_env, "Session", "\"name\" -- \"value\"", "the value of an environment variable; an error if it is not set", "\"HOME\" env" },
   { "manual", 0, op_manual, "Session", "--", "open the user manual in the pager ($PAGER, less or more); at the prompt, manual <chapter>, manual 9.3 or manual <word> opens it there (n for the next match, q to return)", "manual" },
   { "usage", 1, op_usage, "Session", "\"name\" --", "show the stack picture, description and example of a command, or a word's definition", "\"sin\" usage" },
   { "listfcns", 0, op_listfcns, "Session", "--", "list all commands by category", "listfcns" },

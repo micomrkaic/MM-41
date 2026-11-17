@@ -448,6 +448,11 @@ Token next_token(Lexer* lexer) {
   if (isalpha((unsigned char)c) || c == '_') return lex_identifier(lexer);
   if (c == '"') return lex_string(lexer);
 
+  if (c == '.' && (lexer->input[lexer->pos + 1] == '\0' || isspace((unsigned char)lexer->input[lexer->pos + 1]))) {
+    advance(lexer);                                   /* a lone dot: the word that prints the top */
+    return make_token(TOK_FUNCTION, ".");
+  }
+
   // Handle multi-character operators
   if (c == '.' && lexer->input[lexer->pos + 1] == '*') {
     lexer->pos += 2;

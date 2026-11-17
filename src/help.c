@@ -41,6 +41,7 @@ void help_menu(void) {
   printf("    dup drop swap over nip tuck  n pick  n roll  depth  clst  ps  print  pm\n");
   printf("    n setprec  sfs  skin plain|hp41|hp12c|hp48|hp48px (draw the stack as that calculator's display)\n");
   printf("    manual  manual <chapter>  manual <word>     the user manual in the pager (n next match, q back)\n");
+  printf("    x .  (print plainly, for scripts)   n exit   \"NAME\" env     mm41 script args...   mm41 -p -e \"...\"\n");
   subtitle("Arithmetic and functions");
   printf("    + - * / ^  chs inv abs sqrt mod fact ncr npr  %% %%t %%chg   .* ./ .^ (elementwise)\n");
   printf("    exp ln log  sin cos tan asin acos atan  sinh cosh tanh asinh acosh atanh\n");

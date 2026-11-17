@@ -57,7 +57,7 @@
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 
-\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 2.0}
+\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 2.1}
 \author{Mico Mrkaic}
 \date{November 2026}
 
@@ -1480,7 +1480,7 @@ The HP-41 took plug-in ROMs; MM-41 takes modules. A module is a named set of com
 \begin{rpn}
 MM-41>> modules
 module       version  words  summary
-core         2.0         86  arithmetic, functions, logic, the stack, words and the session
+core         2.1         89  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -1587,12 +1587,40 @@ mm41 -n -e ': f dup * 2 - ;' -e '0 3 @f fzero'
 \end{shell}
 \code{-n} starts with a clean slate: no saved words, modules or configuration, and nothing is written at exit. Use it in scripts so that their behaviour does not depend on the state of your configuration directory. Scripts may define words, and \code{\textbackslash} or \code{\#} comments are allowed. The project's own tests are batch runs compared against golden output files (\code{tests/golden/}).
 
+\subsection{Scripts}
+
+A file named on the command line without an option is a script: its lines run, and whatever follows its name on the command line is pushed onto the stack first---numbers as numbers, anything else as a string. A script is quiet: nothing is printed but what it prints itself, which it does with \cmd{.} (print the top of the stack plainly and drop it: a number as a number, a string without quotes, a matrix as rows of numbers). The first line may be \code{\#!/usr/bin/env mm41}, so a script is a program:
+\begin{shell}
+$ cat loan
+#!/usr/bin/env mm41
+# amount rate years -- the monthly payment
+clrtvm 12 * n 12 / i% pv 0 fv ?pmt chs .
+$ chmod +x loan
+$ ./loan 300000 6 30
+1798.65
+$ echo "2 3 + ." | mm41 -q -           # the script from standard input
+5.000000
+$ mm41 -p -e "[1 2; 3 4] det"           # -p: print the top plainly at the end
+-2.000000
+\end{shell}
+In a Makefile or a cron job the exit status is what matters: 0 if all went well, 1 if any error was reported (or what \code{n exit} says), 2 if a file could not be opened or an option was wrong. With \code{-x} the first error ends the run, so a script cannot carry on with a half result:
+\begin{shell}
+rate=$(mm41 -x -p -e '"rates.txt" readvec mean') || exit 1
+\end{shell}
+\code{"NAME" env} reads an environment variable, and \code{n exit} ends the script with that status.
+
 \begin{center}
 \begin{tabular}{@{}lp{0.7\textwidth}@{}}
 \toprule
+\code{SCRIPT [ARG]...} & run the script, its arguments pushed first; quiet unless \code{-p} \\
+\code{-}       & the script from standard input \\
 \code{-e EXPR} & evaluate one line; may be repeated \\
-\code{-f FILE} & run the lines of a file; \code{-} is standard input; may be repeated and mixed with \code{-e} \\
+\code{-f FILE} & run the lines of a file; may be repeated and mixed with \code{-e} \\
+\code{-q}      & quiet: do not print the final stack \\
+\code{-p}      & print the top of the stack plainly at the end (implies \code{-q}) \\
+\code{-x}      & stop at the first error \\
 \code{-n}      & do not load the saved words, the modules in the config directory, or the configuration \\
+\code{--}      & end of options: what follows is a script and its arguments \\
 \code{--modules} & list the built-in modules and exit \\
 \code{--commands} & print the command reference as Markdown \\
 \code{--commands-tex} & the same as LaTeX tables (used to build this manual) \\
@@ -1600,7 +1628,7 @@ mm41 -n -e ': f dup * 2 - ;' -e '0 3 @f fzero'
 \bottomrule
 \end{tabular}
 \end{center}
-Exit status: 0 on success, 1 if any error was reported in batch mode, 2 for a usage error.
+Exit status: 0 on success, 1 if any error was reported (or the status given to \cmd{exit}), 2 for a usage error or a file that could not be opened.
 
 %======================================================================
 \section{Configuration and files}
@@ -1695,7 +1723,7 @@ The following words are loaded from \code{modules/std.mm} in the configuration d
 \section{Coming from MM-15, MM-14, MM-11 or MM-B1}
 \label{app:changes}
 
-MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module; 1.3 added \code{help \emph{name}}; 1.4 added the \code{stat}, \code{random} and \code{ode} modules, the rest of the special functions and the \code{const} word module; 1.4.1 the bare-name line forms \code{use const}, \code{usehol us}; 1.5 the \code{g\%} register for growing payments; 1.6 the display skins; 1.7 the survival and income modules and the bracket-only matrix literal; 1.8 reading tables from files and fitting published life tables and income shares; 1.9 the manual at the prompt; 2.0 graphs. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
+MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module; 1.3 added \code{help \emph{name}}; 1.4 added the \code{stat}, \code{random} and \code{ode} modules, the rest of the special functions and the \code{const} word module; 1.4.1 the bare-name line forms \code{use const}, \code{usehol us}; 1.5 the \code{g\%} register for growing payments; 1.6 the display skins; 1.7 the survival and income modules and the bracket-only matrix literal; 1.8 reading tables from files and fitting published life tables and income shares; 1.9 the manual at the prompt; 2.0 graphs; 2.1 scripts from the shell. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
 \begin{itemize}
   \item The binary is \code{mm41}, the configuration directory \code{\textasciitilde/.config/mm41/}. Copy \code{user\_words.txt}, \code{registers.txt} and \code{config.txt} across from \code{mm\_15} if you want them.
   \item \code{predefined\_macros.txt} is now the word module \code{modules/std.mm} and is installed there; the old file is not read. Your own additions belong in \code{user\_words.txt} or in a module of your own.

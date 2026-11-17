@@ -62,6 +62,37 @@ static const char *fmt_real(double x, char *buf, size_t n) {
   return buf;
 }
 
+/* The top of the stack with nothing around it: a real as a number, a
+   decimal as stored, a string without quotes, a complex as (re,im), a
+   matrix as rows of numbers separated by spaces. What a script pipes on. */
+void print_top_plain(const Stack* stack) {
+  if (stack->top == -1) return;
+  const stack_element *e = &stack->items[stack->top];
+  char b[64];
+  switch (e->type) {
+  case TYPE_REAL: printf("%s\n", fmt_real(e->real, b, sizeof b)); break;
+  case TYPE_DECIMAL: { char d[DECNUMDIGITS + 48]; if (fixed_point) dec_to_fixed(&e->dec, print_precision, d, sizeof d); else dec_to_string(&e->dec, d, sizeof d); printf("%s\n", d); break; }
+  case TYPE_STRING: printf("%s\n", e->string); break;
+  case TYPE_COMPLEX: printf("(%s,", fmt_real(GSL_REAL(e->complex_val), b, sizeof b)); printf("%s)\n", fmt_real(GSL_IMAG(e->complex_val), b, sizeof b)); break;
+  case TYPE_MATRIX_REAL:
+    for (size_t i = 0; i < e->matrix_real->size1; i++) {
+      for (size_t j = 0; j < e->matrix_real->size2; j++) printf("%s%s", j ? " " : "", fmt_real(gsl_matrix_get(e->matrix_real, i, j), b, sizeof b));
+      printf("\n");
+    }
+    break;
+  case TYPE_MATRIX_COMPLEX:
+    for (size_t i = 0; i < e->matrix_complex->size1; i++) {
+      for (size_t j = 0; j < e->matrix_complex->size2; j++) {
+        gsl_complex z = gsl_matrix_complex_get(e->matrix_complex, i, j);
+        printf("%s(%s,", j ? " " : "", fmt_real(GSL_REAL(z), b, sizeof b)); printf("%s)", fmt_real(GSL_IMAG(z), b, sizeof b));
+      }
+      printf("\n");
+    }
+    break;
+  default: break;
+  }
+}
+
 void print_top_scalar(const Stack* stack) {
   if (stack->top == -1) {
     printf("{}\n");

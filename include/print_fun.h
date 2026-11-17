@@ -36,6 +36,7 @@ static inline void cerror(const char* fmt, ...) {
 }
 
 void print_top_scalar(const Stack* stack);
+void print_top_plain(const Stack* stack);   /* for scripts: the value alone, machine-readable */
 void print_matrix(Stack *stack);
 void print_stack(const Stack* stack, char *title);
 void print_stack_display(const Stack *stack);   /* after a line: plain listing or the skin */
