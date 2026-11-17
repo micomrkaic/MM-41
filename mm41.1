@@ -1,4 +1,4 @@
-.TH MM41 1 "November 2026" "MM-41 1.7" "User Commands"
+.TH MM41 1 "November 2026" "MM-41 1.8" "User Commands"
 .SH NAME
 mm41 \- programmable RPN calculator for real, complex and decimal scalars, strings and matrices
 .SH SYNOPSIS
@@ -87,7 +87,9 @@ with the escapes \e\(dq \e\e \en \et.
 .TP
 .B Matrices
 .BR "[1 2 3]" " (a row vector), " "[1 2; 3 4]" " (a semicolon ends a row), or " "[rows cols $ elements...]"
-with real or complex elements, or
+with real or complex elements;
+.BR "\(dqfile\(dq readmat" ", " readvec " or " "\(dqfile\(dq j readcol"
+to read a table, every number, or one column from a file; or
 .B [rows, cols, \(dqfile\(dq]
 to read one from a whitespace-separated text file.
 .TP
@@ -384,7 +386,8 @@ and
 .BR axn ", " Axn ).
 From data (times, event 1 / censored 0):
 .BR "t e km" ", " "t e nelsonaalen" ", " "t1 e1 t2 e2 logrank" ", " "t e lifefit"
-(maximum likelihood).
+(maximum likelihood); from a life table
+.BR "x q lawfit" ", " "x l lawfitl" .
 .SS Income distribution
 Select a family once,
 .BR "\(dqdagum\(dq [a b p] setdist"
@@ -393,7 +396,11 @@ Select a family once,
 .BR "gini theil mld" ", " "eps atkinson" ", " "p lorenz" ", " "p top" ", " palma ", " "p1 p2 qratio" ,
 .BR "z headcount povgap" ", " "z alpha fgt" ", " "v incfit" .
 The same from a vector of incomes:
-.BR "ginid theild mldd atkinsond lorenzd decilesd palmad topd headcountd povgapd fgtd" .
+.BR "ginid theild mldd atkinsond lorenzd decilesd palmad topd headcountd povgapd fgtd" ;
+from published quintile or decile shares
+.BR "v incfits" ,
+from Lorenz points
+.BR "p L incfitl" .
 .SS Workdays
 Dates are \(dqd.m.yyyy\(dq strings or YYYYMMDD numbers.
 .B d1 d2 workdays

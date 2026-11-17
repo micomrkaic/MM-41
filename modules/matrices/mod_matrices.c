@@ -14,6 +14,7 @@
 #include "linear_algebra.h"
 #include "stat_fun.h"
 #include "poly_fun.h"
+#include "read_fun.h"
 #include "binary_fun.h"
 
 
@@ -70,6 +71,11 @@ static const Op table[] = {
   { "reshape", 3, op_reshape, "Matrices", "A rows cols -- B", "reshape in row-major order; rows*cols must match", "[2 3 $ 1 2 3 4 5 6] 3 2 reshape" },
   { "get_aij", 3, op_get_aij, "Matrices", "A i j -- A a_ij", "push element (i,j), 0-based (the matrix stays)", "[2 2 $ 1 2 3 4] 0 1 get_aij" },
   { "set_aij", 4, op_set_aij, "Matrices", "A i j x -- A", "set element (i,j), 0-based, in place; a complex x promotes a real matrix", "[2 2 $ 1 2 3 4] 0 1 9 set_aij" },
+  { "getcol", 2, op_getcol, "Matrices", "A j -- v", "column j (0-based) as a column vector", "[2 2 $ 1 2 3 4] 1 getcol" },
+  { "getrow", 2, op_getrow, "Matrices", "A i -- v", "row i (0-based) as a row vector", "[2 2 $ 1 2 3 4] 0 getrow" },
+  { "readmat", 1, op_readmat, "Matrices", "\"file\" -- M", "read a table from a file: one row per line, numbers separated by spaces, tabs, commas or semicolons; blank lines, # \\ // comments and a non-numeric header are skipped; the first data row sets the column count", "\"table.txt\" readmat" },
+  { "readvec", 1, op_readvec, "Matrices", "\"file\" -- v", "read every number in a file as one column vector, however the lines are laid out", "\"incomes.txt\" readvec" },
+  { "readcol", 2, op_readcol, "Matrices", "\"file\" j -- v", "read column j (0-based) of a table in a file as a column vector", "\"survival.txt\" 0 readcol" },
   { "split_mat", 1, op_split_mat, "Matrices", "A -- a11 a12 ...", "push all elements as scalars, row by row", "[2 2 $ 1 2 3 4] split_mat" },
   { "diag", 1, op_diag, "Matrices", "A -- v", "main diagonal as a row vector", "[2 2 $ 1 2 3 4] diag" },
   { "to_diag", 1, op_to_diag, "Matrices", "v -- D", "diagonal matrix from a row or column vector", "[1 3 $ 1 2 3] to_diag" },
@@ -98,6 +104,6 @@ static const Op table[] = {
 };
 
 const Module mm41_mod_matrices = {
-  "matrices", "1.0", "linear algebra, matrix construction and reduction, polynomials",
+  "matrices", "1.1", "linear algebra, matrix construction and reduction, polynomials, reading tables from files",
   table, (int)(sizeof table / sizeof table[0]), NULL, NULL, 0
 };

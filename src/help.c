@@ -35,7 +35,7 @@ void help_menu(void) {
   title("MM-41 " MM41_VERSION " -- RPN calculator for real, complex and decimal scalars, strings and matrices");
   subtitle("Entering data");
   printf("    Numbers 3  -1.2e-4   decimal 0.1d   complex (1,2)   strings \"text\"   all input is case sensitive\n");
-  printf("    Matrices [1 2 3] (a row), [1 2; 3 4] (rows end at ;), or [rows cols $ a11 a12 ...];  from a file [2, 2, \"m.txt\"]\n");
+  printf("    Matrices [1 2 3] (a row), [1 2; 3 4] (rows end at ;), or [rows cols $ a11 a12 ...];  \"t.txt\" readmat readvec\n");
   printf("    Comments start with \\ or #.  undo restores the stack before the previous line.\n");
   subtitle("Stack");
   printf("    dup drop swap over nip tuck  n pick  n roll  depth  clst  ps  print  pm\n");
@@ -61,6 +61,7 @@ void help_menu(void) {
   printf("    x n tpx nqx  x px qx lx  x0 x1 lifetab  x i ax Ax  x n i axn Axn   t e km nelsonaalen  t1 e1 t2 e2 logrank  t e lifefit\n");
   printf("    \"dagum\" [a b p] setdist  then  x incpdf inccdf  p incq  incmean incmed  gini theil mld  eps atkinson  p lorenz  p top\n");
   printf("    palma  p1 p2 qratio share  z headcount povgap  z a fgt  v incfit   from data: v ginid theild mldd  v eps atkinsond ...\n");
+  printf("    x q lawfit  x l lawfitl (fit a life table)   v incfits (fit quintile or decile shares)   \"f.txt\" readvec readmat\n");
   subtitle("Matrices");
   printf("    tran ' minv pinv det eig chol svd kron  eye ones zeroes rand randn rrange\n");
   printf("    dim reshape get_aij set_aij split_mat diag to_diag join_v join_h\n");
@@ -573,6 +574,7 @@ static const Topic topics[] = {
     "  x i ax (annuity-due of 1 a year at i%)   x n i axn   x i Ax (insurance of 1)   x n i Axn\n"
     "From data (times, and 1 for an event / 0 for censored):  t e km   t e nelsonaalen   t1 e1 t2 e2 logrank\n"
     "  t e lifefit   fits the current law by maximum likelihood; the estimates become current.\n"
+    "From a life table:  x q lawfit (ages and qx)   x l lawfitl (ages and lx)   least squares, estimates become current.\n"
     "  \"gompertz\" [0.0001 0.09] setlaw 65 elife        -> 11.876902  Manual: chapter Survival analysis.\n" },
   { "income",
     "Income and wealth distributions, inequality and poverty measures, each for a fitted family and for data.\n"
@@ -581,6 +583,7 @@ static const Topic topics[] = {
     "Then:  x incpdf inccdf   p incq   incmean incvar incmed incmode   gini theil mld   eps atkinson\n"
     "  p lorenz   n lorenzm   p1 p2 share   p top (0.1: top 10%)   deciles   palma   p1 p2 qratio (P90/P10)\n"
     "  z headcount   z povgap   z alpha fgt   v incfit (maximum likelihood; the estimates become current)\n"
+    "From published shares:  [3.1 8.3 14.1 22.7 51.9] incfits (quintile or decile shares)   p L incfitl (Lorenz points)\n"
     "From a vector of incomes, no family assumed:  v ginid theild mldd   v eps atkinsond   v n lorenzd\n"
     "  v decilesd   v palmad   v p topd   v z headcountd povgapd   v z alpha fgtd\n"
     "  \"dagum\" [3.5 20000 0.8] setdist gini           -> 0.302546   Manual: chapter Income distribution.\n" },

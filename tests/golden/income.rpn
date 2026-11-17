@@ -33,3 +33,14 @@ clst
 [1 -2 3] ginid
 [0 0 0] ginid
 [1 2 3] 0 headcountd
+\ fits from published shares and Lorenz points
+"dagum" [3 1 1] setdist [3.1 8.3 14.1 22.7 51.9] incfits drop pm gini palma
+"singhmaddala" [3 1 1] setdist [3.1 8.3 14.1 22.7 51.9] incfits drop gini
+"lognormal" [0 1] setdist [3.1 8.3 14.1 22.7 51.9] incfits drop gini
+"pareto" [1 2] setdist [3.1 8.3 14.1 22.7 51.9] incfits nip
+"dagum" [3.5 20000 0.8] setdist deciles "dagum" [3 20000 1] setdist incfits drop pm
+"dagum" [3.5 20000 0.8] setdist 10 lorenzm "dagum" [3 20000 1] setdist dup 0 getcol swap 1 getcol incfitl drop pm
+"tests/golden/data/incomes.txt" readvec ginid
+"tests/golden/data/incomes.txt" readvec incfit
+"dagum" [3 1 1] setdist [50] incfits
+"dagum" [3 1 1] setdist [0.5] [0.7] incfitl

@@ -27,6 +27,14 @@ Error: km: times and event indicators must be vectors of the same length
 Error: km: times must be >= 0 and indicators 0 (censored) or 1 (event)
 Error: surv: expected a real number
 Error: tpx: needs two real numbers
+| 0.0005 3.0000e-05 0.1000 |
+| 6.1299e-05 0.0839 |
+| 4.0821e-05 0.0954 |
+| 6.1299e-05 0.0839 |
+| 7.2270e-05 0.0821 |
+Error: lawfit: ages and values must be vectors of the same length, at least 2 long
+Error: lawfit: ages must increase
+Error: lawfit: qx must be strictly between 0 and 1
 
 [0] 𝒮 : "nosuch"
 [1] Mℝ: 1 x 1 matrix
@@ -43,4 +51,17 @@ Error: tpx: needs two real numbers
 [12] 𝒮 : "x"
 [13] ℝ : 65.000000
 [14] 𝒮 : "x"
+[15] Mℝ: 1 x 3 matrix
+[16] Mℝ: 1 x 2 matrix
+[17] Mℝ: 1 x 2 matrix
+[18] ℝ : 86.079884
+[19] Mℝ: 1 x 2 matrix
+[20] Mℝ: 1 x 2 matrix
+[21] Mℝ: 1 x 2 matrix
+[22] Mℝ: 1 x 2 matrix
+[23] Mℝ: 1 x 3 matrix
+[24] Mℝ: 1 x 2 matrix
+[25] Mℝ: 1 x 2 matrix
+[26] Mℝ: 1 x 2 matrix
+[27] Mℝ: 1 x 2 matrix
 [exit 1]

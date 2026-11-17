@@ -1,0 +1,57 @@
+| 40.0000 0.0020 95000.0000 |
+| 50.0000 0.0040 92000.0000 |
+| 60.0000 0.0090 86000.0000 |
+| 70.0000 0.0220 74000.0000 |
+| 80.0000 0.0550 52000.0000 |
+|    40.0000 |
+|     0.0020 |
+| 95000.0000 |
+|    50.0000 |
+|     0.0040 |
+| 92000.0000 |
+|    60.0000 |
+|     0.0090 |
+| 86000.0000 |
+|    70.0000 |
+|     0.0220 |
+| 74000.0000 |
+|    80.0000 |
+|     0.0550 |
+| 52000.0000 |
+| 95000 |
+| 92000 |
+| 86000 |
+| 74000 |
+| 52000 |
+Error: readmat: line 3 of tests/golden/data/incomes.txt has 1 numbers, the first row 2
+|  1200 |
+|  1500 |
+|  2200 |
+|  3100 |
+|  4000 |
+|  5400 |
+|  9000 |
+| 15000 |
+Error: readmat: cannot open tests/golden/data/nothere.txt (No such file or directory)
+Error: readcol: the table has 3 columns, numbered from 0
+| 2 |
+| 4 |
+| 1 2 |
+Error: getcol: the matrix has 2 columns, numbered from 0
+Error: getcol: needs a real matrix
+
+[0] Mℝ: 5 x 3 matrix
+[1] Mℝ: 15 x 1 matrix
+[2] Mℝ: 5 x 1 matrix
+[3] 𝒮 : "tests/golden/data/incomes.txt"
+[4] Mℝ: 8 x 1 matrix
+[5] 𝒮 : "tests/golden/data/nothere.txt"
+[6] 𝒮 : "tests/golden/data/lifetable.txt"
+[7] ℝ : 3.000000
+[8] Mℝ: 2 x 1 matrix
+[9] Mℝ: 1 x 2 matrix
+[10] Mℝ: 2 x 2 matrix
+[11] ℝ : 2.000000
+[12] ℝ : 5.000000
+[13] ℝ : 1.000000
+[exit 1]

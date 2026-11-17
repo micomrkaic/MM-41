@@ -1,5 +1,5 @@
 module       version  words  summary
-core         1.7         85  arithmetic, functions, logic, the stack, words and the session
+core         1.8         85  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -7,9 +7,9 @@ special      1.1         24  gamma, beta, the normal distribution, error, Bessel
 stat         1.0         27  descriptive statistics, curve fitting, regression, t/chi-square/F/binomial/Poisson distributions
 random       1.0         16  draws from named distributions, resampling and Monte Carlo over a word
 ode          1.0          2  initial-value problems y' = f(t, y) over a word, scalar or system (RKF45)
-survival     1.0         29  lifetime laws (Gompertz-Makeham and others), survival and hazard, life tables, annuities, Kaplan-Meier, fits
-income       1.0         36  income distributions (Dagum, Singh-Maddala, Pareto, lognormal and more), inequality and poverty measures, fits
-matrices     1.0         38  linear algebra, matrix construction and reduction, polynomials
+survival     1.1         31  lifetime laws (Gompertz-Makeham and others), survival and hazard, life tables, annuities, Kaplan-Meier, fits
+income       1.1         38  income distributions (Dagum, Singh-Maddala, Pareto, lognormal and more), inequality and poverty measures, fits
+matrices     1.1         43  linear algebra, matrix construction and reduction, polynomials, reading tables from files
 numerics     1.0         12  integration, roots, minima, derivatives and sums over any word
 strings      1.0          7  string construction and manipulation
 registers    1.0          7  64 storage registers of any type
@@ -26,8 +26,9 @@ programs     1.0          1  HP-41 style programs with labels, jumps and subrout
     which leaves:
 [0] ℝ : 10.000000
     see also: tran ' minv pinv eig chol svd kron dim reshape get_aij set_aij 
-              split_mat diag to_diag eye ones zeroes rand randn rrange join_v join_h cumsum_r 
-              cumsum_c cmean rmean csum rsum cvar rvar cmin rmin cmax rmax 
+              getcol getrow readmat readvec readcol split_mat diag to_diag eye ones zeroes rand 
+              randn rrange join_v join_h cumsum_r cumsum_c cmean rmean csum rsum cvar rvar 
+              cmin rmin cmax rmax 
 
 
 [1mintegrate[0m   a b xt -- I   [module numerics, Numerics]

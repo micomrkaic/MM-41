@@ -1,0 +1,12 @@
+\ reading tables from files
+"tests/golden/data/lifetable.txt" readmat pm
+"tests/golden/data/lifetable.txt" readvec pm
+"tests/golden/data/lifetable.txt" 2 readcol pm
+"tests/golden/data/incomes.txt" readmat
+"tests/golden/data/incomes.txt" readvec pm
+"tests/golden/data/nothere.txt" readmat
+"tests/golden/data/lifetable.txt" 3 readcol
+[1 2; 3 4] 1 getcol pm
+[1 2; 3 4] 0 getrow pm
+[1 2; 3 4] 2 getcol
+5 1 getcol

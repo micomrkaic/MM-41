@@ -36,8 +36,9 @@
     which leaves:
 [0] ℝ : 10.000000
     see also: tran ' minv pinv eig chol svd kron dim reshape get_aij set_aij 
-              split_mat diag to_diag eye ones zeroes rand randn rrange join_v join_h cumsum_r 
-              cumsum_c cmean rmean csum rsum cvar rvar cmin rmin cmax rmax 
+              getcol getrow readmat readvec readcol split_mat diag to_diag eye ones zeroes rand 
+              randn rrange join_v join_h cumsum_r cumsum_c cmean rmean csum rsum cvar rvar 
+              cmin rmin cmax rmax 
 
 
 [1m+[0m   y x -- y+x   [module core, Arithmetic]

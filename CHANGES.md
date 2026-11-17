@@ -1,5 +1,24 @@
 # MM-41 changes
 
+## MM-41 1.8
+
+- **Reading files.** `"table.txt" readmat` reads a table as it is: one row
+  per line, numbers separated by spaces, tabs, commas or semicolons; blank
+  lines, `#` `\` `//` comments and a non-numeric header are skipped, the
+  first data row sets the column count. `readvec` takes every number in a
+  file as one column, `"file" j readcol` one column of a table. `getcol`
+  and `getrow` take one out of a matrix on the stack. (matrices 1.1)
+- **Fitting published tables.** `x q lawfit` and `x l lawfitl` fit the
+  current survival law to a life table's qx or lx by least squares on the
+  log scale; a Gompertz-Makeham table is recovered exactly. `v incfits`
+  fits the current income family to quintile or decile shares, `p L
+  incfitl` to Lorenz-curve points, shape parameters only (the curve is
+  scale-free); the 2019 US household quintiles give a Dagum Gini of 0.486
+  against the published 0.484. (survival 1.1, income 1.1)
+- Manual: Reading from files, Fitting a published life table, Fitting a
+  published table of shares; help survival, help income; README, MANUAL.md,
+  man page; goldens with data files under tests/golden/data.
+
 ## MM-41 1.7
 
 - **survival** module (29 words). A lifetime law is selected once with its

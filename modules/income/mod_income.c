@@ -671,6 +671,128 @@ static int op_incfit(Stack *s) {
 }
 
 /* ------------------------------------------------------------------ */
+/* fitting from grouped data: Lorenz points or group shares */
+
+/* The Lorenz curve is scale-free, so only the shape parameters are fitted
+   and the scale (b, xm, mu, theta, lambda) keeps its current value. The
+   shape slots per family: pareto {1}, lognormal {1}, dagum {0, 2},
+   singhmaddala {0, 2}, fisk {0}, gamma {0}, weibull {0}. */
+static const int shape_slots[D_COUNT][2] = { { 1, -1 }, { 1, -1 }, { 0, 2 }, { 0, 2 }, { 0, -1 }, { 0, -1 }, { 0, -1 } };
+
+typedef struct { const double *p, *L; size_t n; int d; double par[3]; } LorenzFit;
+
+typedef struct { int d; const double *par; } FamCtx;
+static double xf_family(double x, void *q) { const FamCtx *c = q; return x * pdf_of(c->d, c->par, x); }
+
+static double lorenz_model(int d, const double *par, double u) {
+  if (u <= 0) return 0;
+  if (u >= 1) return 1;
+  double mu = moment_of(d, par, 1);
+  if (!isfinite(mu) || mu <= 0) return NAN;
+  double lo = d == D_PARETO ? par[0] : 0, hi = q_of(d, par, u);
+  if (!isfinite(hi) || hi <= lo) return 0;
+  /* integrate x f(x) from lo to q(u) with the current family's density */
+  gsl_integration_workspace *w = gsl_integration_workspace_alloc(1000);
+  FamCtx ctx = { d, par };
+  double r, err;
+  gsl_function F = { xf_family, &ctx };
+  gsl_error_handler_t *old = gsl_set_error_handler_off();
+  int st = gsl_integration_qags(&F, lo, hi, 0, 1e-8, 1000, w, &r, &err);
+  gsl_set_error_handler(old);
+  gsl_integration_workspace_free(w);
+  return st == GSL_SUCCESS || st == GSL_EROUND ? r / mu : NAN;
+}
+
+static double lorenz_rss(const gsl_vector *x, void *q) {
+  LorenzFit *lf = q;
+  for (int k = 0; k < 2; k++) if (shape_slots[lf->d][k] >= 0) lf->par[shape_slots[lf->d][k]] = exp(gsl_vector_get(x, (size_t)k));
+  if (!isfinite(moment_of(lf->d, lf->par, 1))) return 1e300;
+  double rss = 0;
+  for (size_t i = 0; i < lf->n; i++) {
+    double L = lorenz_model(lf->d, lf->par, lf->p[i]);
+    if (!isfinite(L)) return 1e300;
+    rss += (L - lf->L[i]) * (L - lf->L[i]);
+  }
+  return rss;
+}
+
+/* [p] [L] -- [params] rss: least squares of the family's Lorenz curve on the points */
+static int fit_lorenz(Stack *s, const char *what, const double *p, const double *L, size_t n) {
+  for (size_t i = 0; i < n; i++)
+    if (!(p[i] >= 0 && p[i] <= 1 && L[i] >= 0 && L[i] <= p[i] + 1e-9)) return mm_error("%s: needs 0 <= p <= 1 and 0 <= L(p) <= p", what);
+  int nshape = shape_slots[dist][1] >= 0 ? 2 : 1;
+  LorenzFit lf = { p, L, n, dist, { 0 } };
+  memcpy(lf.par, dp, sizeof lf.par);
+  /* starting shapes that give a Gini of about 0.4 */
+  double start[2] = { 2, 1 };
+  switch (dist) {
+  case D_PARETO: start[0] = 1.75; break;
+  case D_LOGNORMAL: start[0] = 0.75; break;
+  case D_DAGUM: case D_SINGHMADDALA: start[0] = 3; start[1] = 0.8; break;
+  case D_FISK: start[0] = 2.5; break;
+  case D_GAMMA: start[0] = 1.5; break;
+  case D_WEIBULL: start[0] = 1.5; break;
+  }
+  gsl_vector *x = gsl_vector_alloc((size_t)nshape), *step = gsl_vector_alloc((size_t)nshape);
+  for (int k = 0; k < nshape; k++) { gsl_vector_set(x, (size_t)k, log(start[k])); gsl_vector_set(step, (size_t)k, 0.3); }
+  gsl_multimin_function F = { lorenz_rss, (size_t)nshape, &lf };
+  gsl_multimin_fminimizer *mn = gsl_multimin_fminimizer_alloc(gsl_multimin_fminimizer_nmsimplex2, (size_t)nshape);
+  gsl_error_handler_t *old = gsl_set_error_handler_off();
+  int st = gsl_multimin_fminimizer_set(mn, &F, x, step), it = 0;
+  for (int restart = 0; restart < 3 && st == GSL_SUCCESS; restart++) {
+    for (it = 0; it < 3000; it++) {
+      st = gsl_multimin_fminimizer_iterate(mn);
+      if (st) break;
+      if (gsl_multimin_test_size(gsl_multimin_fminimizer_size(mn), 1e-8) == GSL_SUCCESS) break;
+    }
+    gsl_vector_memcpy(x, mn->x);
+    gsl_vector_set_all(step, 0.05);
+    st = gsl_multimin_fminimizer_set(mn, &F, x, step);
+  }
+  gsl_set_error_handler(old);
+  double rss = lorenz_rss(mn->x, &lf);
+  gsl_multimin_fminimizer_free(mn);
+  gsl_vector_free(x); gsl_vector_free(step);
+  if (!isfinite(rss) || rss >= 1e299) return mm_error("%s: no %s fits these points", what, dists[dist].name);
+  memcpy(dp, lf.par, sizeof dp);
+  num_evals = it;
+  gsl_matrix *m = gsl_matrix_alloc(1, (size_t)dists[dist].npar);
+  for (int i = 0; i < dists[dist].npar; i++) gsl_matrix_set(m, 0, (size_t)i, dp[i]);
+  push_matrix_real(s, m);
+  push_real(s, rss);
+  return 0;
+}
+
+static int op_incfitl(Stack *s) {
+  if (need_dist("incfitl") != 0) return -1;
+  double *p, *L; size_t np_, nl;
+  if (vector_at(s, 1, "incfitl", &p, &np_) != 0) return -1;
+  if (vector_at(s, 0, "incfitl", &L, &nl) != 0) { free(p); return -1; }
+  if (np_ != nl || np_ == 0) { free(p); free(L); return mm_error("incfitl: p and L(p) must be vectors of the same length"); }
+  drop_n(s, 2);
+  int rc = fit_lorenz(s, "incfitl", p, L, np_);
+  free(p); free(L);
+  return rc;
+}
+
+/* [shares] -- [params] rss: the shares of k equal population groups (quintiles, deciles), summing to 1 or 100 */
+static int op_incfits(Stack *s) {
+  if (need_dist("incfits") != 0) return -1;
+  double *sh; size_t k;
+  if (vector_at(s, 0, "incfits", &sh, &k) != 0) return -1;
+  if (k < 2) { free(sh); return mm_error("incfits: needs the shares of at least two groups"); }
+  double total = 0; for (size_t i = 0; i < k; i++) { if (sh[i] < 0) { free(sh); return mm_error("incfits: shares must be >= 0"); } total += sh[i]; }
+  if (total <= 0) { free(sh); return mm_error("incfits: the shares sum to zero"); }
+  double *p = malloc((k - 1) * sizeof *p), *L = malloc((k - 1) * sizeof *L), acc = 0;
+  for (size_t i = 0; i + 1 < k; i++) { acc += sh[i] / total; p[i] = (double)(i + 1) / (double)k; L[i] = acc; }
+  free(sh);
+  drop_n(s, 1);
+  int rc = fit_lorenz(s, "incfits", p, L, k - 1);
+  free(p); free(L);
+  return rc;
+}
+
+/* ------------------------------------------------------------------ */
 
 static const Op table[] = {
   { "setdist",  2, op_setdist,  "Income", "\"name\" [params] --", "select the income distribution for the parametric words: pareto [xm alpha], lognormal [mu sigma], dagum [a b p], singhmaddala [a b q] (Burr XII), fisk [a b], gamma [k theta], weibull [k lambda]", "\"dagum\" [3.5 20000 0.8] setdist" },
@@ -698,6 +820,8 @@ static const Op table[] = {
   { "povgap",   1, op_povgap,   "Income", "z -- P",  "poverty gap index at line z (FGT alpha = 1)", "\"lognormal\" [10 0.5] setdist 10000 povgap" },
   { "fgt",      2, op_fgt,      "Income", "z alpha -- P", "Foster-Greer-Thorbecke index at line z with aversion alpha (0 headcount, 1 gap, 2 severity)", "\"lognormal\" [10 0.5] setdist 10000 2 fgt" },
   { "incfit",   1, op_incfit,   "Income", "v -- v2 ll", "maximum-likelihood fit of the current family to a vector of incomes; leaves the parameters, which become current, and the log-likelihood", "\"lognormal\" [0 1] setdist [1200 1500 2200 3100 4000 5400 9000 15000] incfit" },
+  { "incfitl",  2, op_incfitl,  "Income", "p L -- v ll", "fit the shape of the current family to points of a Lorenz curve by least squares (the scale is kept); leaves the parameters, which become current, and the residual sum of squares", "\"dagum\" [3 1 1] setdist [0.2 0.4 0.6 0.8] [0.031 0.114 0.255 0.481] incfitl" },
+  { "incfits",  1, op_incfits,  "Income", "v -- v2 ll", "fit the current family to the income shares of equal population groups (quintiles, deciles; summing to 1 or 100), as incfitl on the cumulative shares", "\"dagum\" [3 1 1] setdist [3.1 8.3 14.1 22.7 51.9] incfits" },
   { "ginid",    1, op_ginid,    "Income", "v -- G",  "Gini coefficient of a vector of incomes", "[1 2 3 4 10] ginid" },
   { "theild",   1, op_theild,   "Income", "v -- T",  "Theil index of a vector of incomes", "[1 2 3 4 10] theild" },
   { "mldd",     1, op_mldd,     "Income", "v -- L",  "mean log deviation of a vector of incomes", "[1 2 3 4 10] mldd" },
@@ -712,6 +836,6 @@ static const Op table[] = {
 };
 
 const Module mm41_mod_income = {
-  "income", "1.0", "income distributions (Dagum, Singh-Maddala, Pareto, lognormal and more), inequality and poverty measures, fits",
+  "income", "1.1", "income distributions (Dagum, Singh-Maddala, Pareto, lognormal and more), inequality and poverty measures, fits",
   table, (int)(sizeof table / sizeof table[0]), NULL, NULL, 0
 };

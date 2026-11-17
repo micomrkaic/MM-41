@@ -574,6 +574,101 @@ static int op_lifefit(Stack *s) {
 }
 
 /* ------------------------------------------------------------------ */
+/* fitting from a life table: ages with qx, or ages with lx */
+
+typedef struct { const double *x, *y; size_t n; int l; int from_lx; } TabFit;
+
+/* least squares on log qx (qx spans orders of magnitude), or on log of
+   the survivors relative to the first age */
+static double table_rss(const gsl_vector *v, void *q) {
+  const TabFit *tf = q;
+  double p[5];
+  for (int i = 0; i < laws[tf->l].npar; i++) p[i] = (tf->l == L_LOGNORMAL && i == 0) ? gsl_vector_get(v, (size_t)i) : exp(gsl_vector_get(v, (size_t)i));
+  double rss = 0, S0 = S_of(tf->l, p, tf->x[0]);
+  if (!(S0 > 0)) return 1e300;
+  for (size_t i = 0; i < tf->n; i++) {
+    double model;
+    if (tf->from_lx) model = log(S_of(tf->l, p, tf->x[i]) / S0);
+    else { double s = S_of(tf->l, p, tf->x[i]); model = s > 0 ? log(1 - S_of(tf->l, p, tf->x[i] + 1) / s) : 0; }
+    if (!isfinite(model)) return 1e300;
+    double d = model - tf->y[i];
+    rss += d * d;
+  }
+  return rss;
+}
+
+static int fit_table(Stack *s, const char *what, int from_lx) {
+  if (need_law(what) != 0) return -1;
+  double *x, *y; size_t nx, ny;
+  if (vector_at(s, 1, what, &x, &nx) != 0) return -1;
+  if (vector_at(s, 0, what, &y, &ny) != 0) { free(x); return -1; }
+  if (nx != ny || nx < (size_t)laws[law].npar) { free(x); free(y); return mm_error("%s: ages and values must be vectors of the same length, at least %d long", what, laws[law].npar); }
+  for (size_t i = 0; i < nx; i++) {
+    if (from_lx ? !(y[i] > 0) : !(y[i] > 0 && y[i] < 1)) { free(x); free(y); return mm_error("%s: %s", what, from_lx ? "lx must be > 0" : "qx must be strictly between 0 and 1"); }
+    if (i && x[i] <= x[i - 1]) { free(x); free(y); return mm_error("%s: ages must increase", what); }
+  }
+  double *yl = malloc(nx * sizeof *yl);
+  for (size_t i = 0; i < nx; i++) yl[i] = from_lx ? log(y[i] / y[0]) : log(y[i]);
+  TabFit tf = { x, yl, nx, law, from_lx };
+  int np = laws[law].npar;
+  /* starting values from the crude slope of log qx or of -log lx */
+  double q0 = from_lx ? (nx > 1 ? -yl[1] / (x[1] - x[0]) : 0.01) : y[0], span = x[nx - 1] - x[0];
+  double q1 = from_lx ? (nx > 1 ? -(yl[nx - 1] - yl[nx - 2]) / (x[nx - 1] - x[nx - 2]) : q0) : y[nx - 1];
+  if (q0 <= 0) q0 = 1e-4;
+  if (q1 <= 0) q1 = q0;
+  double c = span > 0 ? log(q1 / q0) / span : 0.08;
+  if (!(c > 0.001)) c = 0.08;
+  double start[5] = { 0 };
+  switch (law) {
+  case L_EXP:         start[0] = (q0 + q1) / 2; break;
+  case L_WEIBULL:     start[0] = 3; start[1] = x[nx - 1]; break;
+  case L_GOMPERTZ:    start[0] = q0 * exp(-c * x[0]); start[1] = c; break;
+  case L_MAKEHAM:     start[0] = q0 / 2; start[1] = q0 * exp(-c * x[0]) / 2; start[2] = c; break;
+  case L_SILER:       start[0] = q0; start[1] = 1; start[2] = q0 / 4; start[3] = q0 * exp(-c * x[0]) / 2; start[4] = c; break;
+  case L_LOGLOGISTIC: start[0] = x[nx - 1]; start[1] = 4; break;
+  case L_LOGNORMAL:   start[0] = log(x[nx - 1] > 0 ? x[nx - 1] : 1); start[1] = 0.5; break;
+  case L_GAMMA:       start[0] = 4; start[1] = x[nx - 1] / 4; break;
+  }
+  gsl_vector *v = gsl_vector_alloc((size_t)np), *step = gsl_vector_alloc((size_t)np);
+  for (int i = 0; i < np; i++) {
+    gsl_vector_set(v, (size_t)i, (law == L_LOGNORMAL && i == 0) ? start[i] : log(start[i] > 0 ? start[i] : 1e-6));
+    gsl_vector_set(step, (size_t)i, 0.5);
+  }
+  gsl_multimin_function F = { table_rss, (size_t)np, &tf };
+  gsl_multimin_fminimizer *mn = gsl_multimin_fminimizer_alloc(gsl_multimin_fminimizer_nmsimplex2, (size_t)np);
+  gsl_error_handler_t *old = gsl_set_error_handler_off();
+  int st = gsl_multimin_fminimizer_set(mn, &F, v, step), it = 0;
+  for (int restart = 0; restart < 4 && st == GSL_SUCCESS; restart++) {
+    for (it = 0; it < 5000; it++) {
+      st = gsl_multimin_fminimizer_iterate(mn);
+      if (st) break;
+      if (gsl_multimin_test_size(gsl_multimin_fminimizer_size(mn), 1e-10) == GSL_SUCCESS) break;
+    }
+    gsl_vector_memcpy(v, mn->x);
+    gsl_vector_set_all(step, 0.05);
+    st = gsl_multimin_fminimizer_set(mn, &F, v, step);
+  }
+  gsl_set_error_handler(old);
+  double rss = table_rss(mn->x, &tf);
+  double p[5];
+  for (int i = 0; i < np; i++) p[i] = (law == L_LOGNORMAL && i == 0) ? gsl_vector_get(mn->x, (size_t)i) : exp(gsl_vector_get(mn->x, (size_t)i));
+  gsl_multimin_fminimizer_free(mn);
+  gsl_vector_free(v); gsl_vector_free(step);
+  free(x); free(y); free(yl);
+  if (!isfinite(rss) || rss >= 1e299) return mm_error("%s: no %s fits this table", what, laws[law].name);
+  memcpy(par, p, sizeof par);
+  num_evals = it;
+  drop_n(s, 2);
+  gsl_matrix *m = gsl_matrix_alloc(1, (size_t)np);
+  for (int i = 0; i < np; i++) gsl_matrix_set(m, 0, (size_t)i, par[i]);
+  push_matrix_real(s, m);
+  push_real(s, rss);
+  return 0;
+}
+static int op_lawfit(Stack *s)  { return fit_table(s, "lawfit", 0); }
+static int op_lawfitl(Stack *s) { return fit_table(s, "lawfitl", 1); }
+
+/* ------------------------------------------------------------------ */
 
 static const Op table[] = {
   { "setlaw",   2, op_setlaw,   "Survival", "\"name\" [params] --", "select the lifetime law for the survival words: exponential [lambda], weibull [k lambda], gompertz [b c], makeham [a b c] (Gompertz-Makeham), siler [a1 b1 a2 a3 b3], loglogistic [alpha beta], lognormal [mu sigma], gamma [k theta]", "\"makeham\" [0.0005 0.00003 0.1] setlaw" },
@@ -604,10 +699,12 @@ static const Op table[] = {
   { "km",       2, op_km,       "Survival", "t e -- M", "Kaplan-Meier: from times and event indicators (1 event, 0 censored), rows of time, S(t), number at risk, events", "[2 3 3 5 8 9] [1 1 0 1 1 0] km" },
   { "nelsonaalen", 2, op_nelsonaalen, "Survival", "t e -- M", "Nelson-Aalen cumulative hazard: rows of time, H(t), number at risk, events", "[2 3 3 5 8 9] [1 1 0 1 1 0] nelsonaalen" },
   { "logrank",  4, op_logrank,  "Survival", "t1 e1 t2 e2 -- chi2 p", "log-rank test that two groups share a survival curve", "[2 3 5 8] [1 1 1 0] [4 6 9 12] [1 1 1 1] logrank" },
+  { "lawfit",   2, op_lawfit,   "Survival", "x q -- v rss", "fit the current law to a life table's one-year death probabilities qx at ages x, least squares on log qx; the parameters become current", "\"gompertz\" [1 1] setlaw [40 50 60 70 80] [0.002 0.004 0.009 0.022 0.055] lawfit" },
+  { "lawfitl",  2, op_lawfitl,  "Survival", "x l -- v rss", "fit the current law to a life table's survivors lx at ages x (any radix), least squares on log lx/l0", "\"gompertz\" [1 1] setlaw [60 65 70 75 80] [100000 92000 81000 66000 47000] lawfitl" },
   { "lifefit",  2, op_lifefit,  "Survival", "t e -- v ll", "maximum-likelihood fit of the current law to times and event indicators (right censoring); leaves the parameters, which become current, and the log-likelihood", "\"exponential\" 1 setlaw [2 3 3 5 8 9] [1 1 0 1 1 0] lifefit" },
 };
 
 const Module mm41_mod_survival = {
-  "survival", "1.0", "lifetime laws (Gompertz-Makeham and others), survival and hazard, life tables, annuities, Kaplan-Meier, fits",
+  "survival", "1.1", "lifetime laws (Gompertz-Makeham and others), survival and hazard, life tables, annuities, Kaplan-Meier, fits",
   table, (int)(sizeof table / sizeof table[0]), NULL, NULL, 0
 };
