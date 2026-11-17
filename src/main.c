@@ -41,6 +41,7 @@
 #include "errors.h"
 #include "eval_fun.h"          // for evaluate_line
 #include "skins.h"
+#include "eggs.h"
 #include "help.h"              // for help_topic
 #include "ops.h"               // for print_ops_markdown
 #include "globals.h"           // for CONFIG_PATH, HISTORY_PATH, completed_...
@@ -219,7 +220,7 @@ static bool handle_line(Stack *stack, Stack *old_stack, char *line) {
     if (!strncmp(p, "help", 4) && (p[4] == ' ' || p[4] == '\t')) { help_topic(p + 4); return true; }
   }
 
-  if (skin_secret_line(line)) return true;
+  if (egg_line(line)) return true;
 
   char rewritten[1024];
   const char *bare = bare_name_form(line, rewritten, sizeof rewritten);

@@ -133,7 +133,6 @@ Stack pictures read deepest-first: `y x -- y+x` consumes Y and X and leaves the 
 | `usage` | `"name" --` | show the stack picture, description and example of a command, or a word's definition | `"sin" usage` |
 | `listfcns` | `--` | list all commands by category | `listfcns` |
 | `clrhist` | `--` | clear the readline history | `clrhist` |
-| `fuck` | `--` | an Easter egg | `fuck` |
 | `modules` | `--` | list the loaded modules with their versions | `modules` |
 
 # Module `decimal` 1.0 — decimal numbers for money: number mode, conversions, rounding

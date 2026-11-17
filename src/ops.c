@@ -291,7 +291,6 @@ static int op_clrwords(Stack *stack) { (void)stack; (void)(clear_words()); retur
 static int op_help(Stack *stack) { (void)stack; (void)(help_menu()); return 0; }
 static int op_listfcns(Stack *stack) { (void)stack; (void)(list_all_functions_sorted()); return 0; }
 static int op_clrhist(Stack *stack) { (void)stack; (void)(clear_history()); return 0; }
-static int op_fuck(Stack *stack) { (void)stack; (void)(whose_place()); return 0; }
 
 static const Op core_table[] = {
   /* ---- Arithmetic ---- */
@@ -387,7 +386,6 @@ static const Op core_table[] = {
   { "usage", 1, op_usage, "Session", "\"name\" --", "show the stack picture, description and example of a command, or a word's definition", "\"sin\" usage" },
   { "listfcns", 0, op_listfcns, "Session", "--", "list all commands by category", "listfcns" },
   { "clrhist", 0, op_clrhist, "Session", "--", "clear the readline history", "clrhist" },
-  { "fuck", 0, op_fuck, "Session", "--", "an Easter egg", "fuck" },
   { "modules", 0, op_modules, "Session", "--", "list the loaded modules with their versions", "modules" },
 };
 

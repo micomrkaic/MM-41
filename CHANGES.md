@@ -11,6 +11,8 @@
   size (`hp48`) or as a dot matrix in quadrant-block pixels (`hp48px`). Every level is drawn, the top framed. `skin plain`
   restores the listing. Only the listing changes; pm, help, tables and
   errors are untouched. Saved in config.txt; TAB completes the names.
+- A new splash screen: the name as a dot-matrix wordmark in an LCD frame.
+  One command that was listed is listed no more.
 - `src/skins.c` is new; `print_stack` defers to it when a skin is on.
 - Manual section Skins (with sample displays), README, MANUAL.md, man page,
   help and help syntax; golden display.rpn.

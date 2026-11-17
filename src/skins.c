@@ -152,7 +152,7 @@ static void level_label(int depth, char *out, size_t cap) {
 static const char bar[] = "────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────";
 
 /* the framed X register with its annunciator row (NULL: none) */
-static void frame41(const char *text, const char *ann) {
+void skin_frame41(const char *text, const char *ann) {
   printf("      ┌%.*s┐\n", (LCD41 + 2) * 3, bar);
   printf("%4s  │ %-*s │\n", "X", LCD41, text);
   if (ann) printf("      │ %-*s │\n", LCD41, ann);
@@ -171,7 +171,7 @@ static void print_hp41(const Stack *s) {
   /* annunciators: BAT USER G RAD SHIFT 0 1 2 3 4 PRGM ALPHA -- the ones that mean something here */
   snprintf(ann, sizeof ann, "%s%s%s%*s", word_count > 0 ? "USER " : "     ", "RAD ", decimal_mode ? "0 " : "  ",
            LCD41 - 11, x->type == TYPE_STRING ? "ALPHA" : "");
-  frame41(text, ann);
+  skin_frame41(text, ann);
 }
 
 /* ---- hp12c ---- */
@@ -379,28 +379,37 @@ static const unsigned char *glyph(char c) {
    cell two pixels by two. The font occupies 7 rows; the eighth is the line
    gap. Quadrant blocks are drawn by the terminal itself, so the pixels are
    solid and contiguous in any font. */
-static void pixel_line(const char *text) {
-  unsigned char px[8][HP48_PX];
+void skin_pixel_text(const char *text, int cols, int scale, const char *prefix, const char *suffix) {
+  enum { MAXPX = 256 };
+  if (scale < 1) scale = 1;
+  if (cols * 6 * scale > MAXPX) cols = MAXPX / (6 * scale);
+  int width = cols * 6 * scale, height = 8 * scale;
+  static unsigned char px[8 * 4][MAXPX];
   memset(px, 0, sizeof px);
-  for (int c = 0; c < HP48_COLS && text[c]; c++) {
+  for (int c = 0; c < cols && text[c]; c++) {
     const unsigned char *g = glyph(text[c]);
     for (int r = 0; r < 7; r++)
       for (int b = 0; b < 5; b++)
-        if (g[r] & (0x10 >> b)) px[r][c * 6 + b] = 1;
+        if (g[r] & (0x10 >> b))
+          for (int dy = 0; dy < scale; dy++)
+            for (int dx = 0; dx < scale; dx++)
+              px[r * scale + dy][(c * 6 + b) * scale + dx] = 1;
   }
   /* quadrants indexed by top-left, top-right, bottom-left, bottom-right */
   static const char *const quad[16] = { " ", "▘", "▝", "▀", "▖", "▌", "▞", "▛", "▗", "▚", "▐", "▜", "▄", "▙", "▟", "█" };
-  for (int r = 0; r < 8; r += 2) {
-    char line[HP48_PX / 2 * 4 + 1]; size_t o = 0;
-    for (int x = 0; x < HP48_PX; x += 2) {
+  for (int r = 0; r < height; r += 2) {
+    char line[MAXPX / 2 * 4 + 1]; size_t o = 0;
+    for (int x = 0; x < width; x += 2) {
       int v = (px[r][x] ? 1 : 0) | (px[r][x + 1] ? 2 : 0) | (px[r + 1][x] ? 4 : 0) | (px[r + 1][x + 1] ? 8 : 0);
       size_t l = strlen(quad[v]);
       memcpy(line + o, quad[v], l); o += l;
     }
     line[o] = '\0';
-    printf("   │%s│\n", line);
+    printf("%s%s%s\n", prefix, line, suffix);
   }
 }
+
+static void pixel_line(const char *text) { skin_pixel_text(text, HP48_COLS, 1, "   │", "│"); }
 
 /* The 48's number display: STD shows up to twelve significant digits with
    no trailing zeros and no leading zero (.5, 1.E-12); FIX p shows p
@@ -491,7 +500,7 @@ void skin_print_stack(const Stack *s) {
   if (s->top < 0) {                                /* an empty stack: the display shows zero, as a real one would */
     char zero[32]; lcd_number(0.0, print_precision, zero, sizeof zero);
     switch (skin) {
-    case SKIN_HP41:  frame41(zero, NULL); return;
+    case SKIN_HP41:  skin_frame41(zero, NULL); return;
     case SKIN_HP12C: frame12c(zero); return;
     case SKIN_HP48:  print_hp48(NULL, 0); return;
     case SKIN_HP48PX: print_hp48(NULL, 1); return;
@@ -516,43 +525,4 @@ int op_skin(Stack *s) {
   stack_element t = pop(s); stack_element_free(&t);
   skin = k;
   return 0;
-}
-
-/* ------------------------------------------------------------------ */
-/* The hidden part. A certain sequence of ten words, typed one per line or
-   all on one, each of which is otherwise nothing in MM-41 (a word the user
-   has defined with that name is left alone). When it completes, the
-   display does what an HP-41 did when the batteries had been out too
-   long, and the skin advances to the next one. */
-
-static int secret_state = 0;
-
-static int memory_lost(void) {
-  skin = skin == SKIN_PLAIN ? SKIN_HP41 : (skin + 1) % SKIN_COUNT;
-  putchar('\n'); frame41("MEMORY LOST", NULL); putchar('\n');
-  return 1;
-}
-
-int skin_secret_line(const char *line) {
-  static const char *const code[] = { "up", "up", "down", "down", "left", "right", "left", "right", "b", "a" };
-  enum { CODE_LEN = sizeof code / sizeof code[0] };
-  char buf[256];
-  snprintf(buf, sizeof buf, "%s", line);
-  int ntok = 0;
-  char *toks[64];
-  for (char *t = strtok(buf, " \t"); t && ntok < 64; t = strtok(NULL, " \t")) toks[ntok++] = t;
-  if (ntok == 0) return 0;
-  for (int i = 0; i < ntok; i++) {
-    int known = 0;
-    for (size_t k = 0; k < CODE_LEN; k++) if (strcmp(toks[i], code[k]) == 0) known = 1;
-    if (!known || find_op(toks[i]) >= 0 || find_word(toks[i])) { secret_state = 0; return 0; }
-  }
-  int fired = 0;
-  for (int i = 0; i < ntok; i++) {
-    if (strcmp(toks[i], code[secret_state]) == 0) secret_state++;
-    else secret_state = strcmp(toks[i], code[0]) == 0 ? 1 : 0;
-    if (secret_state == CODE_LEN) { secret_state = 0; fired = memory_lost(); }
-  }
-  (void)fired;
-  return 1;
 }

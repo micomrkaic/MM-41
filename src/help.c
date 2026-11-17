@@ -30,11 +30,6 @@ static void describe_op(int idx);
 #define title(s) printf(BOLD s RESET "\n")
 #define subtitle(s) printf(UNDERLINE s RESET "\n")
 
-void whose_place(void) {
-  printf("Your place or mine?\n");
-  return;
-}
-
 void help_menu(void) {
   printf("\n");
   title("MM-41 " MM41_VERSION " -- RPN calculator for real, complex and decimal scalars, strings and matrices");

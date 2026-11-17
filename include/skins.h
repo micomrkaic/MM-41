@@ -29,8 +29,11 @@ void        skin_print_stack(const Stack *s);  /* the stack in the current skin 
 
 int op_skin(Stack *s);                         /* "name" skin */
 
-/* The hidden part. Feed every input line; returns 1 when the line was taken
-   and must not be evaluated. */
-int skin_secret_line(const char *line);
+/* Building blocks other parts use: the 41's framed LCD line (ann NULL for
+   no annunciator row) and text in the 48's 5 x 7 font as quadrant-block
+   pixels, `cols` characters wide, magnified `scale` times, each terminal
+   row wrapped in prefix and suffix. */
+void skin_frame41(const char *text, const char *ann);
+void skin_pixel_text(const char *text, int cols, int scale, const char *prefix, const char *suffix);
 
 #endif
