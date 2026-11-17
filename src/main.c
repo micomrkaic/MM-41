@@ -42,7 +42,8 @@
 #include "eval_fun.h"          // for evaluate_line
 #include "skins.h"
 #include "eggs.h"
-#include "help.h"              // for help_topic
+#include "help.h"
+#include "manual.h"              // for help_topic
 #include "ops.h"               // for print_ops_markdown
 #include "globals.h"           // for CONFIG_PATH, HISTORY_PATH, completed_...
 #include "print_fun.h"         // for print_stack
@@ -218,6 +219,7 @@ static bool handle_line(Stack *stack, Stack *old_stack, char *line) {
     const char *p = line;
     while (*p == ' ' || *p == '\t') p++;
     if (!strncmp(p, "help", 4) && (p[4] == ' ' || p[4] == '\t')) { help_topic(p + 4); return true; }
+    if (!strncmp(p, "manual", 6) && (p[6] == ' ' || p[6] == '\t')) { manual_open(p + 6); return true; }
   }
 
   if (egg_line(line)) return true;

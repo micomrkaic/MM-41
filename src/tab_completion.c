@@ -25,6 +25,7 @@
 #include <string.h>             // for strdup, strncmp, NULL, strlen
 #include "globals.h"            // for app_path
 #include "help.h"               // for help_topic_name
+#include "manual.h"             // for manual_titles
 #include "skins.h"              // for skin_name
 #include "module.h"             // for modules_count, module_at
 #include "ops.h"                // for ops, n_ops
@@ -97,6 +98,9 @@ static char **argument_completion(const char *word, size_t wl, const char *text,
   } else if (!strncmp(word, "unuse", wl) && wl == 5) {
     names = calloc((size_t)word_module_count + 1, sizeof *names);
     for (int i = 0; i < word_module_count; i++) names[n_names++] = strdup(word_modules[i].name);
+  } else if (!strncmp(word, "manual", wl) && wl == 6) {
+    char *titles[128]; int nt = manual_titles(titles, 128);
+    for (int i = 0; i < nt; i++) { add_name(titles[i]); free(titles[i]); }
   } else if (!strncmp(word, "skin", wl) && wl == 4) {
     for (int i = 0; i < SKIN_COUNT; i++) add_name(skin_name(i));
   } else if (!strncmp(word, "usehol", wl) && wl == 6) {

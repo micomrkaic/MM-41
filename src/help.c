@@ -40,6 +40,7 @@ void help_menu(void) {
   subtitle("Stack");
   printf("    dup drop swap over nip tuck  n pick  n roll  depth  clst  ps  print  pm\n");
   printf("    n setprec  sfs  skin plain|hp41|hp12c|hp48|hp48px (draw the stack as that calculator's display)\n");
+  printf("    manual  manual <chapter>  manual <word>     the user manual in the pager (n next match, q back)\n");
   subtitle("Arithmetic and functions");
   printf("    + - * / ^  chs inv abs sqrt mod fact ncr npr  %% %%t %%chg   .* ./ .^ (elementwise)\n");
   printf("    exp ln log  sin cos tan asin acos atan  sinh cosh tanh asinh acosh atanh\n");
@@ -600,7 +601,7 @@ static const Topic topics[] = {
     "matrices [rows cols $ a11 a12 ...] or [rows, cols, \"file\"]. Comments start with \\ or #.\n"
     "The stack prints after every line, [0] at the bottom (or as an HP-41, HP-12C or HP-48 display\n"
     "would show it: skin hp41, skin hp12c, skin hp48, skin hp48px; skin plain); undo restores the previous\n"
-    "stack, q quits. help <name> describes any command.\n"
+    "stack, q quits. help <name> describes any command; manual <chapter or word> opens the manual there.\n"
     "Matrices: [1 2 3] is a row vector, [1 2; 3 4] a 2 x 2 matrix (a semicolon ends a row), and the\n"
     "older [rows cols $ elements] form is what the calculator writes back.\n"
     "Commands that take a name take a string: \"const\" use, \"us\" usehol, \"f.so\" load. A line\n"

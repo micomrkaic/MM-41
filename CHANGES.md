@@ -1,5 +1,16 @@
 # MM-41 changes
 
+## MM-41 1.9
+
+- **The manual at the prompt.** `manual` opens the user manual in the pager
+  (`$PAGER`, then less, then more); `manual survival`, `manual 9.3` or
+  `manual npv` opens it at that chapter, section or first mention, with
+  `n` for the next match and `q` back to the prompt; TAB after `manual`
+  completes the chapter titles. In a pipeline the chapter is printed. The
+  text is `doc/mm41-manual.txt`, rendered from the LaTeX by `make docs`
+  with pandoc (`doc/manual-text.lua` numbers the headings), committed, and
+  installed next to the PDF; `$MM41_MANUAL` overrides where to look.
+
 ## MM-41 1.8
 
 - **Reading files.** `"table.txt" readmat` reads a table as it is: one row

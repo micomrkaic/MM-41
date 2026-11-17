@@ -28,7 +28,7 @@ MM-41>> 2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
 [5] 𝔻 : -1798.65
 MM-41>> modules
 module       version  words  summary
-core         1.8         85  arithmetic, functions, logic, the stack, words and the session
+core         1.9         86  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -52,7 +52,9 @@ with a complete command reference. `man mm41` and [COMMANDS.md](COMMANDS.md)
 are the short forms; inside the calculator, `help` for the overview, `help npv`
 for one command in full (what it takes, what it leaves, its example run),
 `help modules` for what modules are and how to add one (also `help words`,
-`help finance`, …), `help holiday` to search, `listfcns` and `modules`.
+`help finance`, …), `help holiday` to search, `listfcns` and `modules`;
+`manual` opens the user manual in the pager, `manual survival` at that
+chapter, `manual npv` at the first mention (`n` next, `q` back).
 `skin hp41`, `skin hp12c` or `skin hp48` draws the stack as that calculator's
 display would have (twelve-character LCD with annunciators, seven-segment,
 the 48's screen; `skin hp48px` the 48 as a dot matrix); `skin plain` is

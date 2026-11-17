@@ -10,7 +10,7 @@ PREFIX     ?= $(HOME)/.local
 BINDIR     ?= $(PREFIX)/bin
 MANDIR     ?= $(PREFIX)/share/man/man1
 DOCDIR     ?= $(PREFIX)/share/doc/mm41
-DOCS        = README.md MANUAL.md COMMANDS.md CHANGES.md LICENSE doc/mm41-manual.pdf
+DOCS        = README.md MANUAL.md COMMANDS.md CHANGES.md LICENSE doc/mm41-manual.pdf doc/mm41-manual.txt
 
 # Respect XDG on Linux; fall back to ~/.config on macOS/Linux
 CONFIG_HOME  ?= $(if $(XDG_CONFIG_HOME),$(XDG_CONFIG_HOME),$(HOME)/.config)
@@ -64,7 +64,7 @@ GIT_DIRTY  := $(shell git diff-index --quiet HEAD -- 2>/dev/null || echo -dirty)
 GIT_VERSION:= $(GIT_HASH)$(GIT_DIRTY)
 
 # Force-include the generated header in every compile
-CPPFLAGS += -include $(GIT_HEADER)
+CPPFLAGS += -include $(GIT_HEADER) -DMM41_DOCDIR='"$(DOCDIR)"'
 
 
 # Executable (mode-specific)
@@ -271,10 +271,23 @@ uninstall:
 	@rm -rf "$(DESTDIR)$(DOCDIR)"
 	@echo "Left $(APP_CONF_DIR) in place (user data)."
 
-# Regenerate the command reference from the dispatch table.
+# Regenerate the command reference from the dispatch table, and the plain-text
+# manual that `manual` opens in the pager (needs pandoc; without it the
+# committed doc/mm41-manual.txt is kept).
 docs: $(TARGET)
 	./$(TARGET) --commands > COMMANDS.md
 	./$(TARGET) --commands-tex > doc/commands.tex
+	@if command -v pandoc >/dev/null 2>&1; then \
+	  echo "Rendering doc/mm41-manual.txt"; \
+	  sed -e 's/\\begin{rpn}/\\begin{verbatim}/' -e 's/\\end{rpn}/\\end{verbatim}/' \
+	      -e 's/^\\input{commands.tex}/The command reference is in COMMANDS.md and at the prompt: help <name>./' \
+	      doc/manual.tex > doc/manual-text.tex; \
+	  ( printf 'MM-41 USER MANUAL, version %s\n\n' "$$(sed -n 's/.*MM41_VERSION "\(.*\)".*/\1/p' include/globals.h)"; \
+	    printf 'Type  manual <chapter or word>  at the prompt to open this file there; in the pager, n finds the next match, q returns.\n\n'; \
+	    cd doc && pandoc -f latex -t plain --columns=88 --lua-filter=manual-text.lua manual-text.tex 2>/dev/null ) > doc/mm41-manual.txt.tmp; \
+	  ( head -4 doc/mm41-manual.txt.tmp; echo "CONTENTS"; echo; grep -E '^[0-9]+(\.[0-9]+)?  ' doc/mm41-manual.txt.tmp | sed 's/^/  /'; echo; tail -n +5 doc/mm41-manual.txt.tmp ) > doc/mm41-manual.txt; \
+	  rm -f doc/mm41-manual.txt.tmp doc/manual-text.tex; \
+	else echo "pandoc not found: keeping doc/mm41-manual.txt as it is"; fi
 
 # Build a compiled module as a shared object: make shared-module DIR=path/to/module
 # (all .c files in DIR -> DIR/<basename>.so). Load it with "<path>.so" load, or

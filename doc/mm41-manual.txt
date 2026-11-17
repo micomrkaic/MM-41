@@ -1,0 +1,2002 @@
+MM-41 USER MANUAL, version 1.9
+
+Type  manual <chapter or word>  at the prompt to open this file there; in the pager, n finds the next match, q returns.
+
+CONTENTS
+
+  1  INTRODUCTION
+  1.1  Notation used in this manual
+  2  GETTING STARTED
+  2.1  Building and installing
+  2.2  A first session
+  2.3  Line forms: help npv, use const
+  2.4  Getting help inside the calculator
+  3  ENTERING DATA
+  3.1  Numbers
+  3.2  Complex numbers
+  3.3  Strings
+  3.4  Matrices
+  3.5  Comments
+  3.6  Execution tokens
+  3.7  Shell commands
+  4  THE STACK
+  4.1  Display
+  4.2  Skins
+  5  ARITHMETIC AND FUNCTIONS
+  5.1  Basic arithmetic
+  5.2  Exponentials, logarithms, trigonometry
+  5.3  The promotion rule
+  5.4  Special functions and the normal distribution
+  5.5  Comparisons and logic
+  6  DECIMAL NUMBERS
+  6.1  Writing decimals
+  6.2  Decimal absorbs binary
+  6.3  Display
+  7  MATRICES
+  7.1  Creating matrices
+  7.2  Arithmetic
+  7.3  Linear algebra
+  7.4  Elements and shape
+  7.5  Reductions and statistics
+  7.6  Polynomials
+  8  STATISTICS AND SIMULATION
+  8.1  Describing a vector
+  8.2  Curve fitting and regression
+  8.3  Distributions
+  8.4  Random draws and Monte Carlo
+  9  SURVIVAL ANALYSIS
+  9.1  Laws
+  9.2  Functions of the law
+  9.3  Annuities and insurance
+  9.4  Estimation
+  9.5  Fitting a published life table
+  10  INCOME DISTRIBUTION
+  10.1  Families
+  10.2  Measures of the distribution
+  10.3  Measures from data
+  10.4  Fitting a published table of shares
+  11  STRINGS
+  12  REGISTERS
+  13  WORDS: PROGRAMMING THE CALCULATOR
+  13.1  Conditionals
+  13.2  Loops
+  13.3  Saving words
+  13.4  Words from modules
+  14  NUMERICAL METHODS
+  15  DIFFERENTIAL EQUATIONS
+  16  DATES, TIME AND THE SUN
+  16.1  Workdays and holidays
+  17  FINANCE
+  17.1  Time value of money
+  17.2  Amortisation
+  17.3  Cash flows: NPV and IRR
+  17.4  Interest-rate conversions and depreciation
+  17.5  Bonds
+  17.6  Dates in the finance module
+  17.7  Dated cash flows: XNPV and XIRR
+  18  PROGRAMS
+  19  MODULES
+  19.1  Built-in modules
+  19.2  Word modules
+  19.3  Compiled modules
+  19.4  Which kind to write
+  20  BATCH MODE AND SCRIPTING
+  21  CONFIGURATION AND FILES
+  22  ERRORS
+  23  COMMAND REFERENCE
+  24  THE STD WORD MODULE
+  25  COMING FROM MM-15, MM-14, MM-11 OR MM-B1
+
+MM-41 is free software under the GNU General Public License, version 3 or later. Source,
+issues and releases: https://github.com/micomrkaic/MM-41.
+
+========================================================================================
+1  INTRODUCTION
+========================================================================================
+
+MM-41 is a stack-based calculator in the tradition of the HP-41C and of FORTH, written
+in C17 on top of the GNU Scientific Library and GNU Readline. You type numbers and
+commands; numbers go on a stack and commands take their arguments from it. Beyond the
+usual scalar functions it handles complex numbers, exact decimals for money, strings,
+and real and complex matrices, and it is programmable in three ways: user-defined words
+with conditionals and loops, numerical methods (integration, root finding, minimisation,
+differentiation) that take any word as the function, and HP-41 style line programs with
+labels and jumps.
+
+Like the HP-41, it is built from modules. The core knows about numbers, the stack, words
+and errors; everything else—matrices, numerical methods, dates, strings, finance—is a
+module, and you can add your own, either as a file of word definitions or as compiled
+code (Section 19). MM-41 unifies the earlier MM-11, MM-14, MM-15 and MM-B1 calculators.
+
+The design has a few fixed points worth knowing before you start.
+
+-   Everything is a token on a line. Whitespace separates tokens; a line is evaluated
+    left to right. There is no operator precedence because there are no infix operators.
+
+-   Every token is atomic. If a command fails—wrong type, singular matrix, division by
+    zero—the stack is put back exactly as it was before that token, the error is
+    printed, and the rest of the line is skipped. You never end up with half a result.
+
+-   Two promotion rules. A real function applied outside its real domain returns a
+    complex number rather than nan: -1 sqrt is (0,1), 2 asin is (1.5708,1.3170), and a
+    real matrix with one such entry becomes a complex matrix. And decimal absorbs
+    binary: a decimal combined with a real gives a decimal, so 0.1d 0.2 + is exactly
+    0.3.
+
+-   Instant startup, no ceremony. The calculator starts in a few milliseconds, reads
+    your saved words and configuration from ~/.config/mm41, and is equally at home in a
+    terminal session and in a shell pipeline.
+
+1.1  Notation used in this manual
+---------------------------------
+
+Commands are shown in bold monospace. Their effect on the stack is described by a stack
+picture, written deepest-first with the top of the stack at the right:
+
+y x – y+x
+
+means that the command consumes two items—y below x—and leaves their sum. A picture that
+lists the same name on both sides (A – A rows cols) means the item stays on the stack.
+
+Transcripts show what you type, followed by the calculator’s output. In the interactive
+session the whole stack is printed after every line; in the transcripts we usually show
+only the relevant part. Lines beginning with \ are comments and are ignored by the
+calculator; we use them to annotate results.
+
+    2 3 +            \ 5
+    (1,2) (3,-1) *   \ (5,5)
+
+========================================================================================
+2  GETTING STARTED
+========================================================================================
+2.1  Building and installing
+----------------------------
+
+MM-41 needs a C17 compiler, GNU make, GNU Readline and the GNU Scientific Library (GSL).
+On Debian or Ubuntu:
+
+sudo apt install build-essential libreadline-dev libgsl-dev
+
+and on macOS with Homebrew, brew install gsl readline. Then:
+
+git clone https://github.com/micomrkaic/MM-41 cd MM-41 make # builds bin/release/mm41
+make test # 21 unit cases + golden files, run under AddressSanitizer make install # into
+ /.local: bin/mm41, the man page, this manual, and docs
+
+make install also seeds ~/.config/mm41/ with the default configuration (kept if you
+already have one) and the shipped word modules (always replaced, so they match the
+program). PREFIX=/usr/local make install installs system-wide; make uninstall removes
+exactly what was installed. Make sure ~/.local/bin is on your PATH.
+
+2.2  A first session
+--------------------
+
+    $ mm41
+    MM-41>> 2 3 +
+    [0] ℝ : 5.000000
+    MM-41>> 4 *
+    [0] ℝ : 20.000000
+    MM-41>> dup sqrt
+    [0] ℝ : 20.000000
+    [1] ℝ : 4.472136
+    MM-41>> q
+
+The prompt is MM_RPN>>. After each line the whole stack is printed, one item per line,
+deepest first: the index in brackets, a type glyph (ℝ real, ℂ complex, 𝒮 string, Mℝ and
+Mℂ real and complex matrices), and the value. Position [0] is the bottom of the stack;
+the highest index is the top, which is where commands take their arguments.
+
+The REPL has GNU Readline editing: arrow keys recall history (kept in .rpn_history
+between sessions), and TAB completes command and word names—and, after help, also
+module, topic and category names; after use, unuse and usehol, the names of the modules
+and calendars they can take; after load, run and batch, file names. q exits, saving the
+configuration; undo restores the stack as it was before the previous line.
+
+2.3  Line forms: help npv, use const
+------------------------------------
+
+Everything in MM-41 is postfix: a command takes its arguments from the stack, so a
+command that takes a name takes it as a string, "const" use. That is the form that works
+everywhere, inside a word definition included. At the prompt, though, such commands are
+typed far more often than they are programmed, and for them the line as a whole is read
+first:
+
+describes name instead of executing it (section 2.4).
+
+and likewise unuse, load, run, batch and usehol: a line that is exactly one of these
+commands followed by one bare name is read as "name" command: use const is "const" use,
+usehol us is "us" usehol, load examples/modules/hello/hello.so is the same with the path
+quoted. If the line fails, the stack is left exactly as it was.
+
+Only that exact shape is rewritten. A quoted name, a second argument, or the command
+inside a definition is evaluated as written, so : setup "const" use "us" usehol ; means
+what it says and use const c is still three tokens (and an error, since use finds no
+string on the stack). The rewriting is a convenience of the prompt and of batch files,
+which go through the same reader, not a change to the language.
+
+2.4  Getting help inside the calculator
+---------------------------------------
+
+a one-screen summary of the input syntax and the command families.
+
+one command in full: what it takes from the stack, item by item, what it leaves, and its
+example—run on a scratch stack when that is harmless, so you see the result as well.
+help followed by a name is a line form, like : ... ;; the name is looked up, not
+executed, and the stack is untouched. "name" usage is the same page.
+
+a short introduction to one part of the calculator—help modules (what modules are and
+how to add one), help words, help decimal, help finance, help workdays, help numerics,
+help syntax—followed, where there is one, by the listing of the module of that name.
+
+every command of a module (help matrices) or of a category (help Stack), one line each.
+
+a user word’s definition.
+
+when the text is none of those, the commands whose name or description mentions it:
+help holiday, help bond.
+
+every command, grouped by module and category, with its stack picture.
+
+the loaded modules with their versions.
+
+this manual, as text, in the pager: manual from the top, manual survival (or manual 9,
+manual 9.3) at that chapter or section, manual lambertw at the first line that mentions
+a word. In less, n finds the next mention, / searches, q returns to the prompt; TAB
+after manual completes the chapter titles. The pager is $PAGER, then less, then more; in
+a pipeline the chapter is printed instead. The text is mm41-manual.txt, rendered from
+this manual by make docs and installed next to the PDF.
+
+    MM-41>> help mod
+    mod   y x -- mod(y,x)   [module core, Arithmetic]
+        floored modulo (result has the sign of x)
+        takes 2 items (the last one named is on top):
+          y          a number: real, or complex, decimal or matrix where allowed
+          x          a number: real, or complex, decimal or matrix where allowed
+        leaves 1 item:
+          mod(y,x)
+        example:  -7 3 mod
+        which leaves:
+    [0] ℝ : 2.000000
+        see also: + - * / ^ pow .* ./ .^ chs inv abs
+                  sqrt % %t %chg fact ncr npr frac intg
+
+The operand names in stack pictures are a small vocabulary (x and y numbers, z real or
+complex, n a whole number, A a matrix, v a vector, s a string, date, cf cash flows, xt
+an execution token, …), and help spells each one out. Examples that would change the
+session—storing registers, switching modes, installing calendars, defining words—are
+shown but not run. Outside the calculator there is man mm41, and mm41 –commands prints
+the complete reference as Markdown (it is also Appendix 23 of this manual).
+
+========================================================================================
+3  ENTERING DATA
+========================================================================================
+
+All input is case sensitive. A line is split into tokens at whitespace; the exceptions
+are strings, complex literals and matrix literals, which may contain spaces.
+
+3.1  Numbers
+------------
+
+Real numbers in the usual forms: 3, -1.25, .5, 1e3, -2.5e-3. A leading + is accepted.
+Numbers are IEEE double precision; inf and nan push the special values, and pi, e and
+gravity (9.80665 m/s²) push constants. A number with the suffix d (0.1d, 1250.00d) is a
+decimal, an exact 34-digit number for money; Section 6 explains decimals and the decimal
+mode in which every literal is one.
+
+3.2  Complex numbers
+--------------------
+
+A complex number is written in parentheses, real part first: (1,2), (-1.2e-4, 0.7e2).
+Spaces inside the parentheses are allowed. A complex number prints as
+(1.000000, 2.000000i). The commands re, im, abs, arg, conj, re2c, split_c and j2r
+convert between the representations:
+
+    (3,4) abs        \ 5
+    (3,4) arg        \ 0.927295  (radians)
+    (1,2) split_c    \ 1 2       (two reals)
+    1 2 j2r          \ (1,2)     (imaginary part on top)
+    5 re2c           \ (5,0)
+
+Reals and complex numbers mix freely in arithmetic; the result is complex whenever an
+operand is.
+
+3.3  Strings
+------------
+
+Strings are double-quoted: "hello world". The escapes \", \\, \n and \t are recognised.
+Strings are used for dates, file names, word names ("sq" usage), and as input to eval;
+see Section 11.
+
+3.4  Matrices
+-------------
+
+An inline matrix is written in brackets; a semicolon ends a row:
+
+    [1 2 3]                     \ a row vector, 1x3
+    [1 2; 3 4]                  \ the 2x2 matrix  1 2 / 3 4
+    [1 (0,1); 0 1]              \ one complex entry makes a complex matrix
+
+The older form gives the dimensions and a dollar sign first, then the elements in
+row-major order, and is what the calculator itself writes:
+
+    [2 2 $ 1 2 3 4]             \ the same 2x2 matrix
+    [1 3 $ 1 2 3]               \ a row vector
+    [3 1 $ 1 2 3]               \ a column vector
+
+Every word that takes a vector accepts a row or a column, so [1 2 3] serves wherever a
+vector is wanted. A matrix can also be read from a text file. readmat takes a table as
+it is—one row per line, numbers separated by spaces, tabs, commas or semicolons; blank
+lines, comments starting with #, \ or //, and a header line that is not numbers are
+skipped, and the first data row sets the number of columns. readvec takes every number
+in the file as one column, however the lines are laid out, and readcol one column of a
+table. The older literal gives the shape and reads that many numbers:
+
+    "table.txt" readmat          \ the whole table
+    "incomes.txt" readvec        \ every number in the file, as a column
+    "table.txt" 2 readcol        \ its third column (columns count from 0)
+    [2, 2, "m.txt"]              \ reads four numbers from m.txt, row by row
+
+getcol and getrow take one column or row out of a matrix on the stack, M 2 getcol. The
+stack shows a matrix as Mℝ: 2 x 2 matrix; pm (or print) prints it in full. Section 7
+covers what you can do with them.
+
+3.5  Comments
+-------------
+
+\ and # start a comment that runs to the end of the line. This works in the REPL, in
+scripts, in word definitions and in program files.
+
+3.6  Execution tokens
+---------------------
+
+@name does not run name; it pushes a reference to it, an execution token, as a real
+number. The numerical methods (Section 14) and exec consume these: 0 pi @sin integrate
+integrates the sine over [0,π]. Any command or word, from any module, can be referenced
+this way.
+
+3.7  Shell commands
+-------------------
+
+A line that starts with ! is run by the shell and its standard output is pushed as a
+string:
+
+    !date +%Y
+
+========================================================================================
+4  THE STACK
+========================================================================================
+
+The stack holds up to 100 items of any type. The classic FORTH words manipulate it:
+
+  ------- --------------- -----------------------------------------------------------------------------
+  dup     x – x x         duplicate the top
+  drop    x –             discard the top
+  swap    a b – b a       exchange the top two
+  over    a b – a b a     copy the second item to the top
+  nip     a b – b         discard the second item
+  tuck    a b – b a b     copy the top below the second item
+  pick    ... n – ... v   copy the item at depth n to the top (0 pick is dup, 1 pick is over)
+  roll    ... n – ...     move the item at depth n to the top (1 roll is swap, 2 roll is FORTH’s rot)
+  depth   – n             number of items on the stack
+  clst    ... –           clear the stack
+  ------- --------------- -----------------------------------------------------------------------------
+
+    10 20 30 2 roll     \ 20 30 10
+    10 20 30 1 pick     \ 10 20 30 20
+
+savestack writes the whole stack to stack_backup.dat in the configuration directory and
+loadstack pushes it back—handy for carrying a set of matrices from one session to the
+next.
+
+4.1  Display
+------------
+
+print prints the top item (a matrix in full), ps prints the whole stack, pm prints the
+matrix on top in full. All three leave the stack unchanged. In fixed-point display a
+real that would show only as 0.000000, or as a fifteen-digit integer, falls back to
+scientific notation (6.626070e-34), as a calculator does. A matrix prints with four
+decimals (scientific notation for very large or small entries), except that a matrix
+whose entries are all whole numbers—dates, counts, an integer cash-flow table—prints
+them as integers.
+
+Numbers are shown in fixed-point with six decimals by default. setprec sets the number
+of decimals (0–20), and sfs toggles between fixed-point and scientific notation, where
+the precision is the number of significant digits:
+
+    10 setprec 1 3 /      \ 0.3333333333
+    sfs 1 3 /             \ 0.3333333333  (6 significant digits would be 0.333333)
+    3 setprec 12345.678   \ 1.23e+04
+    sfs                   \ back to fixed point
+
+Both settings are saved in config.txt when you quit.
+
+4.2  Skins
+----------
+
+The stack listing can be drawn the way a classic calculator would have shown it.
+"hp41" skin—or skin hp41 at the prompt—selects a skin; skin plain returns to MM-41’s own
+listing. Only the listing after each line changes: pm, ps, help, the tables and the
+error messages are the same in every skin. The setting is saved in config.txt.
+
+One twelve-character LCD line per level, the top of the stack (the 41’s X register)
+framed with its annunciator row: USER when you have defined words, RAD always (MM-41
+works in radians), flag 0 in decimal mode, ALPHA when a string is on top. Numbers follow
+the 41’s rules: a ten-digit mantissa in FIX with comma separators, fewer decimals when
+the integer part needs the digits, and a switch to SCI when the number does not fit or
+would show as zero, the exponent after a space or a minus (6.02 23, 1.00-05). Strings go
+to ALPHA in capitals, a matrix shows as MAT 3X3, a complex number as 1+J2. The levels
+below X are labelled Y, Z, T and then by register number.
+
+A seven-segment display drawn as 3 × 5 pixel digits in half blocks, three rows per
+level, digits lit from the right, the same ten-digit arithmetic, and BEGIN when payments
+are at the beginning of the period. Anything the 12C could not have held—a string, a
+matrix—shows as a row of dashes.
+
+The 48’s screen, 22 characters a line: the RAD and { HOME } header, levels numbered from
+the top as the 48 numbered them, values right-justified and clipped on the right.
+Numbers follow the 48: STD shows up to twelve significant digits with no trailing zeros
+and no leading zero (.5, 1.E-12); with setprec in force, FIX. Strings keep their quotes
+and case, a matrix is written out as [[ 1 2 ] [ 3 4 ]] as far as it fits, a complex
+number as (1,2).
+
+The same screen as a dot matrix: a 5 × 7 font rendered in quadrant blocks, two pixels to
+the cell, four terminal rows per line of text—the 48 at the size it would have on a
+terminal, which is large.
+
+    2 setprec 1000 2.5 -1798.65 skin hp41
+       Z    1,000.00
+       Y    2.50
+          ┌──────────────────┐
+       X  │ -1,798.65        │
+          │      RAD         │
+          └──────────────────┘
+
+    skin hp12c
+          ┌──────────────────────────────────────────────┐
+          │                       █ ▀▀█ █▀█ █▀█ █▀▀ █▀▀  │
+       X  │                 ▀▀▀   █   █ ▀▀█ █▀█ █▀█ ▀▀█  │
+          │                       ▀,  ▀ ▀▀▀ ▀▀▀.▀▀▀ ▀▀▀  │
+          │                                              │
+          └──────────────────────────────────────────────┘
+
+    2.5 skin hp48
+       ┌────────────────────────┐
+       │ RAD       { HOME }     │
+       │ 2:                2.50 │
+       │ 1:            -1798.65 │
+       └────────────────────────┘
+
+    skin hp48px
+
+[image]
+
+The digits and pixels are block elements (▀ ▄ █ and the quadrants), every stroke a full
+or half cell, which terminals draw solidly in any font. The 41 and 12C skins are
+faithful to the digit count and formats, not to the pixel: the real LCDs kept
+punctuation between the digit positions, which a terminal cannot, so a comma takes a
+column.
+
+========================================================================================
+5  ARITHMETIC AND FUNCTIONS
+========================================================================================
+5.1  Basic arithmetic
+---------------------
+
++, -, *, / and ^ (also spelled pow) work on reals, complex numbers and matrices
+(Section 7 explains the matrix cases). Division by zero is an error, not inf.
+
+  ------ ---------------- --------------------------------------------------------------
+  chs    x – -x           change sign
+  inv    x – 1/x          reciprocal
+  abs    z – |z|          absolute value or complex magnitude
+  sqrt   x – sqrt(x)      square root
+  intg   x – int(x)       integer part, truncated toward zero (-3.7 intg is  − 3)
+  frac   x – frac(x)      fractional part, x − intg(x) (-3.7 frac is  − 0.7)
+  mod    y x – mod(y,x)   floored modulo; the result has the sign of x (-7 3 mod is 2)
+  fact   x – x!           factorial, Γ(x+1) for non-integers
+  ncr    n k – C(n,k)     combinations
+  npr    n k – P(n,k)     permutations
+  ------ ---------------- --------------------------------------------------------------
+
+The three percentage functions follow the HP convention of keeping the base value y so
+that it is available for the next step:
+
+    200 25 %        \ 200 50      25% of 200
+    200 50 %t       \ 200 25      50 is 25% of 200
+    80 100 %chg     \ 80 25       from 80 to 100 is +25%
+
+5.2  Exponentials, logarithms, trigonometry
+-------------------------------------------
+
+exp, ln, log (base 10); sin, cos, tan, asin, acos, atan; sinh, cosh, tanh, asinh, acosh,
+atanh. Angles are in radians. All of them accept real and complex arguments and apply
+elementwise to matrices.
+
+5.3  The promotion rule
+-----------------------
+
+Real functions whose result would not be real return a complex number. The rule is
+applied consistently, so a calculation never produces nan where a complex answer exists:
+
+  Command      Promotes when                Example
+  ------------ ---------------------------- ----------------------------
+  sqrt         x < 0                        -4 sqrt  → (0,2)
+  ln, log      x < 0                        -1 ln  → (0,π)
+  asin, acos   |x| > 1                      2 asin  → (1.5708,1.3170)
+  acosh        x < 1                        0.5 acosh  → (0,1.0472)
+  atanh        |x| > 1                      2 atanh  → (0.5493,1.5708)
+  ^            y < 0 and x not an integer   -8 3 inv ^  → (1,1.7321)
+
+A real matrix with one such entry becomes a complex matrix: [2 2 $ 1 -2 3 4] ln is
+complex. The limits  ± ∞ remain real where they are the correct answer (0 ln is -inf).
+
+5.4  Special functions and the normal distribution
+--------------------------------------------------
+
+gamma, ln_gamma, beta and ln_beta wrap the GSL special functions. npdf, ncdf and nquant
+are the standard normal density, distribution function and quantile:
+
+    1.96 ncdf        \ 0.975002
+    0.975 nquant     \ 1.959964
+    5 gamma          \ 24
+    2 3 beta         \ 0.083333
+
+The rest of the Math Pac is here too, each through GSL’s error-checked entry point, so
+an argument outside the domain is a calculator error rather than a nan; the one-argument
+functions apply elementwise to a real matrix.
+
+  ------------------ ------------- ---------------------------------------------------------
+  erf, erfc          x – y         error function and its complement
+  gammap, gammaq     a x – P       regularised incomplete gamma P(a,x) and Q = 1 − P
+  betainc            a b x – I     regularised incomplete beta I_(x)(a,b)
+  digamma            x – psi(x)    ψ(x) = Γ′(x)/Γ(x)
+  zeta               x – zeta(x)   Riemann zeta, x ≠ 1
+  besselj, bessely   x n – Jn(x)   Bessel functions of integer order n (Y_(n) needs x > 0)
+  besseli, besselk   x n – In(x)   modified Bessel functions (K_(n) needs x > 0)
+  airyai, airybi     x – Ai(x)     Airy functions
+  ellk, elle         k – K(k)      complete elliptic integrals, modulus |k| < 1
+  expint             x – E1(x)     exponential integral E₁
+  lambertw           x – W(x)      Lambert W, principal branch, x ≥  − 1/e
+  ------------------ ------------- ---------------------------------------------------------
+
+    2 3 0.5 betainc  \ 0.687500
+    2.5 0 besselj    \ -0.048384
+    1 lambertw       \ 0.567143   W e^W = 1
+
+5.5  Comparisons and logic
+--------------------------
+
+eq, neq, lt, leq, gt, geq leave a flag: 1 for true, 0 for false. and, or and not treat 0
+as false and anything else as true. Complex numbers compare by magnitude; strings
+support eq and neq; matrices compare elementwise and produce a matrix of flags, and a
+scalar compared with a matrix is compared with every element.
+
+    2 3 lt                     \ 1
+    "abc" "abc" eq             \ 1
+    [1 3 $ 1 5 3] 2 gt pm      \ | 0 1 1 |
+
+Flags are what the control words inside user words test (Section 13).
+
+========================================================================================
+6  DECIMAL NUMBERS
+========================================================================================
+
+Binary floating point cannot represent one tenth, so 0.1 0.2 + is 0.30000000000000004 on
+every computer. For most of science that is irrelevant; for money it is not. MM-41
+therefore has a fifth stack type, the decimal: a 34-digit decimal floating-point number
+with round-half-even arithmetic, the same arithmetic as SQL NUMERIC, Java BigDecimal and
+Python’s decimal module, implemented by IBM’s decNumber library. A decimal shows on the
+stack with the glyph 𝔻:
+
+    0.1d 0.2d +            \ [0] 𝔻 : 0.300000
+    0.1 0.2 + 0.3 eq       \ 0   (binary)
+    0.1d 0.2d + 0.3d eq    \ 1   (decimal)
+
+6.1  Writing decimals
+---------------------
+
+A number with the suffix d is a decimal literal; b forces a binary one. In decimal mode,
+entered with decimal and left with binary, every number without a suffix is a decimal,
+and the prompt becomes MM-41[dec]>>. The mode is saved in config.txt as number_mode, so
+a calculator used for bookkeeping can start in decimal mode every time.
+
+    decimal
+    19.99 3 * 0.0825 1 + *         \ 64.917525   (exact: 59.97 x 1.0825)
+    2 round                        \ 64.92
+    binary
+
+>dec converts a real to a decimal by its shortest round-trip representation, so 0.1 >dec
+is exactly 0.1 and not 0.1000000000000000055511151231257827; >bin goes the other way and
+keeps 16 or 17 of the 34 digits. round rounds a number to n decimal places, half-even,
+and always leaves a decimal: 2.345d 2 round is 2.34 and 2.355d 2 round is 2.36. isdec
+and decmode test the type of the top item and the current mode.
+
+6.2  Decimal absorbs binary
+---------------------------
+
+A decimal combined with a real gives a decimal (the real is converted first, as with
+>dec): 1d 3 / is 0.3333333333333333333333333333333333. The operators and functions
+defined for decimals are
+
+  ------------- ----------------------------------------------------------------------------------------------------------------------------------------------
+  arithmetic    + - * / ^ chs abs inv mod
+  functions     sqrt exp ln log intg frac round
+  percentages   % %t %chg
+  comparisons   eq neq lt leq gt geq and or not
+  elsewhere     sto and rcl, savestack and loadstack, int2str, the control words, and the finance module (Section 17), which computes in decimals throughout
+  ------------- ----------------------------------------------------------------------------------------------------------------------------------------------
+
+Everything else—trigonometry, complex numbers, matrices, the numerical methods—is binary
+only, and a decimal value given to them is an error that tells you to convert with >bin.
+A decimal given where a command wants an index, a count, a dimension, a precision or a
+flag is simply converted, since nothing can be lost: 2 setprec, 1 pick, 5 rcl, 3 3 eye,
+0 pi @sin integrate and 3 0 do ... loop all work in decimal mode. This is deliberate:
+the one direction in which digits are lost should be visible in the transcript. A
+decimal that would need a complex result (-4d sqrt, -1d ln) is likewise an error rather
+than a silent promotion, because money has no imaginary part. The numerical methods
+accept a word that returns a decimal and convert the result, so
+: f dup * 2d - ; 0 3 @f fzero works.
+
+6.3  Display
+------------
+
+In fixed-point display a decimal is shown rounded half-even to the setprec number of
+decimals, the natural way to show money; in scientific display (sfs) it is shown as
+stored, with all its digits and its exponent, which is how you inspect it:
+
+    1d 3d /                \ [0] 𝔻 : 0.333333
+    sfs                    \ [0] 𝔻 : 0.3333333333333333333333333333333333
+    1e-7d                  \ [1] 𝔻 : 1E-7
+
+Decimals keep their trailing zeros, as the General Decimal Arithmetic specification
+prescribes: 1.10d 2d * is 2.20.
+
+========================================================================================
+7  MATRICES
+========================================================================================
+7.1  Creating matrices
+----------------------
+
+Besides the literal forms of Section 3, there are constructors:
+
+    3 eye                      \ 3x3 identity
+    2 3 ones                   \ 2x3 matrix of ones
+    2 3 zeroes                 \ 2x3 matrix of zeros
+    2 2 rand                   \ uniform(0,1) entries
+    2 2 randn                  \ standard normal entries
+    0 0.25 1 rrange            \ row vector 0 0.25 0.5 0.75 1
+    [1 3 $ 1 2 3] to_diag      \ 3x3 diagonal matrix with 1 2 3 on the diagonal
+
+7.2  Arithmetic
+---------------
+
+-   + and - add and subtract matrices of the same shape. A scalar is added to every
+    element.
+
+-   * is the matrix product; a scalar scales every element.
+
+-   / divides a matrix by a scalar elementwise; x A / is x/a_(ij) elementwise; and A B /
+    is AB⁻¹ (right division).
+
+-   ^ raises a square matrix to a non-negative integer power (A⁰ is the identity).
+
+-   .*, ./, .^ are the elementwise product, quotient and power; either operand may be a
+    scalar.
+
+-   A real matrix combined with a complex matrix or complex scalar is promoted to
+    complex first.
+
+    [2 2 $ 1 2 3 4] dup * pm       \ |  7 10 |  matrix product
+                                   \ | 15 22 |
+    [2 2 $ 1 2 3 4] dup .* pm      \ |  1  4 |  elementwise
+                                   \ |  9 16 |
+    [2 2 $ 1 2 3 4] 10 + pm        \ | 11 12 | / | 13 14 |
+    [2 2 $ 1 2 3 4] 3 ^ pm         \ | 37 54 | / | 81 118 |
+
+The unary functions—sqrt, exp, ln, the trigonometric and hyperbolic functions, abs, chs,
+inv, intg, frac, npdf and the rest—apply elementwise. Note that inv is therefore the
+elementwise reciprocal; the matrix inverse is minv.
+
+7.3  Linear algebra
+-------------------
+
+  --------- ------------- ---------------------------------------------------------------------------
+  tran, ’   A – A^T       transpose
+  minv      A – A^-1      inverse of a square real or complex matrix; singular is an error
+  pinv      A – A^+       Moore–Penrose pseudoinverse (real, square), by SVD
+  det       A – det(A)    determinant
+  eig       A – V L       eigenvectors (columns of V) and eigenvalues (diagonal of L), both complex
+  chol      A – L         Cholesky factor of a symmetric positive definite matrix, A = LL^(T)
+  svd       A – U S V     singular value decomposition, A = USV^(T)
+  kron      A B – A(x)B   Kronecker product
+  --------- ------------- ---------------------------------------------------------------------------
+
+    [2 2 $ 4 7 2 6] det            \ 10
+    [2 2 $ 4 7 2 6] minv pm        \ |  0.6 -0.7 |
+                                   \ | -0.2  0.4 |
+    [2 2 $ 2 1 1 2] eig pm         \ L: eigenvalues 3 and 1 on the diagonal
+    [2 2 $ 4 2 2 3] chol pm        \ | 2 0 | / | 1 1.4142 |
+
+Solving Ax = b is b A minv *—or, keeping the operands in the natural order,
+A b swap minv *. The std word module adds cond (condition number), norm2, normfro and
+XprimeX (Appendix 24).
+
+7.4  Elements and shape
+-----------------------
+
+Indices are 0-based.
+
+  ----------- ----------------- ----------------------------------------------------------------
+  dim         A – A rows cols   dimensions; the matrix stays
+  get_aij     A i j – A a_ij    element (i,j); the matrix stays
+  set_aij     A i j x – A       set element (i,j) in place; a complex x promotes a real matrix
+  reshape     A rows cols – B   reshape in row-major order
+  split_mat   A – a11 a12 ...   push every element as a scalar, row by row
+  diag        A – v             the main diagonal as a row vector
+  to_diag     v – D             diagonal matrix from a row or column vector
+  join_v      A B – [A;B]       stack vertically (same number of columns)
+  join_h      A B – [A|B]       join side by side (same number of rows)
+  ----------- ----------------- ----------------------------------------------------------------
+
+    [2 2 $ 1 2 3 4] 0 1 get_aij        \ A 2
+    [2 2 $ 1 2 3 4] 1 0 9 set_aij pm   \ | 1 2 | / | 9 4 |
+    [2 3 $ 1 2 3 4 5 6] 3 2 reshape pm \ | 1 2 | / | 3 4 | / | 5 6 |
+    [1 2 $ 1 2] [1 2 $ 3 4] join_v pm  \ | 1 2 | / | 3 4 |
+
+7.5  Reductions and statistics
+------------------------------
+
+The c-prefixed commands reduce each column and return a row vector; the r-prefixed ones
+reduce each row and return a column vector. They consume the matrix: csum/rsum,
+cmean/rmean, cvar/rvar (sample variance, n − 1 in the denominator), cmin/rmin,
+cmax/rmax. cumsum_r and cumsum_c are cumulative sums along rows and down columns;
+cumprod_r and cumprod_c in the std module do the same for products.
+
+    [2 2 $ 1 2 3 4] cmean pm       \ | 2 3 |
+    [2 2 $ 1 2 3 4] rsum pm        \ | 3 | / | 7 |
+    [2 2 $ 1 2 3 4] cvar pm        \ | 2 2 |
+
+7.6  Polynomials
+----------------
+
+A polynomial is a vector of coefficients, highest degree first, as in Matlab. pval
+evaluates it at a real or complex point; roots returns all roots as a complex row
+vector.
+
+    [1 3 $ 1 -3 2] 2 pval          \ 0        x^2 - 3x + 2 at x = 2
+    [1 3 $ 1 -3 2] roots pm        \ | (1,0) (2,0) |
+    [1 3 $ 1 0 1] roots pm         \ | (0,1) (0,-1) |   x^2 + 1
+
+The npv and irr words of the std module are built on these two commands (Appendix 24).
+
+========================================================================================
+8  STATISTICS AND SIMULATION
+========================================================================================
+
+The stat module is the HP-41 Stat Pac and the Advantage Pac’s curve fitting; the random
+module is what the Stat Pac could not do: draws from named distributions and Monte Carlo
+over a word. Both work on vectors, real matrices with one row or one column, and leave
+reals where the matrix reductions of Section 7 would leave a 1 × 1 matrix:
+[1 5 $ 2 4 4 4 6] mean is 4, cmean would be | 4 |.
+
+8.1  Describing a vector
+------------------------
+
+  ----------------------- ---------- ---------------------------------------------------------------------
+  mean, median, sd, sem   v – x      mean, median, sample standard deviation, standard error of the mean
+  skew, kurt              v – x      skewness and excess kurtosis
+  quantile                v p – q    the p-quantile, interpolated between order statistics
+  cov, corr               x y – c    sample covariance and Pearson correlation of two vectors
+  movavg                  v n – v2   trailing moving average over n values
+  hist                    v k – M    histogram with k equal bins: bin centre, count
+  ----------------------- ---------- ---------------------------------------------------------------------
+
+    [1 5 $ 2 4 4 4 6] mean               \ 4
+    [1 5 $ 2 4 4 4 6] sd                 \ 1.414214
+    [1 5 $ 5 1 4 2 3] 0.9 quantile       \ 4.6
+    [1 4 $ 1 2 3 4] [1 4 $ 2 4 5 9] corr \ 0.964764
+
+8.2  Curve fitting and regression
+---------------------------------
+
+The four fits of the Advantage Pac take x and y vectors and leave a row vector of the
+two coefficients and R² (on the transformed scale for the three non-linear ones, which
+are least squares on logarithms):
+
+  -------- ---------------- ----------------------------------------------------------------------------------------------------------
+  linfit   x y – [a,b,r2]   y = a + bx
+  expfit   x y – [a,b,r2]   y = a e^(bx), y > 0
+  logfit   x y – [a,b,r2]   y = a + bln x, x > 0
+  powfit   x y – [a,b,r2]   y = a x^(b), x, y > 0
+  ols      X y – beta       multiple regression of y on the columns of X, intercept added; coefficients as a column, intercept first
+  olstab   X y – M r2       the regression table: coefficient, standard error, t, two-sided p per row, and R²
+  -------- ---------------- ----------------------------------------------------------------------------------------------------------
+
+    [1 4 $ 1 2 3 4] [1 4 $ 2 8 18 32] powfit pm          \ | 2.0000 2.0000 1.0000 |   y = 2 x^2
+    [4 1 $ 1 2 3 4] [4 1 $ 2 4 5 9] olstab swap pm
+    | -0.5000 1.1023 -0.4536 0.6946 |
+    |  2.2000 0.4025  5.4659 0.0319 |
+    [0] ℝ : 0.930769
+
+ols with a 4 × 2 matrix of x and x² fits a quadratic; any transformation of the
+regressors is a matrix you build first.
+
+8.3  Distributions
+------------------
+
+The cumulative distribution and its inverse for the test distributions, plus the
+binomial and Poisson probabilities; the normal ones are ncdf and nquant in the special
+module.
+
+  -------------------- ------------------------------ -----------------------------------------------------
+  tcdf, tinv           x df – p, p df – x             Student t
+  chi2cdf, chi2inv     x df – p, p df – x             chi-square
+  fcdf, finv           x df1 df2 – p, p df1 df2 – x   F
+  binompdf, binomcdf   k n p – P                      binomial: exactly / at most k successes in n trials
+  poispdf, poiscdf     k mu – P                       Poisson: exactly / at most k events
+  -------------------- ------------------------------ -----------------------------------------------------
+
+    0.975 10 tinv        \ 2.228139
+    0.95 1 chi2inv       \ 3.841459
+    3 10 0.5 binomcdf    \ 0.171875
+
+8.4  Random draws and Monte Carlo
+---------------------------------
+
+The random module draws from the calculator’s Mersenne-twister generator, which seed
+makes reproducible. Scalar draws are for words that simulate one outcome; the -rnd words
+give n draws as a column.
+
+  ------------------------------------------------------------ ----------------------------------------- -----------------------------------------------------------------
+  seed                                                         n –                                       seed the generator
+  rnorm, runif, rpois, rexp                                    mu sigma – x, a b – x, mu – k, rate – x   one draw
+  normrnd, unifrnd, poisrnd, binomrnd, exprnd, trnd, chi2rnd   n params – v                              n draws as a column; the parameters follow the count
+  resample, shuffle                                            v – v2                                    a bootstrap resample (with replacement) / a random permutation
+  sims                                                         n xt – v                                  run a word n times, collecting the one real it leaves each time
+  mcstats                                                      v – [mean,sd, q05,q50,q95]                summary of simulated values
+  ------------------------------------------------------------ ----------------------------------------- -----------------------------------------------------------------
+
+    : pnl 0 1 rnorm 100 * 0 0.02 rnorm 1 + * ;   \ one simulated outcome
+    42 seed 10000 @pnl sims mcstats pm           \ | 0.0054 ... 1.6451 |   mean sd q05 q50 q95
+    [1 5 $ 1 2 3 4 5] resample mean              \ a bootstrap replicate of the mean
+
+A word for sims takes nothing and leaves one real; everything it needs comes from the
+draws or from registers. Ten thousand runs of a short word take well under a second.
+
+========================================================================================
+9  SURVIVAL ANALYSIS
+========================================================================================
+
+The survival module is for lifetimes: the parametric laws used in demography, actuarial
+work and reliability, with everything that follows from a law—survival and hazard,
+expectation of life, life tables, the present values of annuities and insurances—and the
+non-parametric estimators and fits used when the data come first.
+
+9.1  Laws
+---------
+
+A law is selected once with its parameters, and every other word then takes only the age
+or time, in whatever unit the parameters are in (years, for a mortality law):
+
+    "makeham" [0.0005 0.00003 0.1] setlaw   \ Gompertz-Makeham: h(t) = a + b e^(ct)
+    law                                      \ shows the law and its parameters
+    lawpar                                   \ the parameters as a row vector
+
+  law           parameters         hazard or survival                
+  ------------- ------------------ --------------------------------- -----------------------------------------------------
+  exponential   [lambda]           h = λ                             constant hazard
+  weibull       [k lambda]         h = (k/λ)(t/λ)^(k − 1)            reliability; k < 1 infant mortality, k > 1 wear-out
+  gompertz      [b c]              h = b e^(ct)                      adult mortality; c ≈ 0.08–0.1 a year
+  makeham       [a b c]            h = a + b e^(ct)                  Gompertz with an age-independent term
+  siler         [a1 b1 a2 a3 b3]   h = a₁e^(−b₁t) + a₂ + a₃e^(b₃t)   infant, background and senescent mortality
+  loglogistic   [alpha beta]       S = 1/(1+(t/α)^(β))               a hazard that rises then falls
+  lognormal     [mu sigma]         ln T ∼ N(μ,σ)                     
+  gamma         [k theta]          shape k, scale θ                  
+
+gm and gompertz-makeham are accepted for makeham, fisk for loglogistic. The exponential
+takes its one parameter as a number or a one-element vector.
+
+9.2  Functions of the law
+-------------------------
+
+S(t) and h(t) are closed forms for every law; the density is f = hS, the cumulative
+hazard H =  − ln S, the distribution function F = 1 − S. Quantiles are found by Brent’s
+method on S, and the expectations by adaptive quadrature. The words that take an age
+apply elementwise to a matrix of ages.
+
+  -------------------------------------- ----------- --------------------------------------------------------------------------
+  surv, haz, cumhaz                      t – x       S(t), h(t) (the force of mortality), H(t)
+  lifepdf, lifecdf                       t – x       f(t) and F(t)
+  lifeinv                                p – t       the quantile, F(t) = p
+  lifemean, lifemed, lifevar, lifemode   – x         expected lifetime from birth, median, variance, modal age at death
+  elife                                  t – e       complete expectation of remaining life, e(t) = ∫_(t)^(∞)S/S(t)
+  curtate                                x – e       curtate expectation e_(x) = ∑_(k ≥ 1)_(k)p_(x), whole years
+  tpx, nqx                               x n – p     _(n)p_(x) and _(n)q_(x): survive, or die within, n more years from age x
+  px, qx                                 x – p       the one-year versions
+  lx                                     x – l       survivors at x from a radix of 100 000 at birth
+  lifetab                                x0 x1 – M   life table: age, l_(x) (radix 100 000 at x₀), d_(x), q_(x), e_(x)
+  -------------------------------------- ----------- --------------------------------------------------------------------------
+
+    "gompertz" [0.0001 0.09] setlaw
+    65 surv                     \ 0.680651   S(65)
+    65 haz                      \ 0.034723   force of mortality at 65
+    65 elife                    \ 11.876902  expected remaining years at 65
+    lifemed                     \ 71.527595  median age at death
+    lifemode                    \ 75.582164  modal age at death, ln(c/b)/c
+    65 10 tpx                   \ 0.569419   chance a 65-year-old reaches 75
+    60 65 lifetab pm            \ a five-row life table
+    [60 70 80 90] qx            \ qx at four ages at once
+
+9.3  Annuities and insurance
+----------------------------
+
+With an interest rate i% a year and the current law for mortality, the actuarial present
+values are sums over whole years (v = 1/(1+i)):
+
+  ----- ----------- --------------------------------------------------------------------------------------------------------------
+  ax    x i – a     whole-life annuity-due $\ddot a_x = \sum_{k\ge 0} v^k\,{}_kp_x$: 1 a year while (x) lives, first payment now
+  axn   x n i – a   n-year temporary annuity-due
+  Ax    x i – A     whole-life insurance A_(x) = ∑v^(k + 1) _(k)p_(x) q_(x + k): 1 at the end of the year of death
+  Axn   x n i – A   n-year term insurance
+  ----- ----------- --------------------------------------------------------------------------------------------------------------
+
+    "gompertz" [0.0001 0.09] setlaw
+    65 3 ax                     \ 10.014379  a pension of 1 a year from 65 costs 10.01 at 3%
+    65 3 ax 30000 *             \ 300431.36  the price of 30000 a year
+    65 3 Ax                     \ 0.708319   whole-life cover of 1 at 65
+    65 20 3 Axn                 \ 0.638128   twenty-year term cover
+
+The identity $\ddot a_x = (1 - A_x)/d$ with d = i/(1+i) holds exactly:
+65 3 Ax 1 swap - 0.03 1.03 / / is 10.014379 too.
+
+9.4  Estimation
+---------------
+
+From data—times, and an indicator that is 1 for an observed event and 0 for a
+right-censored observation—the module gives the non-parametric estimates and the
+maximum-likelihood fit of any of the laws:
+
+  ------------- ---------------------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  km            t e – M                Kaplan-Meier: one row per distinct event time with time, Ŝ(t), number at risk, events
+  nelsonaalen   t e – M                Nelson-Aalen cumulative hazard, the same layout
+  logrank       t1 e1 t2 e2 – chi2 p   log-rank test that two groups share a survival curve
+  lifefit       t e – v ll             maximum-likelihood fit of the current law (its name; the parameters it was set with are ignored); leaves the estimates, which become the current parameters, and the log-likelihood
+  ------------- ---------------------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    [2 3 3 5 8 9] [1 1 0 1 1 0] km pm        \ S = 0.833 0.667 0.444 0.222 at t = 2 3 5 8
+    "weibull" [1 1] setlaw
+    [2 3 3 5 8 9] [1 1 0 1 1 0] lifefit      \ [1.8213 6.9297] and the log-likelihood
+    law                                      \ the fitted Weibull is now current
+    drop 0.5 lifeinv                         \ 5.666553   its median
+
+The fit runs Nelder-Mead on the log-parameters from moment-based starting values, with
+two restarts; nevals reports the iterations. With no censoring the exponential and
+lognormal fits agree with their closed forms, and with censoring the Gompertz fit on
+simulated data recovers the generating parameters.
+
+9.5  Fitting a published life table
+-----------------------------------
+
+Mortality usually arrives as a table, not as individual lifetimes: ages with one-year
+death probabilities q_(x), or with survivors l_(x). lawfit and lawfitl fit the current
+law to such a table by least squares on log q_(x) (which spans orders of magnitude) or
+on log l_(x)/l_(x₀); the estimates become current, and everything above is then
+available for the table’s population.
+
+  --------- ------------- -----------------------------------------------------------------------
+  lawfit    x q – v rss   ages and q_(x); leaves the parameters and the residual sum of squares
+  lawfitl   x l – v rss   ages and l_(x), any radix
+  --------- ------------- -----------------------------------------------------------------------
+
+    "gompertz" [1 1] setlaw                  \ the law to fit; its parameters are ignored
+    [40 50 60 70 80] [0.002 0.004 0.009 0.022 0.055] lawfit
+    drop lawpar                              \ [6.1299e-05 0.0839]
+    lifemode                                 \ 86.0       modal age at death of this table
+    65 elife                                 \ remaining life at 65 under the fitted law
+    "lifetable.txt" 0 readcol "lifetable.txt" 1 readcol lawfit   \ the same from a file
+
+A table generated from a Gompertz-Makeham law is recovered exactly by "makeham" lawfit;
+a Gompertz fitted to it gives the best pure-Gompertz approximation, which is what one
+wants from a published table that has a Makeham floor in it.
+
+========================================================================================
+10  INCOME DISTRIBUTION
+========================================================================================
+
+The income module has the distributions used for incomes and wealth, the inequality and
+poverty measures, and each measure twice: for a fitted distribution and for a vector of
+data (the data words end in d).
+
+10.1  Families
+--------------
+
+A family is selected once with its parameters, like a survival law:
+
+    "dagum" [3.5 20000 0.8] setdist          \ shape a, scale b, shape p
+    dist                                     \ shows the family and parameters
+    distpar                                  \ the parameters as a row vector
+
+  family         parameters   distribution function
+  -------------- ------------ -------------------------------------------------
+  pareto         [xm alpha]   F = 1 − (x_(m)/x)^(α), x ≥ x_(m) (type I)
+  lognormal      [mu sigma]   ln X ∼ N(μ,σ)
+  dagum          [a b p]      F = (1+(x/b)^(−a))^(−p)
+  singhmaddala   [a b q]      F = 1 − (1+(x/b)^(a))^(−q) (Burr XII; burr, sm)
+  fisk           [a b]        F = 1/(1+(x/b)^(−a)) (log-logistic)
+  gamma          [k theta]    shape k, scale θ
+  weibull        [k lambda]   F = 1 − e^(−(x/λ)^(k))
+
+Dagum and Singh-Maddala are the two three-parameter families that fit income data best
+in practice; both have the Pareto tail on the right, Dagum with a mode above zero and a
+lognormal-like body. Means, second moments, quantiles and Gini coefficients are closed
+forms (through the gamma function for Dagum and Singh-Maddala), and a mean that does not
+exist—Pareto with α ≤ 1, Dagum with a ≤ 1—is an error, not infinity.
+
+10.2  Measures of the distribution
+----------------------------------
+
+  ---------------------------------- ------------- ---------------------------------------------------------------------------------------------------
+  incpdf, inccdf                     x – y         density; share of the population with income below x
+  incq                               p – x         quantile: the income below which a fraction p lies
+  incmean, incvar, incmed, incmode   – x           mean, variance, median, mode
+  gini                               – G           Gini coefficient, closed form
+  theil, mld                         – x           Theil index GE(1) and mean log deviation GE(0)
+  atkinson                           eps – A       Atkinson index with inequality aversion ε (ε = 1 allowed)
+  lorenz                             p – L         Lorenz curve: the share of income held by the poorest fraction p
+  lorenzm                            n – M         the curve at n + 1 points, columns p and L(p)
+  share                              p1 p2 – s     income share of those between the p₁ and p₂ quantiles
+  top                                p – s         share of the top fraction p: 0.1 top is the top 10 %
+  deciles                            – v           the ten decile shares
+  palma                              – r           Palma ratio, top 10 % share over bottom 40 % share
+  qratio                             p1 p2 – r     quantile ratio: 0.9 0.1 qratio is P90/P10
+  headcount, povgap                  z – x         poverty headcount ratio and poverty gap index at line z
+  fgt                                z alpha – x   Foster-Greer-Thorbecke P_(α): 0 headcount, 1 gap, 2 severity
+  incfit                             v – v2 ll     maximum-likelihood fit of the current family to a vector of incomes; the estimates become current
+  ---------------------------------- ------------- ---------------------------------------------------------------------------------------------------
+
+    "dagum" [3.5 20000 0.8] setdist
+    incmean incmed                \ 20983.27  18247.66
+    gini                          \ 0.302546
+    theil 1 atkinson              \ 0.162223  0.146825
+    0.1 top palma                 \ 0.238405  1.115419  top decile share; Palma
+    0.9 0.1 qratio                \ 3.919646  P90/P10
+    10000 headcount 10000 povgap  \ 0.134180  0.036466  at a poverty line of 10000
+    10 lorenzm pm                 \ the Lorenz curve at deciles
+    "pareto" [1000 2] setdist gini  \ 0.333333  = 1/(2 alpha - 1)
+
+The Lorenz curve, Theil, Atkinson and the poverty gaps are integrals over the density
+and take a few milliseconds each; deciles and lorenzm call the curve once per point.
+
+10.3  Measures from data
+------------------------
+
+The same quantities from a vector of incomes, no distribution assumed. The data are
+sorted; the Lorenz curve interpolates between individuals.
+
+  --------------------- --------------- -------------------------------------
+  ginid, theild, mldd   v – x           Gini, Theil, mean log deviation
+  atkinsond             v eps – A       Atkinson
+  lorenzd               v n – M         Lorenz curve at n + 1 points
+  decilesd, palmad      v – x           decile shares; Palma ratio
+  topd                  v p – s         share of the top fraction p
+  headcountd, povgapd   v z – x         headcount and poverty gap at line z
+  fgtd                  v z alpha – x   P_(α)
+  --------------------- --------------- -------------------------------------
+
+    [1 2 3 4 10] ginid            \ 0.4
+    [1 2 3 4 10] theild           \ 0.276364
+    [1 2 3 4 10] 2.5 headcountd   \ 0.4       two of five below 2.5
+    "lognormal" [0 1] setdist
+    [1200 1500 2200 3100 4000 5400 9000 15000] incfit   \ [mu sigma] and the log-likelihood
+    drop gini                     \ 0.434449  the Gini of the fitted lognormal
+
+incfit is closed-form for Pareto (x_(m) the minimum, α = n/∑ln (x_(i)/x_(m))) and
+Nelder-Mead on the log-parameters otherwise. A fitted Dagum or Singh-Maddala reproduces
+the published shape parameters of survey data to the precision the survey allows; on
+2000 draws from a Dagum with (3.5,20000,0.8) the fit returns (3.41,20118,0.77).
+
+10.4  Fitting a published table of shares
+-----------------------------------------
+
+Survey results are mostly published as the income shares of quintiles or deciles, or as
+points of the Lorenz curve, not as microdata. incfits fits the current family to the
+shares of equal population groups (summing to 1 or to 100), incfitl to any points
+(p,L(p)) of the Lorenz curve, by least squares on L(p). The Lorenz curve is scale-free,
+so only the shape parameters are fitted and the scale (b, x_(m), μ, θ, λ) keeps its
+current value; the Gini, the quantile ratios, the Palma ratio and every share then
+follow from the fitted family.
+
+  --------- ------------- -----------------------------------------
+  incfits   v – v2 rss    shares of k equal groups, poorest first
+  incfitl   p L – v rss   points of the Lorenz curve
+  --------- ------------- -----------------------------------------
+
+    "dagum" [3 1 1] setdist                  \ the family; the scale 1 is kept
+    [3.1 8.3 14.1 22.7 51.9] incfits         \ US household quintile shares, 2019
+    drop gini                                \ 0.485587   the Census Bureau published 0.484
+    palma 0.9 0.1 qratio                     \ Palma 2.15; P90/P10
+    "singhmaddala" [3 1 1] setdist [3.1 8.3 14.1 22.7 51.9] incfits drop gini   \ 0.482203
+    "lognormal" [0 1] setdist [3.1 8.3 14.1 22.7 51.9] incfits drop gini        \ 0.479056
+
+The decile shares of a Dagum distribution fed back to incfits return its shape
+parameters to all displayed digits. The residual sum of squares tells the families
+apart: on the quintiles above Dagum and Singh-Maddala fit to 10⁻⁵, a Pareto to 7 × 10⁻³.
+
+========================================================================================
+11  STRINGS
+========================================================================================
+
+  ---------- ------------------- ----------------------------------------
+  scon       s1 s2 – s1s2        concatenate
+  substr     s start end – sub   substring, 0-based, end exclusive
+  slen       s – n               length in bytes
+  s2u, s2l   s – s               upper and lower case
+  srev       s – s               reverse
+  int2str    x – s               integer part of x as a string
+  eval       s –                 evaluate the string as a line of input
+  ---------- ------------------- ----------------------------------------
+
+    "abcdef" 1 3 substr        \ "bc"
+    "foo" "bar" scon s2u       \ "FOOBAR"
+    "2 3 +" eval               \ 5
+    "12:45" dec_hr             \ 12.75   (from the std module: substr + eval)
+
+eval is the bridge from text to computation: the std word dec_hr converts a time string
+such as the one sunrise returns into decimal hours by cutting out the hour and minute
+fields with substr and evaluating them.
+
+========================================================================================
+12  REGISTERS
+========================================================================================
+
+There are 64 storage registers, numbered 0–63, and each can hold any type—a matrix or a
+string as well as a number. Following the HP convention the value comes first and the
+register number last:
+
+    42 0 sto             \ store 42 in R0
+    0 rcl                \ 42   (a copy; the register keeps its value)
+    [2 2 $ 1 2 3 4] 5 sto
+    pr                   \ shows which registers are occupied
+    ffr                  \ 1    index of the first free register
+
+sto_add, sto_sub, sto_mul and sto_div (in the std module) are the HP storage arithmetic:
+5 0 sto_add adds 5 to register 0. saveregs and loadregs write and read registers.txt in
+the configuration directory; clregs empties all registers.
+
+Registers are the natural way to pass parameters to a word used in a numerical method
+(Section 14): the word reads the parameter with rcl and you change it with sto between
+calls.
+
+========================================================================================
+13  WORDS: PROGRAMMING THE CALCULATOR
+========================================================================================
+
+A word is a named sequence of tokens. Defining one takes a single line that starts with
+a colon and ends with a semicolon:
+
+    : sq dup * ;
+    5 sq                 \ 25
+    : hyp sq swap sq + sqrt ;
+    3 4 hyp              \ 5
+
+Once defined, a word is used exactly like a built-in command; it can appear in other
+words, in scripts, in programs, and as a function for the numerical methods. listwords
+lists your words with their definitions, "hyp" usage shows one, "hyp" delword deletes
+one, and clrwords deletes them all.
+
+Words are compiled when defined. Every name in the body must already exist (as a command
+or a word, from any module), so a typo is reported immediately rather than when the word
+is first run; the control structures described below are turned into branches at this
+point. A word may call itself, and nesting stops with an error at 256 levels. Redefining
+a word replaces it, and any word that calls it sees the new definition.
+
+A name must not be a built-in command or control word and must not start with a digit.
+Names are case sensitive.
+
+13.1  Conditionals
+------------------
+
+Inside a word, if consumes a flag from the stack and executes the following tokens when
+it is true (non-zero); else introduces the alternative; then closes the construct.
+
+    : abs2 dup 0 lt if chs then ;
+    -3 abs2              \ 3
+    : sign dup 0 lt if drop -1 else 0 gt if 1 else 0 then then ;
+    -7 sign 0 sign 2 sign     \ -1 0 1
+
+13.2  Loops
+-----------
+
+repeat until the flag is true (the body runs at least once).
+
+test in the middle; leave the loop when the flag is false.
+
+a counted loop from start up to but not including limit; i is the current index and j
+the index of the enclosing loop. If start equals limit the body is skipped.
+
+the same with a step of n; a negative step counts down to limit inclusive.
+
+Loops nest to 16 levels. Flags are reals; 0 is false.
+
+    : fac dup 1 gt if dup 1 - fac * then ;         \ recursive
+    10 fac                                       \ 3628800
+
+    : sum 0 swap 1 + 1 do i + loop ;             \ 1 + 2 + ... + n
+    100 sum                                      \ 5050
+
+    : step dup 2 mod if 3 * 1 + else 2 / then ;   \ one Collatz step
+    : collatz 0 swap begin dup 1 gt while swap 1 + swap step repeat drop ;
+    27 collatz                                   \ 111 steps
+
+    : fib 0 swap 1 swap 0 do tuck + loop drop ;  \ nth Fibonacci number
+    30 fib                                       \ 832040
+
+    : table 1 + 1 do i dup sq loop ;             \ i and i^2 for i = 1..n
+    3 table                                      \ 1 1 2 4 3 9
+
+A definition occupies the whole line: nothing may follow the closing semicolon. Long
+bodies are best split into words, as collatz does with step.
+
+13.3  Saving words
+------------------
+
+savewords writes all your words to user_words.txt in the configuration directory, one
+name body per line, and they are loaded automatically at the next start; loadwords
+reloads the file by hand. The file is plain text and you may edit it: forward references
+are fine (it is loaded in two passes), comments start with \, and a line that fails to
+compile is reported with its line number and skipped.
+
+13.4  Words from modules
+------------------------
+
+Words also arrive in word modules: files of definitions plugged in at startup, such as
+the shipped std module (Appendix 24). They behave exactly like your own words—the only
+difference is where they are stored, so that clrwords does not remove them. listmacros
+lists them by module. If one of your words has the same name as a module’s word, yours
+wins. Section 19 explains how to write a module.
+
+========================================================================================
+14  NUMERICAL METHODS
+========================================================================================
+
+The numerical methods take a function as an execution token—@name for any word or
+command—and treat it as a map x ↦ f(x): the function is called with x on the stack and
+must leave exactly one real number. An error inside the function aborts the method, and
+the stack is restored.
+
+  ------------- -------------- --------------------------------------------------------------------
+  integrate     a b xt – I     ∫_(a)^(b)f by tanh–sinh quadrature with adaptive bisection
+  romberg       a b xt – I     ∫_(a)^(b)f by Romberg extrapolation
+  fzero         a b xt – x     root in a bracket [a,b] where f changes sign (Brent)
+  solve         g xt – x       root near one guess g (HP-15C style: expand a bracket, then Brent)
+  minimize      a b xt – x     argument of the minimum of f on [a,b] (Brent)
+  deriv         x xt – f’(x)   derivative by Ridders’ extrapolation
+  fsum, fprod   lo hi xt – S   ∑f(i) or ∏f(i) over the integers lo..hi
+  exec          xt –           run the token
+  tol           x –            set the tolerance, relative to max (1,|result|); default 10⁻¹⁰
+  nevals        – n            function evaluations used by the last call
+  interr        – e            error estimate of the last integrate
+  ------------- -------------- --------------------------------------------------------------------
+
+    12 setprec
+    0 2 @exp integrate              \ 6.389056098931   (e^2 - 1)
+    : rsqrt sqrt inv ;
+    0 1 @rsqrt integrate            \ 2.000000000000   endpoint singularity, exact
+    0 pi @sin integrate             \ 2.000000000000
+    0 1 @exp romberg                \ 1.718281828459
+    2 4 @sin fzero                  \ 3.141592653605
+    3 @sin solve                    \ 3.141592653590
+    : par 3 - dup * 1 + ;
+    0 5 @par minimize               \ 3.000000000000
+    2 @exp deriv                    \ 7.389056098931
+    : invsq dup * inv ;
+    1 1000 @invsq fsum              \ 1.643934566682   (pi^2/6 - 1/1000 + ...)
+    3 @par exec                     \ 1
+
+Some practical notes.
+
+-   integrate uses the tanh–sinh rule, whose nodes cluster at the endpoints; an
+    integrable singularity at an endpoint converges to full precision, and the method is
+    exponentially convergent for analytic integrands. Interior kinks or peaks are
+    handled by bisecting the interval where the rule does not converge. If the error
+    estimate stays above the tolerance a warning is printed and the result is returned
+    anyway; interr tells you how good it is.
+
+-   fzero needs a sign change; solve needs only a guess and will grow a bracket around
+    it, so it is the one to reach for interactively. Both are exact to the tolerance for
+    simple roots.
+
+-   A function may take parameters from registers: : f 0 rcl * sin ; integrates sin (kx)
+    with k in register 0, and 2 0 sto changes k.
+
+-   The function may be a built-in (@sin, @exp) or a word from a module as well as your
+    own word. It may also be a long-running word; the limit is two million evaluations
+    per call, after which the method gives up with an error suggesting a looser
+    tolerance.
+
+-   Loosen tol for expensive functions: 1e-6 tol. The value is kept in config.txt.
+
+The methods were cross-checked against SciPy on 62 cases with a worst relative error of
+3.5 × 10⁻¹¹.
+
+========================================================================================
+15  DIFFERENTIAL EQUATIONS
+========================================================================================
+
+The ode module integrates initial-value problems y′ = f(t,y) to the tolerance tol, using
+GSL’s adaptive Runge–Kutta–Fehlberg driver of orders 4 and 5. The right-hand side is a
+word that takes t and y and leaves y′:
+
+  -------- ------------------- --------------------------------------------------------------------------------------------
+  odeint   y0 t0 t1 n xt – M   the trajectory at n + 1 equally spaced times: t in the first column, the state in the rest
+  odesol   y0 t0 t1 xt – y     the state at t₁ only
+  -------- ------------------- --------------------------------------------------------------------------------------------
+
+    : f swap drop chs ;          \ y' = -y   (t is dropped)
+    1 0 2 4 @f odeint pm
+    | 0.0000 1.0000 |
+    | 0.5000 0.6065 |
+    | 1.0000 0.3679 |
+    | 1.5000 0.2231 |
+    | 2.0000 0.1353 |
+    1 0 1 @f odesol              \ 0.367879 = e^-1
+
+A system is the same with y a row vector: the word receives t and a 1 × k matrix and
+must leave a vector of k. The harmonic oscillator y″ =  − y as (y,v)′ = (v,−y):
+
+    : ho nip dup 0 1 get_aij nip swap 0 0 get_aij nip chs
+         1 1 ones * swap 1 1 ones * swap join_h ;
+    [1 2 $ 1 0] 0 pi @ho odesol pm          \ | -1.0000 -6.3e-12 |
+
+(1 1 ones * turns a real into a 1 × 1 matrix so that join_h can assemble the row.)
+Parameters go in registers, as for the numerical methods. A problem that blows up before
+t₁, or one too stiff for an explicit method at the current tol, ends in an error naming
+the t reached; nevals reports the evaluations of the last call.
+
+========================================================================================
+16  DATES, TIME AND THE SUN
+========================================================================================
+
+Dates are strings in the form d.m.yyyy; leading zeros are optional on input and present
+on output ("1.2.2025" and "01.02.2025" are the same date). Times are strings HH:MM.
+
+  ----------------- -------------------------- ---------------------------------------------------
+  today             – date                     today’s date
+  now               – time                     current local time
+  dateplus          date n – date              n days later (n may be negative)
+  ddays             d1 d2 – n                  days from d1 to d2
+  dow               date – name                weekday name
+  edmy              date – y m d               split into year, month, day
+  num2date          d m y – date               build a date
+  days2eoy          date – n                   days from the date to the end of its year
+  tz_offset         date zone – h              UTC offset in hours of an IANA zone on that date
+  sunrise, sunset   date lat lon zone – time   local sunrise and sunset
+  dawn, dusk        date lat lon zone – time   civil dawn and dusk (sun 6^(∘) below the horizon)
+  workdays …                                   workdays and holidays, Section 16.1
+  ----------------- -------------------------- ---------------------------------------------------
+
+    "1.1.2025" 30 dateplus         \ "31.01.2025"
+    "1.1.2025" "31.12.2025" ddays  \ 364
+    "1.1.2025" dow                 \ "Wednesday"
+    "1.3.2024" days2eoy            \ 305
+    "1.12.2026" "America/New_York" tz_offset        \ -5
+    "21.6.2026" 46.24 14.36 "Europe/Ljubljana" sunset   \ "20:58"
+
+The zone argument of the solar functions is either an IANA zone name such as
+"Europe/Ljubljana" or a UTC offset in hours such as -4. With a zone name the offset is
+resolved for the date on the stack, so daylight-saving time is never your problem; names
+are validated against the system’s zoneinfo database. The location words of the std
+module push latitude, longitude and zone in one go:
+
+    today 100 dateplus durham dawn      \ civil dawn in Durham, NC, 100 days from now
+    today kranj sunset dec_hr           \ sunset in Kranj as a decimal hour
+
+Add your own with one line in user_words.txt or in a word module of your own:
+home 51.5 -0.12 "Europe/London".
+
+16.1  Workdays and holidays
+---------------------------
+
+A workday is a Monday to Friday that is not in the holiday calendar, a list of dates the
+dates module keeps for the session. These words take dates as strings "d.m.yyyy" or as
+numbers YYYYMMDD, like the finance words, and follow Excel’s conventions so that the
+results can be checked against a spreadsheet.
+
+  ------------- ---------------- -------------------------------------------------------------------------------------------------------------------------------------------------
+  workdays      d1 d2 – n        workdays from d1 to d2, both ends inclusive (NETWORKDAYS); negative when d2 precedes d1
+  workdayplus   date n – date2   the date n workdays after date, the start day itself not counted (WORKDAY); n may be negative
+  isworkday     date – flag      for a workday
+  holidays      name – H         a calendar as a vector of YYYYMMDD: the file holidays/name.txt in the configuration directory, or the built-in rules for the years around today
+  yholidays     year name – H    the built-in rules for one year
+  sethol        H –              install a vector of dates as the calendar for this session
+  usehol        name –           install a calendar by name and remember it in config.txt
+  clrhol        –                no holidays (weekends only), and forget the name
+  hol           – H              the installed calendar
+  ------------- ---------------- -------------------------------------------------------------------------------------------------------------------------------------------------
+
+Until a calendar is installed only weekends are skipped:
+
+    "1.1.2026" "31.12.2026" workdays     \ 261
+    "5.1.2026" "1.1.2026" workdays       \ -3
+    "us" usehol                          \ the federal holidays, kept in config.txt
+    "1.1.2026" "31.12.2026" workdays     \ 250
+    "24.12.2026" 10 workdayplus          \ "11.01.2027"   (25.12 and 1.1 skipped)
+    20261126 isworkday                   \ 0              Thanksgiving
+    2027 "si" yholidays pm               \ Slovenia's work-free days of 2027
+
+Two calendars are built in. "us" is the eleven federal holidays with the federal
+observance rule (a holiday on a Saturday is taken on the Friday before, on a Sunday on
+the Monday after, so New Year’s Day 2028 appears as 31 December 2027). "si" is
+Slovenia’s work-free days—fixed dates plus Easter Monday—which are not shifted. Without
+a year, holidays and usehol generate the rules for last year through two years ahead,
+which covers what you compute day to day; yholidays gives any single year from 1583.
+
+Any other calendar is a file, ~/.config/mm41/holidays/name.txt, with one date per line,
+d.m.yyyy or YYYYMMDD, anything after the date a comment, and # lines and blank lines
+ignored. make install puts an annotated example there, holidays/example.txt, which is an
+office calendar for one year (the federal holidays plus the day after Thanksgiving):
+copy it to imf.txt, edit, and "imf" usehol. A file calendar knows only the years you
+have typed into it; a date outside them is treated as having no holidays, so extend the
+file each year. A name containing a slash or ending in .txt is taken as a path, which is
+how a calendar can live anywhere.
+
+The calendar named in config.txt (holidays = us) is loaded on first use. If it cannot be
+loaded—a misspelt name, a deleted file—every workday word reports the problem until you
+fix it, clrhol, or usehol another: a silently wrong count would be worse than an error.
+A holiday that falls on a weekend changes nothing, duplicates are dropped, and the list
+is sorted, so hol is also a tidy way to look at a calendar.
+
+========================================================================================
+17  FINANCE
+========================================================================================
+
+The finance module is MM-B1, the decimal business calculator, rebuilt as a module: the
+time value of money, amortisation, cash flows, interest-rate conversions, depreciation,
+bonds and day counts. Three conventions hold throughout.
+
+-   Everything is decimal. Every finance word computes in 34-digit decimals and leaves a
+    decimal, whatever it was given; a real argument is converted on the way in. You can
+    therefore use the module in either number mode, and 2 setprec shows money to the
+    cent, correctly rounded.
+
+-   Rates are in percent, per period. 1 i% is one percent per period; a 6 % annual rate
+    paid monthly is 0.5 i%. The dated words (xnpv, xirr, xprice, …) take annual rates.
+
+-   Cash received is positive, cash paid is negative. A loan is a positive pv with a
+    negative pmt; a savings plan is a negative pmt with a positive fv.
+
+17.1  Time value of money
+-------------------------
+
+Like the HP-12C, the module keeps the registers n (periods), i% (rate per period), pv,
+pmt and fv—and one the 12C lacks, g%, the growth of the payment from one period to the
+next. They are tied together by
+$$pv\,(1+r)^n + pmt\,(1 + r\,\tau)\,A_n + fv = 0, \qquad r = \frac{i\%}{100},\; g = \frac{g\%}{100},$$
+$$A_n = \sum_{t=1}^{n} (1+g)^{t-1}(1+r)^{n-t} = \frac{(1+r)^n - (1+g)^n}{r - g},$$
+where τ is 0 when payments fall at the end of each period (end, the default) and 1 when
+they fall at the beginning (beg), and pmt is the first payment: payment t is
+pmt (1+g)^(t − 1). With g = 0 (the default, and what clrtvm restores) A_(n) is the
+ordinary annuity factor ((1+r)^(n)−1)/r and the equation is the 12C’s; with r = g it is
+n(1+r)^(n − 1). Store a value with the register’s name, solve for the unknown with a
+question mark:
+
+  ------------------------- ----- --------------------------------------------------------------------------
+  n i% pv pmt fv g%         x –   store into the register
+  ?n ?i% ?pv ?pmt ?fv ?g%   – x   solve for that register from the others; the result is stored and pushed
+  beg, end                  –     payments at the beginning or the end of the period
+  clrtvm                    –     clear the registers (g% to 0) and select end
+  tvm                       –     show the registers
+  ------------------------- ----- --------------------------------------------------------------------------
+
+    2 setprec
+    clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt      \ -1798.65   30-year mortgage at 6%
+    clrtvm 120 n 0.4 i% 0 pv -200 pmt ?fv        \ 30726.39   200 a month for 10 years at 4.8%
+    clrtvm 6 12 / i% 250000 pv -1500 pmt 0 fv ?n \ 359.25     months to repay
+    clrtvm 48 n 20000 pv -450 pmt 0 fv ?i% 12 *  \ 3.82       annual rate of a car loan
+
+Growing payments cover the cases a level annuity cannot: a pension indexed to inflation,
+a graduated-payment mortgage, a dividend stream growing at g, a salary rising 3 % a year
+paid into a fund. The rates are per period, so for monthly payments growing once a year
+convert g the way you convert i.
+
+    clrtvm 25 n 4 i% 2 g% -30000 pmt 0 fv ?pv    \ 576871.69  what funds 25 years of 30000 indexed at 2%
+    clrtvm 25 n 4 i% 0 g% -30000 pmt 0 fv ?pv    \ 468662.40  the same without indexation
+    clrtvm 30 n 5 i% 3 g% -12000 pmt 0 pv ?fv    \ 1136807.94 30 years of saving, 12000 rising 3% a year
+    clrtvm 10 n 6 i% -1000 pv 80 pmt 0 fv ?g%    \ 12.48      growth that makes 80 rising from 1000 at 6% break even
+    clrtvm 360 n 0.5 i% 0.2 g% 300000 pv 0 fv ?pmt \ -1365.45  graduated mortgage: first payment, rising 0.2% a month
+
+?pv, ?pmt and ?fv are closed forms, and so is ?n whenever g = 0 or fv = 0: dividing the
+equation by (1+r)^(n) leaves one exponential, x^(n) with x = (1+g)/(1+r), which is the
+level-annuity formula at the growth-adjusted rate. ?i% and ?g% bracket the rate on a
+grid from  − 99 % to 1000 % per period and bisect in decimal to 34 digits, so they are
+exact to the last displayed digit and report an error if no rate satisfies the equation;
+?n with both g and fv non-zero (two exponentials, x^(n) and (1+r)^(−n)) does the same
+over 0 to 10 000 periods. The registers are not saved between sessions.
+
+17.2  Amortisation
+------------------
+
+amort prints the schedule of the loan in the registers, period by period: payment,
+interest, principal and remaining balance, with totals, all to the current display
+precision. amortm pushes the same schedule as an n × 4 real matrix, for csum, getrow or
+saving to a file. Both use the magnitudes of pv and pmt and the end convention; when g%
+is set the payment column grows accordingly, so the schedule of a graduated-payment loan
+is g% and amort.
+
+    clrtvm 3 n 1 i% 1000 pv 0 fv ?pmt drop amort
+      per        payment       interest      principal        balance
+      --- -------------- -------------- -------------- --------------
+        1         340.02          10.00         330.02         669.98
+        2         340.02           6.70         333.32         336.66
+        3         340.02           3.37         336.66           0.00
+      --- -------------- -------------- -------------- --------------
+      tot                         20.07        1000.00
+
+17.3  Cash flows: NPV and IRR
+-----------------------------
+
+Cash flows are given as a column vector in time order, the first element at t = 0 (the
+outlay) and one element per period. When a flow repeats, a matrix with two columns gives
+the amounts in the first column and the repeat counts in the second; the shape decides,
+so [1 2 $ 1000 100] is one hundred payments of 1000 and two single flows are the column
+[2 1 $ 1000 100].
+
+  ----- ------------- ----------------------------------------------
+  npv   cf rate – x   net present value at rate percent per period
+  irr   cf – x        internal rate of return, percent per period
+  ----- ------------- ----------------------------------------------
+
+    [5 1 $ -5000 1500 1500 1500 1500] 8 npv     \ -31.81    not worth it at 8%
+    [5 1 $ -5000 1500 1500 1500 1500] irr       \ 7.71
+    [2 2 $ -5000 1 1500 4] irr                  \ 7.71      the same flows, with a count
+
+MM-15’s std word module defined npv and irr as macros over pval and roots, with the cash
+flows written latest first and the rate as a fraction. Those macros are gone; the
+finance words take the flows in time order and the rate in percent, like every other
+business calculator.
+
+17.4  Interest-rate conversions and depreciation
+------------------------------------------------
+
+  --------- ----------------------------------- -------------------------------------------------------------------------------------------
+  nom>eff   nom m – eff                         nominal annual rate compounded m times a year to the effective annual rate
+  eff>nom   eff m – nom                         the inverse
+  sl        cost salvage life – d               straight-line depreciation per period
+  soyd      cost salvage life year – d          sum-of-the-years’-digits depreciation in year
+  db        cost salvage life year factor – d   declining-balance depreciation in year; factor 2 is double-declining; never below salvage
+  --------- ----------------------------------- -------------------------------------------------------------------------------------------
+
+    6 12 nom>eff            \ 6.17   6% monthly is 6.17% effective
+    6 365 nom>eff           \ 6.18
+    12.6825 12 eff>nom      \ 12.00
+    10000 1000 5 sl         \ 1800
+    10000 1000 5 1 soyd     \ 3000   first year
+    10000 1000 5 1 2 db     \ 4000   first year, double declining
+    10000 1000 5 5 2 db     \ 296    fifth year: capped by the salvage value
+
+17.5  Bonds
+-----------
+
+Two bond words work in periods, for a bond settled on a coupon date: price per 100 of
+face value from the coupon and yield per period, the number of periods and the
+redemption value, and the yield from the price.
+
+    3 3.5 20 100 bprice     \ 92.89   3% coupon, 3.5% yield, 20 periods
+    92.89 3 20 100 byield   \ 3.50
+
+The dated words follow the SIA conventions used by Excel’s PRICE, YIELD and ACCRINT:
+settlement and maturity dates, the annual coupon rate and yield in percent, the
+redemption value, the number of coupons per year (1, 2, 3, 4, 6 or 12) and a day-count
+basis:
+
+  --- ----------------------
+   0  30/360 (US, NASD)
+   1  actual/actual (ISDA)
+   2  actual/360
+   3  actual/365
+   4  30E/360 (European)
+  --- ----------------------
+
+  ---------- --------------------------------------------------- --------------------------------------------
+  xprice     settle maturity cpn yld redeem freq basis – price   clean price per 100
+  xyield     settle maturity cpn price redeem freq basis – yld   annual yield from the clean price
+  xaccr      settle maturity cpn freq basis – accrued            accrued interest per 100 at settlement
+  yearfrac   d1 d2 basis – f                                     year fraction between two dates on a basis
+  ---------- --------------------------------------------------- --------------------------------------------
+
+    4 setprec
+    20080215 20171115 5.75 6.5 100 2 0 xprice        \ 94.6344   (Excel's PRICE example)
+    20080215 20161115 5.75 95.04287 100 2 0 xyield   \ 6.5000
+    20080215 20171115 5.75 2 0 xaccr                 \ 1.4375
+    "1.1.2007" "1.1.2008" 3 yearfrac                 \ 1.0000    actual/365
+    20070101 20080101 2 yearfrac                     \ 1.0139    actual/360
+
+17.6  Dates in the finance module
+---------------------------------
+
+A date argument to any finance word is either a date string of the dates module,
+"d.m.yyyy", or the integer YYYYMMDD, which is the form that fits in a matrix. date>ymd
+and ymd>date convert between the two, so the dates module’s today, dateplus and ddays
+combine with the finance words:
+
+    "15.3.2026" date>ymd       \ 20260315
+    20260315 ymd>date          \ "15.03.2026"
+    today 90 dateplus date>ymd \ the numeric date 90 days from now
+
+17.7  Dated cash flows: XNPV and XIRR
+-------------------------------------
+
+Irregularly spaced flows are an N × 2 matrix of amount and numeric date, in date order.
+xnpv discounts each flow by actual/365 from the first date at an annual rate in percent,
+exactly as Excel’s XNPV; xirr finds the annual rate that makes the net present value
+zero.
+
+    2 setprec
+    [4 2 $ -5000 20250110  2000 20250601  2000 20251201  2000 20260601] 8 xnpv   \ 605.77
+    [4 2 $ -5000 20250110  2000 20250601  2000 20251201  2000 20260601] xirr     \ 23.25
+
+A matrix literal is binary, so the amounts are converted on the way in like every other
+real argument; dates that you hold as strings go through date>ymd first. The matrix can
+also be built up with join_v from 1 × 2 rows, or read from a file with
+[4, 2, "flows.txt"].
+
+========================================================================================
+18  PROGRAMS
+========================================================================================
+
+Besides words, MM-41 runs HP-41 style programs: text files with one instruction per
+line, labels, jumps and subroutine calls. They are useful for longer procedures with
+explicit control flow, and they are how the calculator was programmed before words had
+loops.
+
+a label.
+
+jump, call, and return.
+
+stop (the program also stops at the end of the file).
+
+a line consisting of a test such as top_gt? skips the next line when the test is false.
+The tests do not consume anything. With y below x on the stack: top_eq?, top_neq?,
+top_lt?, top_leq?, top_gt?, top_gte? compare y with x; top_eq0?, top_neq0?, top_lt0?,
+top_lte0?, top_gt0?, top_gte0? compare x with zero.
+
+is evaluated as a line of ordinary input, so a line may hold several tokens.
+
+Blank lines and lines starting with \ or # are ignored.
+
+A factorial, fact.prg:
+
+    \ n -- n!
+    1
+    LBL loop
+    over 1
+    top_gt?
+    GOTO body
+    GOTO done
+    LBL body
+    drop *
+    swap 1 - swap
+    GOTO loop
+    LBL done
+    drop drop nip
+    END
+
+    5 "fact.prg" run        \ 120
+
+run loads and runs a program file; with verbose_mode = 1 in the configuration it also
+prints the listing. Two related commands: batch runs a file of ordinary lines (no labels
+or tests), and eval evaluates a string.
+
+========================================================================================
+19  MODULES
+========================================================================================
+
+The HP-41 took plug-in ROMs; MM-41 takes modules. A module is a named set of commands
+with a version and a one-line summary. The core of the calculator—numbers, the stack,
+words and control flow, errors, batch mode—is itself the module core, and everything a
+user would call a feature is a module alongside it. modules shows what is plugged in:
+
+    MM-41>> modules
+    module       version  words  summary
+    core         1.9         86  arithmetic, functions, logic, the stack, words and the session
+    decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
+    finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
+    complex      1.0          7  complex numbers: parts, argument, conjugate, construction
+    special      1.1         24  gamma, beta, the normal distribution, error, Bessel, Airy, elliptic, zeta and more
+    stat         1.0         27  descriptive statistics, curve fitting, regression, t/chi-square/F/binomial/Poisson distributions
+    random       1.0         16  draws from named distributions, resampling and Monte Carlo over a word
+    ode          1.0          2  initial-value problems y' = f(t, y) over a word, scalar or system (RKF45)
+    survival     1.1         31  lifetime laws (Gompertz-Makeham and others), survival and hazard, life tables, annuities, Kaplan-Meier, fits
+    income       1.1         38  income distributions (Dagum, Singh-Maddala, Pareto, lognormal and more), inequality and poverty measures, fits
+    matrices     1.1         43  linear algebra, matrix construction and reduction, polynomials, reading tables from files
+    numerics     1.0         12  integration, roots, minima, derivatives and sums over any word
+    strings      1.0          7  string construction and manipulation
+    registers    1.0          7  64 storage registers of any type
+    dates        1.1         22  calendar arithmetic, workdays and holidays, time zones, sunrise and sunset
+    programs     1.0          1  HP-41 style programs with labels, jumps and subroutines
+    std          1.0         28  standard word module: powers, norms, storage arithmetic, locations
+
+Every command belongs to exactly one module; "name" usage says which. Two modules may
+not define the same name—a clash is reported when the second one loads, with the file
+and line for a word module—so a command means the same thing whatever is plugged in.
+There are three kinds of module, and from the stack they are indistinguishable.
+
+19.1  Built-in modules
+----------------------
+
+These are compiled into the calculator from the modules/ directory of the source tree,
+one subdirectory each. The MODULES variable in the Makefile chooses which; the default
+is all of them, and
+
+make MODULES="matrices strings"
+
+builds a smaller calculator with only those two (and the core). The command reference in
+Appendix 23 is generated per module, so it always describes the binary it was built
+with.
+
+19.2  Word modules
+------------------
+
+A word module is a text file of definitions, and it is the way to add commands without a
+compiler. The file holds one definition per line in either form, with an optional header
+line naming the module:
+
+    \ module geo 0.1 circles and spheres
+    : circ 2 * pi * ;              \ circumference of a circle of radius x
+    sphere dup * 4 * pi *          \ surface of a sphere (name body form)
+
+Save it as geo.mm in ~/.config/mm41/modules/ and it is loaded at every start, like a ROM
+left in its slot; the std module ships there. To load one by hand:
+
+    "geo" use                  \ modules/geo.mm in the configuration directory
+    use geo                    \ the same, typed at the prompt (section Line forms)
+    "/tmp/draft.mm" use        \ or any path
+    "geo" unuse                \ remove its words
+    listmacros                 \ the words of every loaded word module, by module
+
+Loading a module that is already loaded replaces it, which makes editing one a quick
+cycle of save and use. Definitions are compiled on loading with the same rules as words
+typed at the prompt: unknown names, control-flow mistakes and clashes are reported with
+the line number, the offending word is skipped, and the rest of the module loads.
+Forward references within a module are fine. Modules are loaded in name order, so a
+module that uses another’s words should sort after it (or simply not depend on it).
+
+Word modules cannot redefine a built-in command. They can be shadowed by your own words,
+which is deliberate: a word you type always wins.
+
+19.3  Compiled modules
+----------------------
+
+A compiled module is a shared object exporting one function, mm41_module(), which
+returns the same Module structure the built-in modules use (include/module.h):
+
+    #include "module.h"
+    #include "errors.h"
+    #include "stack.h"
+
+    static int op_cube(Stack *stack) {           /* x -- x^3 */
+      double x;
+      if (pop_real_arg(stack, "cube", &x) != 0) return -1;
+      push_real(stack, x * x * x);
+      return 0;
+    }
+
+    static const Op table[] = {
+      /* name, min depth, function, category, stack picture, description, example */
+      { "cube", 1, op_cube, "Example", "x -- x^3", "cube of a real number", "3 cube" },
+    };
+
+    static const Module mod = {
+      "hello", "0.1", "example module",
+      table, (int)(sizeof table / sizeof table[0]),
+      NULL, NULL,           /* init, shutdown */
+      MM41_MODULE_API
+    };
+
+    const Module *mm41_module(void) { return &mod; }
+
+A command takes the stack and returns 0, or reports a problem with mm_error() and
+returns nonzero; the core checks the minimum depth before calling it and rolls the stack
+back on error, exactly as for a built-in. The helpers in ops.h (pop_real_arg,
+pop_two_reals, pop_string_arg) and the whole stack API are available. The complete
+example, with init and shutdown hooks and three commands, is examples/modules/hello/.
+
+make shared-module DIR=examples/modules/hello # -> hello.so
+
+    "examples/modules/hello/hello.so" load
+    3 cube                     \ 27
+    "cube" usage               \ [hello: Example]
+
+A .so placed in ~/.config/mm41/modules/ is loaded at startup. A compiled module stays
+loaded for the session (its code must remain mapped while its commands are in the
+dispatch table), and loading one renumbers execution tokens, so do not keep an @name
+token on the stack across a load. The api field guards against a module built for a
+different version of the interface.
+
+19.4  Which kind to write
+-------------------------
+
+A word module for anything that can be said in words—formulas, conventions, locations, a
+house style of abbreviations; it needs no compiler and travels as one text file. A
+compiled module when you need a new algorithm, a library, or speed: an FFT, a database
+connector, a different number type. The std module is the first kind; the matrix module
+is the second, and the only difference between it and a module you write is that it
+happens to be compiled in.
+
+========================================================================================
+20  BATCH MODE AND SCRIPTING
+========================================================================================
+
+When MM-41 is given expressions or files on the command line, or when its standard input
+is not a terminal, it runs in batch mode: no banner, no per-line echo, the final stack
+is printed, and the exit status is 1 if any error occurred.
+
+-n starts with a clean slate: no saved words, modules or configuration, and nothing is
+written at exit. Use it in scripts so that their behaviour does not depend on the state
+of your configuration directory. Scripts may define words, and \ or # comments are
+allowed. The project’s own tests are batch runs compared against golden output files
+(tests/golden/).
+
+  --------------- ----------------------------------------------------------------------------------------
+  -e EXPR         evaluate one line; may be repeated
+  -f FILE         run the lines of a file; - is standard input; may be repeated and mixed with -e
+  -n              do not load the saved words, the modules in the config directory, or the configuration
+  –modules        list the built-in modules and exit
+  –commands       print the command reference as Markdown
+  –commands-tex   the same as LaTeX tables (used to build this manual)
+  –version, -h    version; usage
+  --------------- ----------------------------------------------------------------------------------------
+
+Exit status: 0 on success, 1 if any error was reported in batch mode, 2 for a usage
+error.
+
+========================================================================================
+21  CONFIGURATION AND FILES
+========================================================================================
+
+Everything lives in $XDG_CONFIG_HOME/mm41/, which defaults to ~/.config/mm41/:
+
+  ------------------ ----------------------------------------------------------------------------------------------------------------
+  config.txt         print_precision, fixed_point, number_mode, holidays, verbose_mode, tol; written at exit
+  holidays/*.txt     holiday calendars (Section 16.1); the shipped example.txt is replaced by make install, your own files are kept
+  modules/*.mm       word modules, loaded at startup in name order; the shipped ones are replaced by make install
+  modules/*.so       compiled modules, loaded at startup
+  user_words.txt     words saved by savewords; loaded at startup
+  registers.txt      saveregs / loadregs
+  stack_backup.dat   savestack / loadstack
+  .rpn_history       readline history (last 1000 lines)
+  ------------------ ----------------------------------------------------------------------------------------------------------------
+
+A missing configuration directory is created on first use. verbose_mode = 1 makes the
+calculator chattier: it lists the module words at startup, echoes word definitions in
+batch mode, and prints program listings.
+
+The configuration directory is per user; the data/ directory in the source tree holds
+the defaults that make install copies there if nothing exists yet.
+
+========================================================================================
+22  ERRORS
+========================================================================================
+
+Every top-level token is atomic. When a command fails, the stack is restored to its
+state before that token, a message beginning with Error: is printed on standard error,
+and the rest of the line is skipped:
+
+    MM-41>> 1 2 [2 2 $ 1 2 2 4] minv +
+    Error: Matrix is singular, cannot invert
+    [0] ℝ : 1.000000
+    [1] ℝ : 2.000000
+    [2] Mℝ: 2 x 2 matrix
+
+The + after the failing minv did not run. A user word counts as one token: if it fails
+half-way, nothing it did remains. undo goes one step further back and restores the stack
+as it was before the previous line.
+
+Common messages:
+
+a command was given too few arguments.
+
+e.g. adding a string to a number, or multiplying matrices of incompatible shapes.
+
+from /, inv or ./.
+
+a function passed to a numerical method pushed nothing, several items, or a non-real.
+
+a word called itself more than 256 levels deep.
+
+In batch mode any error makes the exit status 1, so a script can be checked with && like
+any other command.
+
+========================================================================================
+23  COMMAND REFERENCE
+========================================================================================
+
+Generated from the dispatch table by mm41 –commands-tex; the same information is
+available at run time from listfcns and "name" usage. Stack pictures read deepest-first.
+
+The command reference is in COMMANDS.md and at the prompt: help <name>.
+
+========================================================================================
+24  THE STD WORD MODULE
+========================================================================================
+
+The following words are loaded from modules/std.mm in the configuration directory. The
+file is replaced at each make install; add your own words to user_words.txt or to a word
+module of your own. A second shipped word module, const.mm, holds the physical and
+astronomical constants (CODATA 2018, SI units):
+c h hbar G kB qe NA Rgas eps0 mu0 me mp mn amu alpha a0 muB sigmaSB Ryd eV atm g0 au ly pc Msun Rsun Mearth Rearth;
+help const lists them with their values, and "const" unuse frees the names.
+
+  Word                                 Definition                                                Meaning
+  ------------------------------------ --------------------------------------------------------- ------------------------------------------------------
+  Word                                 Definition                                                Meaning
+  sq                                   dup *                                                     x²
+  qu                                   sq sq                                                     x⁴
+  cube                                 3 ^                                                       x³
+  cubrt                                3 inv ^                                                   cube root (complex for negative x)
+  pctchg                               over - swap / 100 *                                       percent change from y to x, consuming both
+  pctot                                / 100 *                                                   x as a percentage of y, consuming both
+  ln2                                  ln 2 ln /                                                 base-2 logarithm
+  norm2                                svd drop swap drop diag rmax split_mat                    spectral norm (largest singular value)
+  normfro                              dim * 1 reshape 2 .^ csum split_mat sqrt                  Frobenius norm
+  cond                                 svd drop swap drop diag dup rmax swap rmin ./ split_mat   -norm condition number
+  isnan, isinf                         nan eq, inf eq                                            flags
+  isreal                               im 0 eq                                                   if the imaginary part is zero
+  selreal                              dup isreal swap re .*                                     keep the real entries of a vector, zero the rest
+  cumprod_c, cumprod_r                 ln cumsum_c exp                                           cumulative products
+  sto_add, sto_sub, sto_mul, sto_div   dup rcl 2 roll + swap sto etc.                            storage arithmetic: x n sto_add adds x to register n
+  XprimeX                              dup ’ swap *                                              X^(T)X
+  f2c, c2f                             32 - 9 / 5 *, 9 * 5 / 32 +                                Fahrenheit and Celsius
+  dec_hr                               dup 0 2 substr eval swap 3 5 substr eval 60 / +           "HH:MM" to decimal hours
+  alexandria, duluth, durham, kranj    lat lon "zone"                                            locations for the solar functions
+
+========================================================================================
+25  COMING FROM MM-15, MM-14, MM-11 OR MM-B1
+========================================================================================
+
+MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1’s decimal numbers and
+finance words as the decimal and finance modules; 1.2 added workdays and holiday
+calendars to the dates module; 1.3 added help name; 1.4 added the stat, random and ode
+modules, the rest of the special functions and the const word module; 1.4.1 the
+bare-name line forms use const, usehol us; 1.5 the g% register for growing payments; 1.6
+the display skins; 1.7 the survival and income modules and the bracket-only matrix
+literal; 1.8 reading tables from files and fitting published life tables and income
+shares; 1.9 the manual at the prompt. Every MM-15 command, word and program runs
+unchanged, with one exception noted below. What is different:
+
+-   The binary is mm41, the configuration directory ~/.config/mm41/. Copy
+    user_words.txt, registers.txt and config.txt across from mm_15 if you want them.
+
+-   predefined_macros.txt is now the word module modules/std.mm and is installed there;
+    the old file is not read. Your own additions belong in user_words.txt or in a module
+    of your own.
+
+-   New commands: modules, use, unuse, load; the option –modules; make MODULES=... and
+    make shared-module.
+
+-   listfcns, "name" usage and the generated reference name the module a command comes
+    from.
+
+-   The std macros npv and irr (latest flow first, rate as a fraction) are replaced by
+    the finance module’s npv and irr (time order, rate in percent); see Section 17.3.
+
+MM-11 and MM-14 users: MM-15 2.0 already contained both (the same core, words, control
+flow and numerical methods), so MM-41 is the one calculator to install.
+
+MM-B1 users: every MM-B1 word is here with the same name and argument order, except that
+
+-   cash flows are matrices on the stack rather than a bank filled with cf/cfn/xcf:
+    -1000 cf 300 cf 5 cfn becomes [2 2 $ -1000 1 300 5], and xcf rows become an N × 2
+    matrix of amount and date (Sections 17.3 and 17.6); cfs, clrcf, xcfs and clrxcf are
+    not needed;
+
+-   i is spelled i% and ?i is ?i%; begin is beg (begin is a control word);
+
+-   fix is setprec; date+ is dateplus and ddays is in the dates module, both of which
+    also accept YYYYMMDD numbers through ymd>date; dow returns the weekday name;
+
+-   numbers are binary by default; decimal switches the number mode, and the finance
+    words return decimals whatever the mode.
+
+CHANGES.md in the source tree has the full history, including the MM-15 2.x changes from
+1.x.

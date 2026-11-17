@@ -26,6 +26,7 @@
 #include <string.h>
 #include "ops.h"
 #include "skins.h"
+#include "manual.h"
 #include "module.h"
 #include "dec_ops.h"
 #include "decimal.h"
@@ -288,6 +289,7 @@ static int op_loadwords(Stack *stack) { (void)stack; (void)(load_words_from_file
 static int op_savewords(Stack *stack) { (void)stack; (void)(save_words_to_file()); return 0; }
 static int op_delword(Stack *stack) { (void)stack; (void)(delete_word(stack)); return 0; }
 static int op_clrwords(Stack *stack) { (void)stack; (void)(clear_words()); return 0; }
+static int op_manual(Stack *stack) { (void)stack; manual_open(NULL); return 0; }
 static int op_help(Stack *stack) { (void)stack; (void)(help_menu()); return 0; }
 static int op_listfcns(Stack *stack) { (void)stack; (void)(list_all_functions_sorted()); return 0; }
 static int op_clrhist(Stack *stack) { (void)stack; (void)(clear_history()); return 0; }
@@ -383,6 +385,7 @@ static const Op core_table[] = {
   { "eval", 1, op_eval, "Session", "s --", "evaluate the string s as a line of input", "\"1 2 +\" eval" },
   { "batch", 1, op_batch, "Session", "s --", "run the lines of file s as input", "\"calc.txt\" batch" },
   { "help", 0, op_help, "Session", "--", "print the quick-start help screen", "help" },
+  { "manual", 0, op_manual, "Session", "--", "open the user manual in the pager ($PAGER, less or more); at the prompt, manual <chapter>, manual 9.3 or manual <word> opens it there (n for the next match, q to return)", "manual" },
   { "usage", 1, op_usage, "Session", "\"name\" --", "show the stack picture, description and example of a command, or a word's definition", "\"sin\" usage" },
   { "listfcns", 0, op_listfcns, "Session", "--", "list all commands by category", "listfcns" },
   { "clrhist", 0, op_clrhist, "Session", "--", "clear the readline history", "clrhist" },
