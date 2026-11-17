@@ -1,0 +1,46 @@
+  no law selected; "gompertz" [b c] setlaw, or lifefit (help survival)
+Error: surv: no law selected; "gompertz" [b c] setlaw first (help survival)
+  law makeham [a b c]   h = a + b e^(ct)
+  parameters: 0.0005 3e-05 0.1
+| 60.0000 100000.0000 1314.1578 0.0131 18.5395 |
+| 61.0000  98685.8422 1427.1740 0.0145 17.7796 |
+| 62.0000  97258.6682 1548.2409 0.0159 17.0330 |
+| 63.0000  95710.4273 1677.4717 0.0175 16.3004 |
+  law makeham [a b c]   h = a + b e^(ct)
+  parameters: 0.0005 3e-05 0.1
+| 2.0000 0.8333 6.0000 1.0000 |
+| 3.0000 0.6667 5.0000 1.0000 |
+| 5.0000 0.4444 3.0000 1.0000 |
+| 8.0000 0.2222 2.0000 1.0000 |
+| 2.0000 0.1667 6.0000 1.0000 |
+| 3.0000 0.3667 5.0000 1.0000 |
+| 5.0000 0.7000 3.0000 1.0000 |
+| 8.0000 1.2000 2.0000 1.0000 |
+  law weibull [k lambda]   h = (k/lambda) (t/lambda)^(k-1)
+  parameters: 2.287189564 11.79825515
+Error: setlaw: no law 'nosuch'; the laws are exponential, weibull, gompertz, makeham, siler, loglogistic, lognormal, gamma
+Error: setlaw: gompertz takes 2 parameters [b c]
+Error: setlaw: the parameters of gompertz must be positive (mu of lognormal excepted)
+Error: lifeinv: p must be strictly between 0 and 1
+Error: lifeinv: p must be strictly between 0 and 1
+Error: km: times and event indicators must be vectors of the same length
+Error: km: times must be >= 0 and indicators 0 (censored) or 1 (event)
+Error: surv: expected a real number
+Error: tpx: needs two real numbers
+
+[0] 𝒮 : "nosuch"
+[1] Mℝ: 1 x 1 matrix
+[2] 𝒮 : "gompertz"
+[3] Mℝ: 1 x 1 matrix
+[4] 𝒮 : "gompertz"
+[5] Mℝ: 1 x 2 matrix
+[6] ℝ : 0.000000
+[7] ℝ : 1.000000
+[8] Mℝ: 1 x 2 matrix
+[9] Mℝ: 1 x 3 matrix
+[10] Mℝ: 1 x 2 matrix
+[11] Mℝ: 1 x 2 matrix
+[12] 𝒮 : "x"
+[13] ℝ : 65.000000
+[14] 𝒮 : "x"
+[exit 1]

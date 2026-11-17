@@ -1,0 +1,46 @@
+  no distribution selected; "dagum" [a b p] setdist, or incfit (help income)
+Error: gini: no distribution selected; "dagum" [a b p] setdist first (help income)
+  dagum [a b p]   F = (1 + (x/b)^-a)^-p
+  parameters: 3.5 20000 0.8
+| 0.0000 0.0000 |
+| 0.1000 0.0311 |
+| 0.2000 0.0807 |
+| 0.3000 0.1421 |
+| 0.4000 0.2137 |
+| 0.5000 0.2955 |
+| 0.6000 0.3880 |
+| 0.7000 0.4932 |
+| 0.8000 0.6146 |
+| 0.9000 0.7616 |
+| 1.0000 1.0000 |
+| 0.0311 0.0496 0.0614 0.0716 0.0818 0.0926 0.1051 0.1214 0.1470 0.2384 |
+Error: gini: the Gini coefficient does not exist (the mean is infinite)
+  singhmaddala [a b q]   F = 1 - (1 + (x/b)^a)^-q
+  parameters: 2.8 20909 1.37
+| 0.0000 0.0000 |
+| 0.2000 0.0500 |
+| 0.4000 0.1500 |
+| 0.6000 0.3000 |
+| 0.8000 0.5000 |
+| 1.0000 1.0000 |
+| 0.0182 0.0364 0.0545 0.0727 0.0909 0.1091 0.1273 0.1455 0.1636 0.1818 |
+  lognormal [mu sigma]   ln X ~ N(mu, sigma)
+  parameters: 8.218457058 0.8126308241
+Error: setdist: no family 'nosuch'; the families are pareto, lognormal, dagum, singhmaddala, fisk, gamma, weibull
+Error: setdist: dagum takes 3 parameters [a b p]
+Error: incmean: the mean does not exist (shape too small)
+Error: incq: p must be strictly between 0 and 1
+Error: ginid: incomes must be finite and >= 0
+Error: ginid: total income is zero
+Error: headcountd: needs a poverty line z > 0 (and alpha >= 0)
+
+[0] 𝒮 : "nosuch"
+[1] Mℝ: 1 x 2 matrix
+[2] 𝒮 : "dagum"
+[3] Mℝ: 1 x 2 matrix
+[4] ℝ : 0.000000
+[5] Mℝ: 1 x 3 matrix
+[6] Mℝ: 1 x 3 matrix
+[7] Mℝ: 1 x 3 matrix
+[8] ℝ : 0.000000
+[exit 1]

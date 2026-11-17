@@ -57,7 +57,7 @@
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 
-\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 1.6}
+\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 1.7}
 \author{Mico Mrkaic}
 \date{November 2026}
 
@@ -209,13 +209,19 @@ Strings are double-quoted: \code{"hello world"}. The escapes \code{\textbackslas
 
 \subsection{Matrices}
 
-An inline matrix gives the dimensions, a dollar sign, and the elements in row-major order:
+An inline matrix is written in brackets; a semicolon ends a row:
 \begin{rpn}
-[2 2 $ 1 2 3 4]             \ the 2x2 matrix  1 2 / 3 4
+[1 2 3]                     \ a row vector, 1x3
+[1 2; 3 4]                  \ the 2x2 matrix  1 2 / 3 4
+[1 (0,1); 0 1]              \ one complex entry makes a complex matrix
+\end{rpn}
+The older form gives the dimensions and a dollar sign first, then the elements in row-major order, and is what the calculator itself writes:
+\begin{rpn}
+[2 2 $ 1 2 3 4]             \ the same 2x2 matrix
 [1 3 $ 1 2 3]               \ a row vector
 [3 1 $ 1 2 3]               \ a column vector
-[2 2 $ 1 (0,1) 0 1]         \ one complex entry makes a complex matrix
 \end{rpn}
+Every word that takes a vector accepts a row or a column, so \code{[1 2 3]} serves wherever a vector is wanted.
 A matrix can also be read from a whitespace-separated text file, giving its shape:
 \begin{rpn}
 [2, 2, "m.txt"]              \ reads four numbers from m.txt, row by row
@@ -667,6 +673,207 @@ The \code{random} module draws from the calculator's Mersenne-twister generator,
 [1 5 $ 1 2 3 4 5] resample mean              \ a bootstrap replicate of the mean
 \end{rpn}
 A word for \cmd{sims} takes nothing and leaves one real; everything it needs comes from the draws or from registers. Ten thousand runs of a short word take well under a second.
+
+%======================================================================
+\section{Survival analysis}
+\label{sec:survival}
+
+The \code{survival} module is for lifetimes: the parametric laws used in demography, actuarial work and reliability, with everything that follows from a law---survival and hazard, expectation of life, life tables, the present values of annuities and insurances---and the non-parametric estimators and fits used when the data come first.
+
+\subsection{Laws}
+
+A law is selected once with its parameters, and every other word then takes only the age or time, in whatever unit the parameters are in (years, for a mortality law):
+\begin{rpn}
+"makeham" [0.0005 0.00003 0.1] setlaw   \ Gompertz-Makeham: h(t) = a + b e^(ct)
+law                                      \ shows the law and its parameters
+lawpar                                   \ the parameters as a row vector
+\end{rpn}
+\begin{center}\small
+\begin{tabular}{@{}ll>{\raggedright\arraybackslash}p{0.3\textwidth}>{\raggedright\arraybackslash}p{0.27\textwidth}@{}}
+\toprule
+law & parameters & hazard or survival & \\
+\midrule
+\code{exponential} & \code{[lambda]} & $h = \lambda$ & constant hazard \\
+\code{weibull} & \code{[k lambda]} & $h = (k/\lambda)(t/\lambda)^{k-1}$ & reliability; $k<1$ infant mortality, $k>1$ wear-out \\
+\code{gompertz} & \code{[b c]} & $h = b\,e^{ct}$ & adult mortality; $c\approx 0.08$--$0.1$ a year \\
+\code{makeham} & \code{[a b c]} & $h = a + b\,e^{ct}$ & Gompertz with an age-independent term \\
+\code{siler} & \code{[a1 b1 a2 a3 b3]} & $h = a_1 e^{-b_1 t} + a_2 + a_3 e^{b_3 t}$ & infant, background and senescent mortality \\
+\code{loglogistic} & \code{[alpha beta]} & $S = 1/(1 + (t/\alpha)^\beta)$ & a hazard that rises then falls \\
+\code{lognormal} & \code{[mu sigma]} & $\ln T \sim N(\mu,\sigma)$ & \\
+\code{gamma} & \code{[k theta]} & shape $k$, scale $\theta$ & \\
+\bottomrule
+\end{tabular}
+\end{center}
+\code{gm} and \code{gompertz-makeham} are accepted for \code{makeham}, \code{fisk} for \code{loglogistic}. The exponential takes its one parameter as a number or a one-element vector.
+
+\subsection{Functions of the law}
+
+$S(t)$ and $h(t)$ are closed forms for every law; the density is $f = hS$, the cumulative hazard $H = -\ln S$, the distribution function $F = 1 - S$. Quantiles are found by Brent's method on $S$, and the expectations by adaptive quadrature. The words that take an age apply elementwise to a matrix of ages.
+\begin{center}\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.3\textwidth}>{\raggedright\arraybackslash}p{0.14\textwidth}>{\raggedright\arraybackslash}p{0.5\textwidth}@{}}
+\toprule
+\cmd{surv}, \cmd{haz}, \cmd{cumhaz} & \stk{t -- x} & $S(t)$, $h(t)$ (the force of mortality), $H(t)$ \\
+\cmd{lifepdf}, \cmd{lifecdf} & \stk{t -- x} & $f(t)$ and $F(t)$ \\
+\cmd{lifeinv} & \stk{p -- t} & the quantile, $F(t) = p$ \\
+\cmd{lifemean}, \cmd{lifemed}, \cmd{lifevar}, \cmd{lifemode} & \stk{-- x} & expected lifetime from birth, median, variance, modal age at death \\
+\cmd{elife} & \stk{t -- e} & complete expectation of remaining life, $e(t) = \int_t^\infty S / S(t)$ \\
+\cmd{curtate} & \stk{x -- e} & curtate expectation $e_x = \sum_{k\ge 1} {}_kp_x$, whole years \\
+\cmd{tpx}, \cmd{nqx} & \stk{x n -- p} & ${}_np_x$ and ${}_nq_x$: survive, or die within, $n$ more years from age $x$ \\
+\cmd{px}, \cmd{qx} & \stk{x -- p} & the one-year versions \\
+\cmd{lx} & \stk{x -- l} & survivors at $x$ from a radix of 100\,000 at birth \\
+\cmd{lifetab} & \stk{x0 x1 -- M} & life table: age, $l_x$ (radix 100\,000 at $x_0$), $d_x$, $q_x$, $e_x$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{rpn}
+"gompertz" [0.0001 0.09] setlaw
+65 surv                     \ 0.680651   S(65)
+65 haz                      \ 0.034723   force of mortality at 65
+65 elife                    \ 11.876902  expected remaining years at 65
+lifemed                     \ 71.527595  median age at death
+lifemode                    \ 75.582164  modal age at death, ln(c/b)/c
+65 10 tpx                   \ 0.569419   chance a 65-year-old reaches 75
+60 65 lifetab pm            \ a five-row life table
+[60 70 80 90] qx            \ qx at four ages at once
+\end{rpn}
+
+\subsection{Annuities and insurance}
+
+With an interest rate $i\%$ a year and the current law for mortality, the actuarial present values are sums over whole years ($v = 1/(1+i)$):
+\begin{center}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.16\textwidth}>{\raggedright\arraybackslash}p{0.55\textwidth}@{}}
+\toprule
+\cmd{ax} & \stk{x i -- a} & whole-life annuity-due $\ddot a_x = \sum_{k\ge 0} v^k\,{}_kp_x$: 1 a year while $(x)$ lives, first payment now \\
+\cmd{axn} & \stk{x n i -- a} & $n$-year temporary annuity-due \\
+\cmd{Ax} & \stk{x i -- A} & whole-life insurance $A_x = \sum v^{k+1}\,{}_kp_x\,q_{x+k}$: 1 at the end of the year of death \\
+\cmd{Axn} & \stk{x n i -- A} & $n$-year term insurance \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{rpn}
+"gompertz" [0.0001 0.09] setlaw
+65 3 ax                     \ 10.014379  a pension of 1 a year from 65 costs 10.01 at 3%
+65 3 ax 30000 *             \ 300431.36  the price of 30000 a year
+65 3 Ax                     \ 0.708319   whole-life cover of 1 at 65
+65 20 3 Axn                 \ 0.638128   twenty-year term cover
+\end{rpn}
+The identity $\ddot a_x = (1 - A_x)/d$ with $d = i/(1+i)$ holds exactly: \code{65 3 Ax 1 swap - 0.03 1.03 / /} is 10.014379 too.
+
+\subsection{Estimation}
+
+From data---times, and an indicator that is 1 for an observed event and 0 for a right-censored observation---the module gives the non-parametric estimates and the maximum-likelihood fit of any of the laws:
+\begin{center}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.2\textwidth}>{\raggedright\arraybackslash}p{0.5\textwidth}@{}}
+\toprule
+\cmd{km} & \stk{t e -- M} & Kaplan-Meier: one row per distinct event time with time, $\hat S(t)$, number at risk, events \\
+\cmd{nelsonaalen} & \stk{t e -- M} & Nelson-Aalen cumulative hazard, the same layout \\
+\cmd{logrank} & \stk{t1 e1 t2 e2 -- chi2 p} & log-rank test that two groups share a survival curve \\
+\cmd{lifefit} & \stk{t e -- v ll} & maximum-likelihood fit of the current law (its name; the parameters it was set with are ignored); leaves the estimates, which become the current parameters, and the log-likelihood \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{rpn}
+[2 3 3 5 8 9] [1 1 0 1 1 0] km pm        \ S = 0.833 0.667 0.444 0.222 at t = 2 3 5 8
+"weibull" [1 1] setlaw
+[2 3 3 5 8 9] [1 1 0 1 1 0] lifefit      \ [1.8213 6.9297] and the log-likelihood
+law                                      \ the fitted Weibull is now current
+drop 0.5 lifeinv                         \ 5.666553   its median
+\end{rpn}
+The fit runs Nelder-Mead on the log-parameters from moment-based starting values, with two restarts; \cmd{nevals} reports the iterations. With no censoring the exponential and lognormal fits agree with their closed forms, and with censoring the Gompertz fit on simulated data recovers the generating parameters.
+
+%======================================================================
+\section{Income distribution}
+\label{sec:income}
+
+The \code{income} module has the distributions used for incomes and wealth, the inequality and poverty measures, and each measure twice: for a fitted distribution and for a vector of data (the data words end in \code{d}).
+
+\subsection{Families}
+
+A family is selected once with its parameters, like a survival law:
+\begin{rpn}
+"dagum" [3.5 20000 0.8] setdist          \ shape a, scale b, shape p
+dist                                     \ shows the family and parameters
+distpar                                  \ the parameters as a row vector
+\end{rpn}
+\begin{center}\small
+\begin{tabular}{@{}ll>{\raggedright\arraybackslash}p{0.55\textwidth}@{}}
+\toprule
+family & parameters & distribution function \\
+\midrule
+\code{pareto} & \code{[xm alpha]} & $F = 1 - (x_m/x)^\alpha$, $x \ge x_m$ (type I) \\
+\code{lognormal} & \code{[mu sigma]} & $\ln X \sim N(\mu, \sigma)$ \\
+\code{dagum} & \code{[a b p]} & $F = (1 + (x/b)^{-a})^{-p}$ \\
+\code{singhmaddala} & \code{[a b q]} & $F = 1 - (1 + (x/b)^a)^{-q}$ (Burr XII; \code{burr}, \code{sm}) \\
+\code{fisk} & \code{[a b]} & $F = 1/(1 + (x/b)^{-a})$ (log-logistic) \\
+\code{gamma} & \code{[k theta]} & shape $k$, scale $\theta$ \\
+\code{weibull} & \code{[k lambda]} & $F = 1 - e^{-(x/\lambda)^k}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Dagum and Singh-Maddala are the two three-parameter families that fit income data best in practice; both have the Pareto tail on the right, Dagum with a mode above zero and a lognormal-like body. Means, second moments, quantiles and Gini coefficients are closed forms (through the gamma function for Dagum and Singh-Maddala), and a mean that does not exist---Pareto with $\alpha \le 1$, Dagum with $a \le 1$---is an error, not infinity.
+
+\subsection{Measures of the distribution}
+
+\begin{center}\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.3\textwidth}>{\raggedright\arraybackslash}p{0.15\textwidth}>{\raggedright\arraybackslash}p{0.48\textwidth}@{}}
+\toprule
+\cmd{incpdf}, \cmd{inccdf} & \stk{x -- y} & density; share of the population with income below $x$ \\
+\cmd{incq} & \stk{p -- x} & quantile: the income below which a fraction $p$ lies \\
+\cmd{incmean}, \cmd{incvar}, \cmd{incmed}, \cmd{incmode} & \stk{-- x} & mean, variance, median, mode \\
+\cmd{gini} & \stk{-- G} & Gini coefficient, closed form \\
+\cmd{theil}, \cmd{mld} & \stk{-- x} & Theil index $GE(1)$ and mean log deviation $GE(0)$ \\
+\cmd{atkinson} & \stk{eps -- A} & Atkinson index with inequality aversion $\varepsilon$ ($\varepsilon = 1$ allowed) \\
+\cmd{lorenz} & \stk{p -- L} & Lorenz curve: the share of income held by the poorest fraction $p$ \\
+\cmd{lorenzm} & \stk{n -- M} & the curve at $n+1$ points, columns $p$ and $L(p)$ \\
+\cmd{share} & \stk{p1 p2 -- s} & income share of those between the $p_1$ and $p_2$ quantiles \\
+\cmd{top} & \stk{p -- s} & share of the top fraction $p$: \code{0.1 top} is the top 10\,\% \\
+\cmd{deciles} & \stk{-- v} & the ten decile shares \\
+\cmd{palma} & \stk{-- r} & Palma ratio, top 10\,\% share over bottom 40\,\% share \\
+\cmd{qratio} & \stk{p1 p2 -- r} & quantile ratio: \code{0.9 0.1 qratio} is P90/P10 \\
+\cmd{headcount}, \cmd{povgap} & \stk{z -- x} & poverty headcount ratio and poverty gap index at line $z$ \\
+\cmd{fgt} & \stk{z alpha -- x} & Foster-Greer-Thorbecke $P_\alpha$: 0 headcount, 1 gap, 2 severity \\
+\cmd{incfit} & \stk{v -- v2 ll} & maximum-likelihood fit of the current family to a vector of incomes; the estimates become current \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{rpn}
+"dagum" [3.5 20000 0.8] setdist
+incmean incmed                \ 20983.27  18247.66
+gini                          \ 0.302546
+theil 1 atkinson              \ 0.162223  0.146825
+0.1 top palma                 \ 0.238405  1.115419  top decile share; Palma
+0.9 0.1 qratio                \ 3.919646  P90/P10
+10000 headcount 10000 povgap  \ 0.134180  0.036466  at a poverty line of 10000
+10 lorenzm pm                 \ the Lorenz curve at deciles
+"pareto" [1000 2] setdist gini  \ 0.333333  = 1/(2 alpha - 1)
+\end{rpn}
+The Lorenz curve, Theil, Atkinson and the poverty gaps are integrals over the density and take a few milliseconds each; \cmd{deciles} and \cmd{lorenzm} call the curve once per point.
+
+\subsection{Measures from data}
+
+The same quantities from a vector of incomes, no distribution assumed. The data are sorted; the Lorenz curve interpolates between individuals.
+\begin{center}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.17\textwidth}>{\raggedright\arraybackslash}p{0.52\textwidth}@{}}
+\toprule
+\cmd{ginid}, \cmd{theild}, \cmd{mldd} & \stk{v -- x} & Gini, Theil, mean log deviation \\
+\cmd{atkinsond} & \stk{v eps -- A} & Atkinson \\
+\cmd{lorenzd} & \stk{v n -- M} & Lorenz curve at $n+1$ points \\
+\cmd{decilesd}, \cmd{palmad} & \stk{v -- x} & decile shares; Palma ratio \\
+\cmd{topd} & \stk{v p -- s} & share of the top fraction $p$ \\
+\cmd{headcountd}, \cmd{povgapd} & \stk{v z -- x} & headcount and poverty gap at line $z$ \\
+\cmd{fgtd} & \stk{v z alpha -- x} & $P_\alpha$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{rpn}
+[1 2 3 4 10] ginid            \ 0.4
+[1 2 3 4 10] theild           \ 0.276364
+[1 2 3 4 10] 2.5 headcountd   \ 0.4       two of five below 2.5
+"lognormal" [0 1] setdist
+[1200 1500 2200 3100 4000 5400 9000 15000] incfit   \ [mu sigma] and the log-likelihood
+drop gini                     \ 0.434449  the Gini of the fitted lognormal
+\end{rpn}
+\cmd{incfit} is closed-form for Pareto ($x_m$ the minimum, $\alpha = n / \sum \ln(x_i/x_m)$) and Nelder-Mead on the log-parameters otherwise. A fitted Dagum or Singh-Maddala reproduces the published shape parameters of survey data to the precision the survey allows; on 2000 draws from a Dagum with $(3.5, 20000, 0.8)$ the fit returns $(3.41, 20118, 0.77)$.
 
 %======================================================================
 \section{Strings}
@@ -1144,7 +1351,7 @@ The HP-41 took plug-in ROMs; MM-41 takes modules. A module is a named set of com
 \begin{rpn}
 MM-41>> modules
 module       version  words  summary
-core         1.6         86  arithmetic, functions, logic, the stack, words and the session
+core         1.7         85  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -1152,6 +1359,8 @@ special      1.1         24  gamma, beta, the normal distribution, error, Bessel
 stat         1.0         27  descriptive statistics, curve fitting, regression, t/chi-square/F/binomial/Poisson distributions
 random       1.0         16  draws from named distributions, resampling and Monte Carlo over a word
 ode          1.0          2  initial-value problems y' = f(t, y) over a word, scalar or system (RKF45)
+survival     1.0         29  lifetime laws (Gompertz-Makeham and others), survival and hazard, life tables, annuities, Kaplan-Meier, fits
+income       1.0         36  income distributions (Dagum, Singh-Maddala, Pareto, lognormal and more), inequality and poverty measures, fits
 matrices     1.0         38  linear algebra, matrix construction and reduction, polynomials
 numerics     1.0         12  integration, roots, minima, derivatives and sums over any word
 strings      1.0          7  string construction and manipulation
@@ -1356,7 +1565,7 @@ The following words are loaded from \code{modules/std.mm} in the configuration d
 \section{Coming from MM-15, MM-14, MM-11 or MM-B1}
 \label{app:changes}
 
-MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module; 1.3 added \code{help \emph{name}}; 1.4 added the \code{stat}, \code{random} and \code{ode} modules, the rest of the special functions and the \code{const} word module; 1.4.1 the bare-name line forms \code{use const}, \code{usehol us}; 1.5 the \code{g\%} register for growing payments; 1.6 the display skins. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
+MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module; 1.3 added \code{help \emph{name}}; 1.4 added the \code{stat}, \code{random} and \code{ode} modules, the rest of the special functions and the \code{const} word module; 1.4.1 the bare-name line forms \code{use const}, \code{usehol us}; 1.5 the \code{g\%} register for growing payments; 1.6 the display skins; 1.7 the survival and income modules and the bracket-only matrix literal. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
 \begin{itemize}
   \item The binary is \code{mm41}, the configuration directory \code{\textasciitilde/.config/mm41/}. Copy \code{user\_words.txt}, \code{registers.txt} and \code{config.txt} across from \code{mm\_15} if you want them.
   \item \code{predefined\_macros.txt} is now the word module \code{modules/std.mm} and is installed there; the old file is not read. Your own additions belong in \code{user\_words.txt} or in a module of your own.

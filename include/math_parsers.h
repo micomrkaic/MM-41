@@ -37,7 +37,7 @@
 #include "binary_fun.h"
 
 int read_complex(const char* input, gsl_complex* z);
-void read_matrix_from_file(Stack *stack, char *input);
+void read_matrix_from_file(Stack *stack, const char *input);
 gsl_matrix* parse_matrix_literal(const char* input);
 gsl_matrix_complex* parse_complex_matrix_literal(const char* input);
 

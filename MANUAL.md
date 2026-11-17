@@ -11,7 +11,7 @@ command list with stack pictures is [COMMANDS.md](COMMANDS.md).
 | numbers | `3` `-1.25` `.5` `1e3`; `0.1d` decimal (34 digits), `2b` binary; `decimal`/`binary` set the mode |
 | complex | `(1,2)` `(-1.2e-4, 0.7e2)` |
 | strings | `"text"` with `\"` `\\` `\n` `\t` |
-| matrices | `[rows cols $ a11 a12 ...]` row-major; `[2, 2, "file.txt"]` from a file |
+| matrices | `[1 2 3]` row vector, `[1 2; 3 4]` (`;` ends a row), `[rows cols $ a11 a12 ...]` row-major; `[2, 2, "file.txt"]` from a file |
 | comments | `\` or `#` to end of line |
 | execution token | `@name` — a reference to a command or word, for the numerical methods |
 | shell | `!command` pushes the command's output as a string |
@@ -128,6 +128,27 @@ Random: `n seed` · `mu sigma rnorm` `a b runif` `mu rpois` `rate rexp` (one dra
 
 `y0 t0 t1 n @f odeint -- M` (t and state per row, RKF45 to `tol`) · `y0 t0 t1 @f
 odesol -- y`. The word is `t y -- y'`; for a system y is a row vector.
+
+## Survival analysis (`survival`)
+
+`"law" [params] setlaw` once: `exponential [lambda]` `weibull [k lambda]` `gompertz [b c]`
+`makeham [a b c]` `siler [a1 b1 a2 a3 b3]` `loglogistic [alpha beta]` `lognormal [mu sigma]`
+`gamma [k theta]`; `law` shows it, `lawpar` leaves the vector. Then `t surv haz cumhaz
+lifepdf lifecdf` · `p lifeinv` · `lifemean lifemed lifevar lifemode` · `t elife` (expected
+remaining life) · `x curtate` · `x n tpx nqx` · `x px qx lx` · `x0 x1 lifetab -- M` (age lx
+dx qx ex) · `x i ax` `x n i axn` (annuity-due of 1 a year) · `x i Ax` `x n i Axn` (insurance).
+Data (times, event 1 / censored 0): `t e km -- M` · `t e nelsonaalen -- M` · `t1 e1 t2 e2
+logrank -- chi2 p` · `t e lifefit -- v ll` (maximum likelihood; the estimates become current).
+
+## Income distribution (`income`)
+
+`"family" [params] setdist` once: `pareto [xm alpha]` `lognormal [mu sigma]` `dagum [a b p]`
+`singhmaddala [a b q]` `fisk [a b]` `gamma [k theta]` `weibull [k lambda]`; `dist` shows it.
+Then `x incpdf inccdf` · `p incq` · `incmean incvar incmed incmode` · `gini theil mld` ·
+`eps atkinson` · `p lorenz` `n lorenzm` · `p1 p2 share` · `p top` · `deciles` · `palma` ·
+`p1 p2 qratio` · `z headcount povgap` · `z alpha fgt` · `v incfit -- v2 ll`.
+From data: `v ginid theild mldd` · `v eps atkinsond` · `v n lorenzd` · `v decilesd palmad` ·
+`v p topd` · `v z headcountd povgapd` · `v z alpha fgtd`.
 
 ## Numerical methods
 

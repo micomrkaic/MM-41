@@ -63,7 +63,7 @@ void evaluate_line(Stack *stack, char* line) {
     if (tok.type == TOK_EOF) break;
     long errors_before = error_count;
     copy_stack(&before, stack);
-    evaluate_one_token(stack, tok);
+    evaluate_one_token(stack, &tok);
     if (error_count > errors_before) {
       copy_stack(stack, &before);
       break;
@@ -84,17 +84,17 @@ void evaluate_line(Stack *stack, char* line) {
 /* } */
 
 // **************** Process one token ****************
-void evaluate_one_token(Stack *stack, Token tok) {
-  switch (tok.type) {
+void evaluate_one_token(Stack *stack, const Token *tok) {
+  switch (tok->type) {
   case TOK_EOF:
     return;
   case TOK_NUMBER: {
     /* "0.1" follows the number mode; "0.1d" is always decimal, "0.1b" always binary */
-    size_t n = strlen(tok.text);
-    char last = n ? tok.text[n - 1] : 0;
+    size_t n = strlen(tok->text);
+    char last = n ? tok->text[n - 1] : 0;
     bool dec = (last == 'd') || (decimal_mode && last != 'b');
-    char buf[MAX_TOKEN_LEN];
-    snprintf(buf, sizeof buf, "%.*s", (int)(last == 'd' || last == 'b' ? n - 1 : n), tok.text);
+    char buf[256];                                   /* a number, not a matrix: short */
+    snprintf(buf, sizeof buf, "%.*s", (int)(last == 'd' || last == 'b' ? n - 1 : n), tok->text);
     if (dec) {
       mm_dec d;
       if (dec_from_string(&d, buf) != 0) { mm_error("not a decimal number: %s", buf); return; }
@@ -106,32 +106,32 @@ void evaluate_one_token(Stack *stack, Token tok) {
   }
   case TOK_COMPLEX: {
     gsl_complex z;
-    if (read_complex(tok.text, &z)) push_complex(stack,z);
+    if (read_complex(tok->text, &z)) push_complex(stack,z);
     return;}
   case TOK_STRING:
-    push_string(stack, tok.text);
+    push_string(stack, tok->text);
     return;
   case TOK_MATRIX_FILE:
-    read_matrix_from_file(stack, tok.text);
+    read_matrix_from_file(stack, tok->text);
     return;
   case TOK_MATRIX_INLINE_REAL:
-    push_matrix_real(stack,parse_matrix_literal(tok.text));
+    push_matrix_real(stack,parse_matrix_literal(tok->text));
     return;
   case TOK_MATRIX_INLINE_COMPLEX:
-    push_matrix_complex(stack,parse_complex_matrix_literal(tok.text));
+    push_matrix_complex(stack,parse_complex_matrix_literal(tok->text));
     return;
   case TOK_MATRIX_INLINE_MIXED:
-    push_matrix_complex(stack,parse_complex_matrix_literal(tok.text));
+    push_matrix_complex(stack,parse_complex_matrix_literal(tok->text));
     return;
   case TOK_PLUS: case TOK_MINUS: case TOK_STAR: case TOK_SLASH: case TOK_CARET:
   case TOK_DOT_STAR: case TOK_DOT_SLASH: case TOK_DOT_CARET: {
-    int idx = find_op(tok.text);
+    int idx = find_op(tok->text);
     if (idx >= 0) call_op(stack, idx);
-    else mm_error("Unknown operator: %s", tok.text);
+    else mm_error("Unknown operator: %s", tok->text);
     return;
   }
   case TOK_BRA: case TOK_KET: case TOK_VERTICAL:
-    mm_error("Illegal token: %s", tok.text);
+    mm_error("Illegal token: %s", tok->text);
     return;
   case TOK_COLON:
     mm_error("':' starts a word definition: ': name body ;' on one line");
@@ -140,29 +140,29 @@ void evaluate_one_token(Stack *stack, Token tok) {
     mm_error("';' without a matching ':'");
     return;
   case TOK_IDENTIFIER: {
-    user_word *w = find_word(tok.text);
-    if (!w) { mm_error("Unknown word: %s", tok.text); return; }
+    user_word *w = find_word(tok->text);
+    if (!w) { mm_error("Unknown word: %s", tok->text); return; }
     exec_word(stack, w);
     return;
   }
   case TOK_FUNCTION: {
 
-    int idx = find_op(tok.text);
+    int idx = find_op(tok->text);
     if (idx >= 0) call_op(stack, idx);
-    else mm_error("Unknown command: %s", tok.text);
+    else mm_error("Unknown command: %s", tok->text);
     return;
   }
   case TOK_XT: {
-    double xt = xt_of(tok.text + 1);
-    if (xt < 0) { mm_error("%s: no such command or word", tok.text); return; }
+    double xt = xt_of(tok->text + 1);
+    if (xt < 0) { mm_error("%s: no such command or word", tok->text); return; }
     push_real(stack, xt);
     return;
   }
   case TOK_UNKNOWN:
-    mm_error("Illegal token: %s", tok.text);
+    mm_error("Illegal token: %s", tok->text);
     return;
   default:
-    mm_error("Unhandled token: %s", tok.text);
+    mm_error("Unhandled token: %s", tok->text);
     return;
   }
 }

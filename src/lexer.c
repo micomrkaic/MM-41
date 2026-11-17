@@ -241,8 +241,68 @@ Token lex_matrix_file(Lexer* lexer) {
   return make_token(TOK_MATRIX_FILE, temp_buf);
 }
 
+/* [a b c] and [a b; c d]: a matrix without the "rows cols $" header. The
+   elements are counted, ';' ends a row, and the token is rewritten into
+   the header form so the parser sees "1 3 $ a b c". */
+static Token lex_matrix_inline_free(Lexer* lexer) {
+  size_t start_pos = lexer->pos;
+  size_t cap = 256, len = 0;
+  char* buf = calloc(cap, 1);
+  if (!buf) return make_token(TOK_UNKNOWN, "[");
+  size_t rows = 1, cols = 0, in_row = 0;
+  bool has_real = false, has_complex = false;
+  char temp[MAX_TOKEN_LEN * 2];
+  for (;;) {
+    skip_whitespace(lexer);
+    char c = peek(lexer);
+    if (c == ']' || c == '\0') break;
+    if (c == ';') {
+      advance(lexer);
+      if (in_row == 0) { free(buf); lexer->pos = start_pos; return make_token(TOK_UNKNOWN, "["); }
+      if (cols == 0) cols = in_row;
+      else if (in_row != cols) { free(buf); lexer->pos = start_pos; mm_error("matrix literal: rows of different lengths"); return make_token(TOK_UNKNOWN, "["); }
+      in_row = 0; rows++;
+      continue;
+    }
+    Token t;
+    if (c == '(') { t = lex_complex(lexer); has_complex = true; }
+    else if (starts_number(lexer)) { t = lex_number(lexer); has_real = true; }
+    else { free(buf); lexer->pos = start_pos; return make_token(TOK_UNKNOWN, "["); }
+    int written = snprintf(temp, sizeof(temp), " %s", t.text);
+    if (written < 0 || (size_t)written >= sizeof(temp)) { free(buf); lexer->pos = start_pos; return make_token(TOK_UNKNOWN, "["); }
+    while (len + (size_t)written + 1 >= cap) cap *= 2;
+    char* nb = realloc(buf, cap);
+    if (!nb) { free(buf); return make_token(TOK_UNKNOWN, "["); }
+    buf = nb;
+    memcpy(buf + len, temp, (size_t)written + 1);
+    len += (size_t)written;
+    in_row++;
+  }
+  if (!match(lexer, ']') || in_row == 0 || (cols && in_row != cols)) {
+    free(buf); lexer->pos = start_pos;
+    if (cols && in_row && in_row != cols) mm_error("matrix literal: rows of different lengths");
+    return make_token(TOK_UNKNOWN, "[");
+  }
+  if (cols == 0) cols = in_row;
+  char head[64];
+  snprintf(head, sizeof head, "%zu %zu $", rows, cols);
+  char* out = malloc(strlen(head) + len + 1);
+  if (!out) { free(buf); return make_token(TOK_UNKNOWN, "["); }
+  strcpy(out, head); strcat(out, buf);
+  free(buf);
+  token_type type = has_complex && has_real ? TOK_MATRIX_INLINE_MIXED : has_complex ? TOK_MATRIX_INLINE_COMPLEX : TOK_MATRIX_INLINE_REAL;
+  Token result = make_token(type, out);
+  free(out);
+  return result;
+}
+
 static Token lex_matrix_inline_j(Lexer* lexer) {
   size_t start_pos = lexer->pos;
+  {                                              /* no '$' before the closing bracket: the free form */
+    size_t i = lexer->pos; bool dollar = false;
+    while (lexer->input[i] && lexer->input[i] != ']') { if (lexer->input[i] == '$') dollar = true; i++; }
+    if (!dollar) return lex_matrix_inline_free(lexer);
+  }
 
   // Parse row and column counts
   Token rows = lex_number(lexer);

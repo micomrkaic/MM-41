@@ -37,7 +37,7 @@ int read_complex(const char* input, gsl_complex* z) {
   return 0; // failure
 }
 
-void read_matrix_from_file(Stack *stack, char *input) {
+void read_matrix_from_file(Stack *stack, const char *input) {
   int rows, cols;
   char filename[1024];
   if (sscanf(input, "[%d,%d,\"%255[^\"]\"]", &rows, &cols, filename) != 3) {

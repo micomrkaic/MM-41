@@ -1,4 +1,4 @@
-.TH MM41 1 "November 2026" "MM-41 1.6" "User Commands"
+.TH MM41 1 "November 2026" "MM-41 1.7" "User Commands"
 .SH NAME
 mm41 \- programmable RPN calculator for real, complex and decimal scalars, strings and matrices
 .SH SYNOPSIS
@@ -86,7 +86,7 @@ every literal is a decimal.
 with the escapes \e\(dq \e\e \en \et.
 .TP
 .B Matrices
-.B [rows cols $ elements...]
+.BR "[1 2 3]" " (a row vector), " "[1 2; 3 4]" " (a semicolon ends a row), or " "[rows cols $ elements...]"
 with real or complex elements, or
 .B [rows, cols, \(dqfile\(dq]
 to read one from a whitespace-separated text file.
@@ -363,6 +363,37 @@ and
 with the word
 .BR "t y -- y'" ,
 scalar or system (y a row vector).
+.SS Survival analysis
+Select a lifetime law once,
+.BR "\(dqmakeham\(dq [a b c] setlaw"
+(exponential, weibull, gompertz, makeham, siler, loglogistic, lognormal,
+gamma), then
+.BR "t surv haz cumhaz lifepdf lifecdf" ,
+.BR "p lifeinv" ,
+.BR "lifemean lifemed lifevar lifemode" ,
+.B t elife
+(expected remaining life),
+.BR "x n tpx nqx" ,
+.BR "x px qx lx" ,
+.B x0 x1 lifetab
+(age, lx, dx, qx, ex),
+.B x i ax
+and
+.B x i Ax
+(annuity-due and whole-life insurance of 1, term versions
+.BR axn ", " Axn ).
+From data (times, event 1 / censored 0):
+.BR "t e km" ", " "t e nelsonaalen" ", " "t1 e1 t2 e2 logrank" ", " "t e lifefit"
+(maximum likelihood).
+.SS Income distribution
+Select a family once,
+.BR "\(dqdagum\(dq [a b p] setdist"
+(pareto, lognormal, dagum, singhmaddala, fisk, gamma, weibull), then
+.BR "x incpdf inccdf" ", " "p incq" ", " "incmean incvar incmed incmode" ,
+.BR "gini theil mld" ", " "eps atkinson" ", " "p lorenz" ", " "p top" ", " palma ", " "p1 p2 qratio" ,
+.BR "z headcount povgap" ", " "z alpha fgt" ", " "v incfit" .
+The same from a vector of incomes:
+.BR "ginid theild mldd atkinsond lorenzd decilesd palmad topd headcountd povgapd fgtd" .
 .SS Workdays
 Dates are \(dqd.m.yyyy\(dq strings or YYYYMMDD numbers.
 .B d1 d2 workdays

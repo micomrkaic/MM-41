@@ -28,7 +28,7 @@
 #include <readline/history.h>
 #include <readline/readline.h>
 
-#define MAX_TOKEN_LEN 1024
+#define MAX_TOKEN_LEN 8192   /* an inline matrix literal is one token: room for about a thousand numbers */
 #define MAX_INPUT_LEN 4096
 #define MAX_SUBTOKEN_LEN 100
 

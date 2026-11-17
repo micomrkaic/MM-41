@@ -279,7 +279,7 @@ int exec_word(Stack *stack, user_word *w) {
     WInstr *in = &w->code[pc];
     switch (in->kind) {
     case W_TOKEN:
-      evaluate_one_token(stack, in->tok);
+      evaluate_one_token(stack, &in->tok);
       pc++;
       break;
     case W_BRANCH:

@@ -28,7 +28,7 @@ MM-41>> 2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
 [5] 𝔻 : -1798.65
 MM-41>> modules
 module       version  words  summary
-core         1.6         86  arithmetic, functions, logic, the stack, words and the session
+core         1.7         85  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -36,6 +36,8 @@ special      1.1         24  gamma, beta, the normal distribution, error, Bessel
 stat         1.0         27  descriptive statistics, curve fitting, regression, t/chi-square/F/binomial/Poisson distributions
 random       1.0         16  draws from named distributions, resampling and Monte Carlo over a word
 ode          1.0          2  initial-value problems y' = f(t, y) over a word, scalar or system (RKF45)
+survival     1.0         29  lifetime laws (Gompertz-Makeham and others), survival and hazard, life tables, annuities, Kaplan-Meier, fits
+income       1.0         36  income distributions (Dagum, Singh-Maddala, Pareto, lognormal and more), inequality and poverty measures, fits
 matrices     1.0         38  linear algebra, matrix construction and reduction, polynomials
 numerics     1.0         12  integration, roots, minima, derivatives and sums over any word
 strings      1.0          7  string construction and manipulation
@@ -113,6 +115,17 @@ loads. `"name" usage` tells you which module a command comes from.
   standard errors, t/chi-square/F/binomial/Poisson distributions; random
   draws, bootstrap `resample`, and `n @word sims` Monte Carlo with `mcstats`.
 - **Differential equations**: `y0 t0 t1 n @f odeint` (RKF45), scalar or system.
+- **Survival analysis**: select a lifetime law once (`"makeham" [a b c] setlaw`;
+  exponential, Weibull, Gompertz, Gompertz-Makeham, Siler, log-logistic,
+  lognormal, gamma), then `t surv haz cumhaz`, `t elife`, `lifemean lifemed
+  lifemode`, `x n tpx`, `x0 x1 lifetab`, the actuarial `ax axn Ax Axn`;
+  Kaplan-Meier `km`, `nelsonaalen`, `logrank`, and `lifefit` by maximum
+  likelihood with right censoring.
+- **Income distribution**: select a family once (`"dagum" [a b p] setdist`;
+  Pareto, lognormal, Dagum, Singh-Maddala, Fisk, gamma, Weibull), then
+  `incmean incmed incq`, `gini theil mld atkinson`, `lorenz top deciles
+  palma qratio`, `headcount povgap fgt`, `incfit`; and the same from data:
+  `ginid theild atkinsond lorenzd decilesd palmad headcountd povgapd fgtd`.
 - **Special functions**: `erf`, incomplete gamma and beta, Bessel, Airy,
   elliptic, zeta, digamma, Lambert W; the `const` word module has the physical
   constants (`c h G kB qe NA ...`).
@@ -153,8 +166,8 @@ echo "[2 2 $ 1 2 3 4] det" | mm41 -n     # -n: ignore saved words, modules and c
 
 Tokens are separated by whitespace and all input is case sensitive. Numbers:
 `3`, `-1.2e-4`, `.5`; `0.1d` is a decimal, `2b` a binary double. Complex: `(1,2)`. Strings: `"text"` with `\" \\ \n \t`.
-Matrices: `[rows cols $ elements...]`, or `[rows, cols, "file"]` to read one
-from a file. `\` and `#` start comments. `@name` pushes an execution token for
+Matrices: `[1 2 3]` (a row vector), `[1 2; 3 4]` (a semicolon ends a row),
+`[rows cols $ elements...]`, or `[rows, cols, "file"]` to read one from a file. `\` and `#` start comments. `@name` pushes an execution token for
 the numerical methods. A line starting with `!` runs a shell command and pushes
 its output.
 

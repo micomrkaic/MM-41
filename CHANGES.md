@@ -1,5 +1,31 @@
 # MM-41 changes
 
+## MM-41 1.7
+
+- **survival** module (29 words). A lifetime law is selected once with its
+  parameters, `"makeham" [a b c] setlaw` -- exponential, Weibull, Gompertz,
+  Gompertz-Makeham, Siler, log-logistic, lognormal, gamma -- and every
+  other word takes only the age: `surv haz cumhaz lifepdf lifecdf lifeinv`,
+  `lifemean lifemed lifevar lifemode`, `elife` (expected remaining life),
+  `curtate`, `tpx nqx px qx lx`, `lifetab` (age lx dx qx ex), the actuarial
+  present values `ax axn Ax Axn`. From data: Kaplan-Meier `km`,
+  `nelsonaalen`, the `logrank` test, and `lifefit` (maximum likelihood with
+  right censoring, Nelder-Mead on the log-parameters).
+- **income** module (36 words). A family is selected once, `"dagum" [a b p]
+  setdist` -- Pareto, lognormal, Dagum, Singh-Maddala (Burr XII), Fisk,
+  gamma, Weibull -- then `incpdf inccdf incq`, `incmean incvar incmed
+  incmode`, `gini` (closed form), `theil mld atkinson`, `lorenz lorenzm
+  share top deciles palma qratio`, `headcount povgap fgt`, `incfit`; and
+  the same measures from a vector of incomes, `ginid theild mldd atkinsond
+  lorenzd decilesd palmad topd headcountd povgapd fgtd`.
+- Matrix literals without the header: `[1 2 3]` is a row vector, `[1 2; 3 4]`
+  a 2 x 2 matrix. `[rows cols $ ...]` still works and is what the calculator
+  writes. A token may now be 32 KB, so a long vector can be pasted.
+- Manual chapters Survival analysis and Income distribution; `help survival`,
+  `help income`; README, MANUAL.md, man page; goldens survival.rpn and
+  income.rpn, every new word type-swept under ASan, values checked against
+  independent integration and scipy.
+
 ## MM-41 1.6
 
 - **Skins.** `skin hp41`, `skin hp12c`, `skin hp48` (or `"hp41" skin`) draw

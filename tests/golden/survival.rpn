@@ -1,0 +1,40 @@
+\ survival: laws, functions, life table, actuarial values, estimators, fits
+6 setprec
+law
+65 surv
+"makeham" [0.0005 0.00003 0.1] setlaw
+law
+lawpar
+65 surv 65 haz 65 cumhaz 65 lifepdf 65 lifecdf 0.5 lifeinv
+lifemean lifemed lifevar lifemode
+65 elife 65 curtate 65 10 tpx 65 10 nqx 65 px 65 qx 65 lx
+[60 70 80 90] qx
+60 63 lifetab pm
+65 3 ax 65 20 3 axn 65 3 Ax 65 20 3 Axn
+clst
+"gompertz" [0.0001 0.09] setlaw lifemode
+"exponential" 0.02 setlaw lifemean 10 elife
+"weibull" [1.5 10] setlaw lifemean 0.5 lifeinv
+"siler" [0.05 1 0.0005 0.00003 0.1] setlaw 0 haz 65 haz
+"loglogistic" [70 6] setlaw lifemed
+"lognormal" [4 0.3] setlaw lifemed 50 surv
+"gamma" [2 30] setlaw lifemean
+"gm" [0.0005 0.00003 0.1] setlaw law
+clst
+[2 3 3 5 8 9] [1 1 0 1 1 0] km pm
+[2 3 3 5 8 9] [1 1 0 1 1 0] nelsonaalen pm
+[2 3 5 8] [1 1 1 0] [4 6 9 12] [1 1 1 1] logrank
+"exponential" 1 setlaw [2 3 3 5 8 9] [1 1 0 1 1 0] lifefit
+"weibull" [1 1] setlaw [12.3 4.5 8.1 15.2 3.3 9.9 11.0 6.4 7.7 20.1] [1 1 1 1 1 1 1 0 1 1] lifefit
+law
+clst
+"nosuch" [1] setlaw
+"gompertz" [1] setlaw
+"gompertz" [-1 2] setlaw
+"gompertz" [0.0001 0.09] setlaw
+0 lifeinv
+1 lifeinv
+[2 3] [1 1 1] km
+[2 3] [1 2] km
+"x" surv
+65 "x" tpx

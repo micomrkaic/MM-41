@@ -35,7 +35,7 @@ void help_menu(void) {
   title("MM-41 " MM41_VERSION " -- RPN calculator for real, complex and decimal scalars, strings and matrices");
   subtitle("Entering data");
   printf("    Numbers 3  -1.2e-4   decimal 0.1d   complex (1,2)   strings \"text\"   all input is case sensitive\n");
-  printf("    Matrices [rows cols $ a11 a12 ...]  e.g. [2 2 $ 1 2 3 4];  from a file [2, 2, \"m.txt\"]\n");
+  printf("    Matrices [1 2 3] (a row), [1 2; 3 4] (rows end at ;), or [rows cols $ a11 a12 ...];  from a file [2, 2, \"m.txt\"]\n");
   printf("    Comments start with \\ or #.  undo restores the stack before the previous line.\n");
   subtitle("Stack");
   printf("    dup drop swap over nip tuck  n pick  n roll  depth  clst  ps  print  pm\n");
@@ -56,6 +56,11 @@ void help_menu(void) {
   printf("    X y ols olstab   tcdf tinv chi2cdf chi2inv fcdf finv binompdf binomcdf poispdf poiscdf\n");
   printf("    n seed  rnorm runif rpois rexp  n ... normrnd unifrnd poisrnd binomrnd exprnd trnd chi2rnd  resample shuffle  n @f sims  mcstats\n");
   printf("    y0 t0 t1 n @f odeint   y0 t0 t1 @f odesol      (the word is  t y -- y')\n");
+  subtitle("Survival and income (help survival, help income)");
+  printf("    \"makeham\" [a b c] setlaw  then  t surv haz cumhaz lifepdf lifecdf  p lifeinv  lifemean lifemed lifemode  t elife\n");
+  printf("    x n tpx nqx  x px qx lx  x0 x1 lifetab  x i ax Ax  x n i axn Axn   t e km nelsonaalen  t1 e1 t2 e2 logrank  t e lifefit\n");
+  printf("    \"dagum\" [a b p] setdist  then  x incpdf inccdf  p incq  incmean incmed  gini theil mld  eps atkinson  p lorenz  p top\n");
+  printf("    palma  p1 p2 qratio share  z headcount povgap  z a fgt  v incfit   from data: v ginid theild mldd  v eps atkinsond ...\n");
   subtitle("Matrices");
   printf("    tran ' minv pinv det eig chol svd kron  eye ones zeroes rand randn rrange\n");
   printf("    dim reshape get_aij set_aij split_mat diag to_diag join_v join_h\n");
@@ -556,6 +561,29 @@ static const Topic topics[] = {
     "  y0 t0 t1 @f odesol -- y      the state at t1\n"
     "A system is the same with y a row vector: the word gets t and a 1 x k matrix and leaves a vector of k\n"
     "(1 1 ones * makes a 1 x 1 matrix from a real; join_h assembles the row). Manual: chapter Differential equations.\n" },
+  { "survival",
+    "Lifetime distributions, life tables, annuities and the estimators of survival analysis.\n"
+    "Select a law once, with its parameters; every other word then takes only the age or time:\n"
+    "  \"exponential\" [lambda] setlaw      h = lambda           \"gompertz\" [b c] setlaw       h = b e^(ct)\n"
+    "  \"makeham\" [a b c] setlaw          h = a + b e^(ct)     \"weibull\" [k lambda] setlaw   reliability\n"
+    "  \"siler\" [a1 b1 a2 a3 b3] setlaw   infant+background+senescent     \"loglogistic\" [alpha beta]\n"
+    "  \"lognormal\" [mu sigma] setlaw     \"gamma\" [k theta] setlaw        law shows it, lawpar leaves the vector\n"
+    "Then:  t surv haz cumhaz lifepdf lifecdf    p lifeinv    lifemean lifemed lifevar lifemode\n"
+    "  t elife (expected remaining life)   x curtate   x n tpx nqx   x px qx lx   x0 x1 lifetab (age lx dx qx ex)\n"
+    "  x i ax (annuity-due of 1 a year at i%)   x n i axn   x i Ax (insurance of 1)   x n i Axn\n"
+    "From data (times, and 1 for an event / 0 for censored):  t e km   t e nelsonaalen   t1 e1 t2 e2 logrank\n"
+    "  t e lifefit   fits the current law by maximum likelihood; the estimates become current.\n"
+    "  \"gompertz\" [0.0001 0.09] setlaw 65 elife        -> 11.876902  Manual: chapter Survival analysis.\n" },
+  { "income",
+    "Income and wealth distributions, inequality and poverty measures, each for a fitted family and for data.\n"
+    "Select a family once:  \"dagum\" [a b p] setdist   \"singhmaddala\" [a b q]   \"pareto\" [xm alpha]\n"
+    "  \"lognormal\" [mu sigma]   \"fisk\" [a b]   \"gamma\" [k theta]   \"weibull\" [k lambda]      dist shows it\n"
+    "Then:  x incpdf inccdf   p incq   incmean incvar incmed incmode   gini theil mld   eps atkinson\n"
+    "  p lorenz   n lorenzm   p1 p2 share   p top (0.1: top 10%)   deciles   palma   p1 p2 qratio (P90/P10)\n"
+    "  z headcount   z povgap   z alpha fgt   v incfit (maximum likelihood; the estimates become current)\n"
+    "From a vector of incomes, no family assumed:  v ginid theild mldd   v eps atkinsond   v n lorenzd\n"
+    "  v decilesd   v palmad   v p topd   v z headcountd povgapd   v z alpha fgtd\n"
+    "  \"dagum\" [3.5 20000 0.8] setdist gini           -> 0.302546   Manual: chapter Income distribution.\n" },
   { "numerics",
     "The numerical methods take a function as an execution token: @name, for a word or a command.\n"
     "  a b @f integrate     a b @f romberg      a b @f fzero       x @f solve\n"
@@ -570,6 +598,8 @@ static const Topic topics[] = {
     "The stack prints after every line, [0] at the bottom (or as an HP-41, HP-12C or HP-48 display\n"
     "would show it: skin hp41, skin hp12c, skin hp48, skin hp48px; skin plain); undo restores the previous\n"
     "stack, q quits. help <name> describes any command.\n"
+    "Matrices: [1 2 3] is a row vector, [1 2; 3 4] a 2 x 2 matrix (a semicolon ends a row), and the\n"
+    "older [rows cols $ elements] form is what the calculator writes back.\n"
     "Commands that take a name take a string: \"const\" use, \"us\" usehol, \"f.so\" load. A line\n"
     "that is only such a command (use unuse load run batch usehol) and one bare name means\n"
     "the same: use const, usehol us. Anything longer is evaluated as written.\n"

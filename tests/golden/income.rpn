@@ -1,0 +1,35 @@
+\ income: families, measures of the distribution and from data, fits
+6 setprec
+dist
+gini
+"dagum" [3.5 20000 0.8] setdist
+dist distpar
+incmean incvar incmed incmode gini theil mld 1 atkinson 0.5 atkinson
+0.5 lorenz 10 lorenzm pm 0.4 0.6 share 0.1 top deciles pm palma 0.9 0.1 qratio
+10000 headcount 10000 povgap 10000 2 fgt 0.9 incq 30000 incpdf 30000 inccdf
+[0.1 0.5 0.9] incq
+clst
+"pareto" [1000 2] setdist gini incmean incmed incmode 2000 inccdf 0.5 lorenz
+"pareto" [1000 0.5] setdist gini
+"lognormal" [10 0.5] setdist gini incmean incvar incmode theil 1 atkinson 2 atkinson
+"singhmaddala" [2.8 20909 1.37] setdist gini incmean incmed
+"sm" [2.8 20909 1.37] setdist dist
+"fisk" [3 20000] setdist gini incmean
+"gamma" [2 10000] setdist gini incmean
+"weibull" [1.5 20000] setdist gini incmean
+clst
+[1 2 3 4 10] ginid [1 2 3 4 10] theild [1 2 3 4 10] mldd [1 2 3 4 10] 0.5 atkinsond [1 2 3 4 10] 1 atkinsond
+[1 2 3 4 10] 5 lorenzd pm [1 2 3 4 5 6 7 8 9 10] decilesd pm [1 2 3 4 5 6 7 8 9 10] palmad [1 2 3 4 10] 0.2 topd
+[1 2 3 4 10] 2.5 headcountd [1 2 3 4 10] 2.5 povgapd [1 2 3 4 10] 2.5 2 fgtd
+clst
+"lognormal" [0 1] setdist [1200 1500 2200 3100 4000 5400 9000 15000] incfit dist
+"pareto" [1 1] setdist [1200 1500 2200 3100 4000 5400 9000 15000] incfit
+"fisk" [1 1] setdist [1200 1500 2200 3100 4000 5400 9000 15000] incfit
+clst
+"nosuch" [1 2] setdist
+"dagum" [1 2] setdist
+"dagum" [0.5 20000 0.8] setdist incmean
+0 incq
+[1 -2 3] ginid
+[0 0 0] ginid
+[1 2 3] 0 headcountd
