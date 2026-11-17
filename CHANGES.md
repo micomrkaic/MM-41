@@ -6,8 +6,8 @@
   the stack listing the way that calculator's display would have: one
   twelve-character LCD line per level with the 41C's annunciators and its
   FIX/SCI number format (ten-digit mantissa, `6.02 23`, `1.00-05`); a
-  seven-segment display in box-drawing strokes with BEGIN; a dot-matrix
-  screen in braille cells with the 48's `{ HOME }` line, level numbering
+  seven-segment display in block elements with BEGIN; a dot-matrix screen
+  in quadrant-block pixels with the 48's `{ HOME }` line, level numbering
   and STD/FIX formats. Every level is drawn, the top framed. `skin plain`
   restores the listing. Only the listing changes; pm, help, tables and
   errors are untouched. Saved in config.txt; TAB completes the names.

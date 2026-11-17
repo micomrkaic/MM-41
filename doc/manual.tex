@@ -286,8 +286,8 @@ The stack listing can be drawn the way a classic calculator would have shown it.
 
 \begin{description}[style=nextline,leftmargin=1.5em]
   \item[\code{hp41}] One twelve-character LCD line per level, the top of the stack (the 41's X register) framed with its annunciator row: \code{USER} when you have defined words, \code{RAD} always (MM-41 works in radians), flag \code{0} in decimal mode, \code{ALPHA} when a string is on top. Numbers follow the 41's rules: a ten-digit mantissa in FIX with comma separators, fewer decimals when the integer part needs the digits, and a switch to SCI when the number does not fit or would show as zero, the exponent after a space or a minus (\code{6.02 23}, \code{1.00-05}). Strings go to ALPHA in capitals, a matrix shows as \code{MAT 3X3}, a complex number as \code{1+J2}. The levels below X are labelled Y, Z, T and then by register number.
-  \item[\code{hp12c}] A seven-segment display in box-drawing strokes, three rows per level, digits lit from the right, the same ten-digit arithmetic, and \code{BEGIN} when payments are at the beginning of the period. Anything the 12C could not have held---a string, a matrix---shows as a row of dashes.
-  \item[\code{hp48}] A dot-matrix screen: a $5\times7$ font rendered in braille cells (two text rows per line, 22 characters a line), the \code{RAD} and \code{\{ HOME \}} header, levels numbered from the top as the 48 numbered them, values right-justified and clipped on the right. Numbers follow the 48: STD shows up to twelve significant digits with no trailing zeros and no leading zero (\code{.5}, \code{1.E-12}); with \cmd{setprec} in force, FIX. Strings keep their quotes and case, a matrix is written out as \code{[[ 1 2 ] [ 3 4 ]]} as far as it fits, a complex number as \code{(1,2)}.
+  \item[\code{hp12c}] A seven-segment display in block elements, four rows per level, digits lit from the right, the same ten-digit arithmetic, and \code{BEGIN} when payments are at the beginning of the period. Anything the 12C could not have held---a string, a matrix---shows as a row of dashes.
+  \item[\code{hp48}] A dot-matrix screen: a $5\times7$ font rendered in quadrant blocks, two pixels to the cell (four terminal rows per line of text, 22 characters a line), the \code{RAD} and \code{\{ HOME \}} header, levels numbered from the top as the 48 numbered them, values right-justified and clipped on the right. Numbers follow the 48: STD shows up to twelve significant digits with no trailing zeros and no leading zero (\code{.5}, \code{1.E-12}); with \cmd{setprec} in force, FIX. Strings keep their quotes and case, a matrix is written out as \code{[[ 1 2 ] [ 3 4 ]]} as far as it fits, a complex number as \code{(1,2)}.
 \end{description}
 
 \begin{rpn}
@@ -300,17 +300,18 @@ The stack listing can be drawn the way a classic calculator would have shown it.
       └──────────────────┘
 
 skin hp12c
-      ┌──────────────────────────────────────────────┐
-      │                          ━   ━   ━   ━   ━   │
-   X  │                  ━    ┃   ┃ ┃━┃ ┃━┃ ┃━  ┃━   │
-      │                       ┃,  ┃  ━┃ ┃━┃.┃━┃  ━┃  │
-      │                                              │
-      └──────────────────────────────────────────────┘
+      ┌─────────────────────────────────────────────────────────┐
+      │                             ▐  ▀▀▐ ▌▀▀▐ ▌▀▀▐ ▌▀▀  ▌▀▀   │
+   X  │                      ▄▄     ▐    ▐ ▌▄▄▐ ▌▄▄▐ ▌▄▄  ▌▄▄   │
+      │                             ▐    ▐    ▐ ▌  ▐ ▌  ▐    ▐  │
+      │                             ▐,   ▐  ▄▄▐ ▌▄▄▐.▌▄▄▐  ▄▄▐  │
+      │                                                         │
+      └─────────────────────────────────────────────────────────┘
 
 2.5 skin hp48
 \end{rpn}
 \begin{center}\includegraphics[width=0.9\textwidth]{skin-hp48.png}\end{center}
-The box-drawing characters are in every monospaced font; the braille cells of the hp48 skin need one that has them, or a terminal that falls back to one that does (DejaVu Sans, Fira Code, JetBrains Mono, Menlo, Noto Sans Mono and the Symbola/Unifont fallbacks all do; the picture above is how it looks). The 41 and 12C skins are faithful to the digit count and formats, not to the pixel: the real LCDs kept punctuation between the digit positions, which a terminal cannot, so a comma takes a column.
+The digits and pixels are block elements (\code{▌ ▐ ▀ ▄} and the quadrants), which terminals draw themselves, so the strokes meet and the pixels are solid whatever the font. The 41 and 12C skins are faithful to the digit count and formats, not to the pixel: the real LCDs kept punctuation between the digit positions, which a terminal cannot, so a comma takes a column.
 
 %======================================================================
 \section{Arithmetic and functions}

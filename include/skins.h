@@ -10,7 +10,7 @@
 /* Display skins: the stack drawn the way a classic calculator would show
    it. `plain` is MM-41's own listing; hp41 is one twelve-character LCD
    line with annunciators, hp12c a seven-segment display, hp48 a dot-matrix
-   screen in braille cells. The skin only changes what is printed after a
+   screen in block pixels. The skin only changes what is printed after a
    line; pm, help, tables and errors are untouched. */
 
 #ifndef SKINS_H

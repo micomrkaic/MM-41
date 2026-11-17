@@ -13,9 +13,9 @@
  *          with the 41C's annunciators; numbers in the 41's FIX/SCI
  *          format (ten-digit mantissa, comma separators, the exponent
  *          after a space or a minus, as in 1.234568-03)
- *   hp12c  a seven-segment display in box-drawing strokes, three rows per
+ *   hp12c  a seven-segment display in block elements, four rows per
  *          level, the same ten-digit arithmetic and the BEGIN annunciator
- *   hp48   a dot-matrix screen: a 5 x 7 font rendered in braille cells,
+ *   hp48   a dot-matrix screen: a 5 x 7 font rendered in quadrant blocks,
  *          the { HOME } line, levels numbered from the top as the 48 did,
  *          values right-justified, 22 characters a line
  *
@@ -188,32 +188,38 @@ static unsigned char seg7(char c) {
   }
 }
 
-/* Draw `text` as 11 positions (sign and ten digits) of 7-segment glyphs
-   into three rows; punctuation sits in the gap after a digit. */
-static void seg_rows(const char *text, char rows[3][256]) {
-  const char *hs = "━", *vs = "┃";
-  char cells[3][256] = { "", "", "" };
+/* Draw `text` as 11 positions (sign and ten digits) of seven-segment
+   glyphs, four rows high, four columns wide, in block elements: the
+   verticals are half blocks, the horizontals half-height bars. Punctuation
+   sits in the gap after a digit. Block elements are drawn by the terminal
+   itself, so the strokes meet whatever the font. */
+#define SEG_ROWS 4
+static void seg_rows(const char *text, char rows[SEG_ROWS][256]) {
+  char cells[SEG_ROWS][512] = { "", "", "", "" };
   int positions = 0;
   for (const char *p = text; *p; p++) {
-    if (*p == '.' || *p == ',') {                   /* replace the gap after the previous glyph */
-      size_t l = strlen(cells[2]);
-      if (l) cells[2][l - 1] = *p;
+    if (*p == '.' || *p == ',') {                   /* the gap after the previous glyph, bottom row */
+      size_t l = strlen(cells[3]);
+      if (l) cells[3][l - 1] = *p;
       continue;
     }
-    unsigned char g = seg7(*p);
-    if (*p == ' ') g = 0;
-    snprintf(cells[0] + strlen(cells[0]), 64, " %s  ", g & 0x01 ? hs : " ");
-    snprintf(cells[1] + strlen(cells[1]), 64, "%s%s%s ", g & 0x20 ? vs : " ", g & 0x40 ? hs : " ", g & 0x02 ? vs : " ");
-    snprintf(cells[2] + strlen(cells[2]), 64, "%s%s%s ", g & 0x10 ? vs : " ", g & 0x08 ? hs : " ", g & 0x04 ? vs : " ");
+    unsigned char g = *p == ' ' ? 0 : seg7(*p);
+    const char *f = g & 0x20 ? "▌" : " ", *b = g & 0x02 ? "▐" : " ";
+    const char *e = g & 0x10 ? "▌" : " ", *c = g & 0x04 ? "▐" : " ";
+    const char *a = g & 0x01 ? "▀▀" : "  ", *gg = g & 0x40 ? "▄▄" : "  ", *d = g & 0x08 ? "▄▄" : "  ";
+    snprintf(cells[0] + strlen(cells[0]), 64, "%s%s%s ", f, a, b);
+    snprintf(cells[1] + strlen(cells[1]), 64, "%s%s%s ", f, gg, b);
+    snprintf(cells[2] + strlen(cells[2]), 64, "%s%s%s ", e, "  ", c);
+    snprintf(cells[3] + strlen(cells[3]), 64, "%s%s%s ", e, d, c);
     positions++;
   }
   /* right-justify in 11 positions: the 12C lights digits from the right */
   int pad = 11 - positions;
   if (pad < 0) pad = 0;
-  for (int r = 0; r < 3; r++) {
-    memset(rows[r], ' ', (size_t)pad * 4);
-    rows[r][pad * 4] = '\0';
-    strncat(rows[r], cells[r], 255 - (size_t)pad * 4);
+  for (int r = 0; r < SEG_ROWS; r++) {
+    memset(rows[r], ' ', (size_t)pad * 5);
+    rows[r][pad * 5] = '\0';
+    strncat(rows[r], cells[r], 255 - (size_t)pad * 5);
   }
 }
 
@@ -225,26 +231,27 @@ static void level_text_12c(const stack_element *e, char *out, size_t cap) {
   }
 }
 
-#define LCD12 44
+#define LCD12 55
 
 static void frame12c(const char *text) {
-  char rows[3][256];
+  char rows[SEG_ROWS][256];
   seg_rows(text, rows);
   printf("      ┌─%.*s─┐\n", LCD12 * 3, bar);
   printf("      │ %s │\n", rows[0]);
   printf("%4s  │ %s │\n", "X", rows[1]);
   printf("      │ %s │\n", rows[2]);
+  printf("      │ %s │\n", rows[3]);
   printf("      │ %-*s │\n", LCD12, ann_begin ? "BEGIN" : "");
   printf("      └─%.*s─┘\n", LCD12 * 3, bar);
 }
 
 static void print_hp12c(const Stack *s) {
-  char text[64], label[8], rows[3][256];
+  char text[64], label[8], rows[SEG_ROWS][256];
   for (int i = 0; i < s->top; i++) {
     level_label(s->top - i, label, sizeof label);
     level_text_12c(&s->items[i], text, sizeof text);
     seg_rows(text, rows);
-    printf("        %s\n%4s    %s\n        %s\n", rows[0], label, rows[1], rows[2]);
+    printf("        %s\n%4s    %s\n        %s\n        %s\n", rows[0], label, rows[1], rows[2], rows[3]);
   }
   level_text_12c(&s->items[s->top], text, sizeof text);
   frame12c(text);
@@ -356,11 +363,13 @@ static const unsigned char *glyph(char c) {
 }
 
 #define HP48_COLS 22                       /* 131 pixels / 6 per character */
-#define HP48_PX   (HP48_COLS * 6)          /* 132, even, so braille cells pair up */
+#define HP48_PX   (HP48_COLS * 6)          /* 132, even, so the cells pair up */
 
-/* Draw one 22-character text line as two rows of braille cells. The font
-   occupies 7 rows; the eighth row of the lower cells is the line gap. */
-static void braille_line(const char *text) {
+/* Draw one 22-character text line as four rows of quadrant blocks, each
+   cell two pixels by two. The font occupies 7 rows; the eighth is the line
+   gap. Quadrant blocks are drawn by the terminal itself, so the pixels are
+   solid and contiguous in any font. */
+static void pixel_line(const char *text) {
   unsigned char px[8][HP48_PX];
   memset(px, 0, sizeof px);
   for (int c = 0; c < HP48_COLS && text[c]; c++) {
@@ -369,19 +378,14 @@ static void braille_line(const char *text) {
       for (int b = 0; b < 5; b++)
         if (g[r] & (0x10 >> b)) px[r][c * 6 + b] = 1;
   }
-  /* braille dot bits: (row, col) -> bit: (0,0)1 (1,0)2 (2,0)4 (0,1)8 (1,1)10 (2,1)20 (3,0)40 (3,1)80 */
-  static const int bit[4][2] = { { 0x01, 0x08 }, { 0x02, 0x10 }, { 0x04, 0x20 }, { 0x40, 0x80 } };
-  for (int half = 0; half < 2; half++) {
+  /* quadrants indexed by top-left, top-right, bottom-left, bottom-right */
+  static const char *const quad[16] = { " ", "▘", "▝", "▀", "▖", "▌", "▞", "▛", "▗", "▚", "▐", "▜", "▄", "▙", "▟", "█" };
+  for (int r = 0; r < 8; r += 2) {
     char line[HP48_PX / 2 * 4 + 1]; size_t o = 0;
     for (int x = 0; x < HP48_PX; x += 2) {
-      int v = 0;
-      for (int dy = 0; dy < 4; dy++)
-        for (int dx = 0; dx < 2; dx++)
-          if (px[half * 4 + dy][x + dx]) v |= bit[dy][dx];
-      unsigned cp = 0x2800 + (unsigned)v;                   /* UTF-8, three bytes */
-      line[o++] = (char)(0xE0 | (cp >> 12));
-      line[o++] = (char)(0x80 | ((cp >> 6) & 0x3f));
-      line[o++] = (char)(0x80 | (cp & 0x3f));
+      int v = (px[r][x] ? 1 : 0) | (px[r][x + 1] ? 2 : 0) | (px[r + 1][x] ? 4 : 0) | (px[r + 1][x + 1] ? 8 : 0);
+      size_t l = strlen(quad[v]);
+      memcpy(line + o, quad[v], l); o += l;
     }
     line[o] = '\0';
     printf("   │%s│\n", line);
@@ -454,7 +458,7 @@ static void print_hp48(const Stack *s) {   /* NULL: an empty stack */
   char line[64], text[256];
   printf("   ┌%.*s┐\n", HP48_PX / 2 * 3, bar);
   snprintf(line, sizeof line, "%-*s", HP48_COLS, "RAD       { HOME }");
-  braille_line(line);
+  pixel_line(line);
   for (int i = 0; s && i <= s->top; i++) {
     int level = s->top - i + 1;                              /* the 48 counts 1 from the top */
     level_text_48(&s->items[i], text, sizeof text);
@@ -464,7 +468,7 @@ static void print_hp48(const Stack *s) {   /* NULL: an empty stack */
     if ((int)strlen(text) > room) text[room] = '\0';         /* clipped on the right, as the 48 did */
     if (room > HP48_COLS) room = HP48_COLS;
     snprintf(line, sizeof line, "%s%*.*s", label, room, room, text);
-    braille_line(line);
+    pixel_line(line);
   }
   printf("   └%.*s┘\n", HP48_PX / 2 * 3, bar);
 }
