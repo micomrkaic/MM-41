@@ -18,6 +18,7 @@
 
 #include "module.h"
 #include "errors.h"
+#include "skins.h"
 #include "stack.h"
 #include "globals.h"
 #include "decimal.h"
@@ -86,9 +87,9 @@ static int op_set_pv(Stack *s)  { return store_reg(s, "pv", &T_pv); }
 static int op_set_pmt(Stack *s) { return store_reg(s, "pmt", &T_pmt); }
 static int op_set_fv(Stack *s)  { return store_reg(s, "fv", &T_fv); }
 static int op_set_g(Stack *s)   { return store_reg(s, "g%", &T_g); }
-static int op_beg(Stack *s)     { (void)s; T_begin = 1; return 0; }
-static int op_end(Stack *s)     { (void)s; T_begin = 0; return 0; }
-static int op_clrtvm(Stack *s)  { (void)s; fin_tvm_reset(); return 0; }
+static int op_beg(Stack *s)     { (void)s; T_begin = 1; ann_begin = 1; return 0; }
+static int op_end(Stack *s)     { (void)s; T_begin = 0; ann_begin = 0; return 0; }
+static int op_clrtvm(Stack *s)  { (void)s; fin_tvm_reset(); ann_begin = 0; return 0; }
 
 static int op_solve_n(Stack *s) {
   mm_dec r;

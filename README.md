@@ -28,7 +28,7 @@ MM-41>> 2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
 [5] 𝔻 : -1798.65
 MM-41>> modules
 module       version  words  summary
-core         1.5         85  arithmetic, functions, logic, the stack, words and the session
+core         1.6         86  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -51,6 +51,9 @@ are the short forms; inside the calculator, `help` for the overview, `help npv`
 for one command in full (what it takes, what it leaves, its example run),
 `help modules` for what modules are and how to add one (also `help words`,
 `help finance`, …), `help holiday` to search, `listfcns` and `modules`.
+`skin hp41`, `skin hp12c` or `skin hp48` draws the stack as that calculator's
+display would have (twelve-character LCD with annunciators, seven-segment,
+dot-matrix in braille cells); `skin plain` is MM-41's own listing.
 Commands that take a name take it as a string (`"const" use`, `"us" usehol`);
 at the prompt a line of just the command and a bare name does the same thing
 (`use const`, `usehol us`, `load hello.so`), and TAB completes the name —

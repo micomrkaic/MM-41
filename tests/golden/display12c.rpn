@@ -1,0 +1,5 @@
+\ the hp12c skin: seven segments, BEGIN, dashes for what the 12C could not show
+2 setprec
+"text" -1798.65 123456789012 0.000001 1234567.891
+beg
+skin hp12c

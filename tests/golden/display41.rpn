@@ -1,0 +1,4 @@
+\ the hp41 skin: FIX/SCI format, ALPHA, matrices, labels X Y Z T and beyond
+2 setprec
+1 1000 2.5 -1798.65 6.02214076e23 1e-5 123456789012 -0.004 (1,2) [2 2 $ 1 2 3 4] "hello"
+skin hp41

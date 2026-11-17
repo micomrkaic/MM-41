@@ -1,0 +1,4 @@
+\ the hp48 skin: dot matrix, STD numbers, strings, complex, a matrix
+0.5 1e-12 -1798.65 (1,2) "Hello" [2 2 $ 1 2 3 4] 123456789012345
+sfs
+skin hp48

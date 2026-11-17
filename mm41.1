@@ -1,4 +1,4 @@
-.TH MM41 1 "November 2026" "MM-41 1.5" "User Commands"
+.TH MM41 1 "November 2026" "MM-41 1.6" "User Commands"
 .SH NAME
 mm41 \- programmable RPN calculator for real, complex and decimal scalars, strings and matrices
 .SH SYNOPSIS
@@ -151,6 +151,13 @@ is
 .B usehol us
 is
 .BR "\(dqus\(dq usehol" .
+.B skin hp41
+(or
+.BR hp12c ", " hp48 ", " plain )
+draws the stack listing as that calculator's display would have: a
+twelve-character LCD with annunciators, a seven-segment display, a
+dot-matrix screen in braille cells. Only the listing changes; the setting
+is saved in config.txt.
 TAB after one of them completes the name, and after
 .B help
 also module, topic and category names. The

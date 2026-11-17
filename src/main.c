@@ -40,6 +40,7 @@
 
 #include "errors.h"
 #include "eval_fun.h"          // for evaluate_line
+#include "skins.h"
 #include "help.h"              // for help_topic
 #include "ops.h"               // for print_ops_markdown
 #include "globals.h"           // for CONFIG_PATH, HISTORY_PATH, completed_...
@@ -168,7 +169,7 @@ static void shutdown(Stack *stack, Stack *old_stack) {
    one bare name is rewritten, so the name is not looked up as a word.
    Anything else -- a quoted name, more tokens, the word inside a definition
    -- is evaluated as written. */
-static const char *const bare_name_words[] = { "use", "unuse", "load", "run", "batch", "usehol", NULL };
+static const char *const bare_name_words[] = { "use", "unuse", "load", "run", "batch", "usehol", "skin", NULL };
 
 static const char *bare_name_form(const char *line, char *out, size_t cap) {
   const char *p = line;
@@ -218,6 +219,8 @@ static bool handle_line(Stack *stack, Stack *old_stack, char *line) {
     if (!strncmp(p, "help", 4) && (p[4] == ' ' || p[4] == '\t')) { help_topic(p + 4); return true; }
   }
 
+  if (skin_secret_line(line)) return true;
+
   char rewritten[1024];
   const char *bare = bare_name_form(line, rewritten, sizeof rewritten);
 
@@ -251,7 +254,7 @@ int repl(void) {
     if (completed_batch)
       completed_batch = false;
     else if (!skip_stack_printing)
-      print_stack(&stack, NULL);
+      print_stack_display(&stack);
     skip_stack_printing = false;
   }
 
@@ -347,7 +350,7 @@ int main(int argc, char **argv) {
       }
     }
   }
-  print_stack(&stack, NULL);
+  print_stack_display(&stack);
   shutdown(&stack, &old_stack);
   gsl_rng_free(global_rng);
   return error_count ? 1 : 0;

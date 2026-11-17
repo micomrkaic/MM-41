@@ -18,6 +18,7 @@
 
 #include "errors.h"
 #include "globals.h"
+#include "skins.h"
 #include "decimal.h"
 
 bool fixed_point = true;
@@ -113,6 +114,7 @@ void save_config(const char* filename) {
   fprintf(f, "tol = %g\n", num_tol);
   fprintf(f, "number_mode = %s\n", decimal_mode ? "decimal" : "binary");
   if (holiday_calendar[0]) fprintf(f, "holidays = %s\n", holiday_calendar);
+  if (skin != SKIN_PLAIN) fprintf(f, "skin = %s\n", skin_name(skin));
 
   fclose(f);
 }
@@ -158,6 +160,9 @@ int load_config(const char* filename) {
       decimal_mode = strcmp(value, "decimal") == 0;
     } else if (strcmp(key, "holidays") == 0) {
       snprintf(holiday_calendar, sizeof holiday_calendar, "%s", value);
+    } else if (strcmp(key, "skin") == 0) {
+      int k = skin_from_name(value);
+      if (k >= 0) skin = k;
     } else if (strcmp(key, "verbose_mode") == 0) {
       verbose_mode = atoi(value);
     } else if (strcmp(key, "tol") == 0) {

@@ -38,6 +38,7 @@ static inline void cerror(const char* fmt, ...) {
 void print_top_scalar(const Stack* stack);
 void print_matrix(Stack *stack);
 void print_stack(const Stack* stack, char *title);
+void print_stack_display(const Stack *stack);   /* after a line: plain listing or the skin */
 void print_real_matrix(const gsl_matrix* m);
 void print_complex_matrix(const gsl_matrix_complex* m);
 

@@ -1,0 +1,31 @@
+\ display skins: the stack drawn as classic calculators showed it
+2 setprec
+1000 2.5 -1798.65
+"hp41" skin
+ps
+6.02214076e23 1e-5 123456789012 -0.004 "hello" (1,2) [2 2 $ 1 2 3 4]
+skin hp12c
+clst
+beg
+-1798.65 123456789012
+end
+skin hp48
+0.5 1e-12 (1,2) "Hello" [2 2 $ 1 2 3 4]
+sfs
+skin xyz
+skin plain
+depth
+up
+up
+down
+down
+left
+right
+left
+right
+b
+a
+: a 1 ;
+up up down down left right left right b a
+a
+skin plain

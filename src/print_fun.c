@@ -30,6 +30,7 @@
 #include "stack.h"
 #include "globals.h"
 #include "print_fun.h"
+#include "skins.h"
 
 /* print -0 as 0 */
 static inline double nz(double x) { return x == 0.0 ? 0.0 : x; }
@@ -102,6 +103,12 @@ void print_top_scalar(const Stack* stack) {
   default:
     break;
   }
+}
+
+/* the listing after each line: the plain one, or the current skin's */
+void print_stack_display(const Stack *stack) {
+  if (skin != SKIN_PLAIN) skin_print_stack(stack);
+  else print_stack(stack, NULL);
 }
 
 void print_stack(const Stack* stack, char *title) {

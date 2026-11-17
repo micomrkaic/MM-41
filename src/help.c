@@ -44,6 +44,7 @@ void help_menu(void) {
   printf("    Comments start with \\ or #.  undo restores the stack before the previous line.\n");
   subtitle("Stack");
   printf("    dup drop swap over nip tuck  n pick  n roll  depth  clst  ps  print  pm\n");
+  printf("    n setprec  sfs  skin plain|hp41|hp12c|hp48 (draw the stack as that calculator's display)\n");
   subtitle("Arithmetic and functions");
   printf("    + - * / ^  chs inv abs sqrt mod fact ncr npr  %% %%t %%chg   .* ./ .^ (elementwise)\n");
   printf("    exp ln log  sin cos tan asin acos atan  sinh cosh tanh asinh acosh atanh\n");
@@ -571,8 +572,9 @@ static const Topic topics[] = {
     "Tokens are separated by spaces; numbers go on the stack, commands take their arguments\n"
     "from it (3 4 + is 7). Numbers 3 -1.2e-4 .5, decimals 0.1d, complex (1,2), strings \"text\",\n"
     "matrices [rows cols $ a11 a12 ...] or [rows, cols, \"file\"]. Comments start with \\ or #.\n"
-    "The stack prints after every line, [0] at the bottom; undo restores the previous stack,\n"
-    "q quits. help <name> describes any command.\n"
+    "The stack prints after every line, [0] at the bottom (or as an HP-41, HP-12C or HP-48 display\n"
+    "would show it: skin hp41, skin hp12c, skin hp48; skin plain); undo restores the previous\n"
+    "stack, q quits. help <name> describes any command.\n"
     "Commands that take a name take a string: \"const\" use, \"us\" usehol, \"f.so\" load. A line\n"
     "that is only such a command (use unuse load run batch usehol) and one bare name means\n"
     "the same: use const, usehol us. Anything longer is evaluated as written.\n"
