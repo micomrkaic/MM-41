@@ -152,6 +152,13 @@ From data: `v ginid theild mldd` · `v eps atkinsond` · `v n lorenzd` · `v dec
 `v p topd` · `v z headcountd povgapd` · `v z alpha fgtd`.
 From published shares: `v incfits -- v2 rss` (quintile/decile shares) · `p L incfitl -- v rss` (Lorenz points).
 
+## Graphs (`plot`)
+
+`x y plot` (line) · `scatter` · `steps` · `x h bars` · `v k hplot` (histogram) · `M mplot` (columns
+against the first) · `a b xt fplot` (a word over [a,b]) · `hold nohold` · `show` · `pclear` ·
+`"s" ptitle pxlabel pylabel plegend` · `pxlog pylog plin` · `pgrid` · `a b pxrange pyrange` · `pauto` ·
+`w h psize` · `"f.svg" psvg` (vector export) · `"f.txt" ptxt`.
+
 ## Numerical methods
 
 `a b @f integrate` · `a b @f romberg` · `a b @f fzero` · `g @f solve` ·

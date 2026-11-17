@@ -63,6 +63,9 @@ void help_menu(void) {
   printf("    \"dagum\" [a b p] setdist  then  x incpdf inccdf  p incq  incmean incmed  gini theil mld  eps atkinson  p lorenz  p top\n");
   printf("    palma  p1 p2 qratio share  z headcount povgap  z a fgt  v incfit   from data: v ginid theild mldd  v eps atkinsond ...\n");
   printf("    x q lawfit  x l lawfitl (fit a life table)   v incfits (fit quintile or decile shares)   \"f.txt\" readvec readmat\n");
+  subtitle("Graphs (help plot)");
+  printf("    x y plot scatter steps   x h bars   v k hplot   M mplot   a b @f fplot   hold   show   pgrid pxlog pylog\n");
+  printf("    \"t\" ptitle pxlabel pylabel   \"a,b\" plegend   a b pxrange pyrange   w h psize   \"fig.svg\" psvg\n");
   subtitle("Matrices");
   printf("    tran ' minv pinv det eig chol svd kron  eye ones zeroes rand randn rrange\n");
   printf("    dim reshape get_aij set_aij split_mat diag to_diag join_v join_h\n");
@@ -588,6 +591,18 @@ static const Topic topics[] = {
     "From a vector of incomes, no family assumed:  v ginid theild mldd   v eps atkinsond   v n lorenzd\n"
     "  v decilesd   v palmad   v p topd   v z headcountd povgapd   v z alpha fgtd\n"
     "  \"dagum\" [3.5 20000 0.8] setdist gini           -> 0.302546   Manual: chapter Income distribution.\n" },
+  { "plot",
+    "Graphs in the terminal, with an SVG export for documents. A figure holds up to eight series;\n"
+    "a plot word adds one and draws the figure, replacing it unless hold is on.\n"
+    "  x y plot        a line        x y scatter   points        x y steps   a step function\n"
+    "  x h bars        bars          v k hplot     histogram     M mplot     columns 2.. against column 1\n"
+    "  a b @f fplot    the word (x -- y) over [a,b]; failures leave gaps      hold / nohold   show   pclear\n"
+    "  \"t\" ptitle  \"x\" pxlabel  \"y\" pylabel  \"a,b\" plegend   pxlog pylog plin   pgrid   a b pxrange pyrange  pauto\n"
+    "  w h psize (0 0: the terminal)   \"fig.svg\" psvg (vector graphics)   \"fig.txt\" ptxt\n"
+    "  0 10 @sin fplot hold 0 10 @cos fplot          two curves, named after the words\n"
+    "  [2 3 3 5 8 9] [1 1 0 1 1 0] km dup 0 getcol swap 1 getcol steps     a Kaplan-Meier curve\n"
+    "  : f swap drop chs ; 1 0 5 100 @f odeint mplot                       an ODE trajectory\n"
+    "Manual: chapter Graphs.\n" },
   { "numerics",
     "The numerical methods take a function as an execution token: @name, for a word or a command.\n"
     "  a b @f integrate     a b @f romberg      a b @f fzero       x @f solve\n"

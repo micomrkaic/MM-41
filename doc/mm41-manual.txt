@@ -1,4 +1,4 @@
-MM-41 USER MANUAL, version 1.9
+MM-41 USER MANUAL, version 2.0
 
 Type  manual <chapter or word>  at the prompt to open this file there; in the pager, n finds the next match, q returns.
 
@@ -55,37 +55,40 @@ CONTENTS
   10.2  Measures of the distribution
   10.3  Measures from data
   10.4  Fitting a published table of shares
-  11  STRINGS
-  12  REGISTERS
-  13  WORDS: PROGRAMMING THE CALCULATOR
-  13.1  Conditionals
-  13.2  Loops
-  13.3  Saving words
-  13.4  Words from modules
-  14  NUMERICAL METHODS
-  15  DIFFERENTIAL EQUATIONS
-  16  DATES, TIME AND THE SUN
-  16.1  Workdays and holidays
-  17  FINANCE
-  17.1  Time value of money
-  17.2  Amortisation
-  17.3  Cash flows: NPV and IRR
-  17.4  Interest-rate conversions and depreciation
-  17.5  Bonds
-  17.6  Dates in the finance module
-  17.7  Dated cash flows: XNPV and XIRR
-  18  PROGRAMS
-  19  MODULES
-  19.1  Built-in modules
-  19.2  Word modules
-  19.3  Compiled modules
-  19.4  Which kind to write
-  20  BATCH MODE AND SCRIPTING
-  21  CONFIGURATION AND FILES
-  22  ERRORS
-  23  COMMAND REFERENCE
-  24  THE STD WORD MODULE
-  25  COMING FROM MM-15, MM-14, MM-11 OR MM-B1
+  11  GRAPHS
+  11.1  Plot words
+  11.2  Decoration and axes
+  12  STRINGS
+  13  REGISTERS
+  14  WORDS: PROGRAMMING THE CALCULATOR
+  14.1  Conditionals
+  14.2  Loops
+  14.3  Saving words
+  14.4  Words from modules
+  15  NUMERICAL METHODS
+  16  DIFFERENTIAL EQUATIONS
+  17  DATES, TIME AND THE SUN
+  17.1  Workdays and holidays
+  18  FINANCE
+  18.1  Time value of money
+  18.2  Amortisation
+  18.3  Cash flows: NPV and IRR
+  18.4  Interest-rate conversions and depreciation
+  18.5  Bonds
+  18.6  Dates in the finance module
+  18.7  Dated cash flows: XNPV and XIRR
+  19  PROGRAMS
+  20  MODULES
+  20.1  Built-in modules
+  20.2  Word modules
+  20.3  Compiled modules
+  20.4  Which kind to write
+  21  BATCH MODE AND SCRIPTING
+  22  CONFIGURATION AND FILES
+  23  ERRORS
+  24  COMMAND REFERENCE
+  25  THE STD WORD MODULE
+  26  COMING FROM MM-15, MM-14, MM-11 OR MM-B1
 
 MM-41 is free software under the GNU General Public License, version 3 or later. Source,
 issues and releases: https://github.com/micomrkaic/MM-41.
@@ -106,7 +109,7 @@ labels and jumps.
 Like the HP-41, it is built from modules. The core knows about numbers, the stack, words
 and errors; everything else—matrices, numerical methods, dates, strings, finance—is a
 module, and you can add your own, either as a file of word definitions or as compiled
-code (Section 19). MM-41 unifies the earlier MM-11, MM-14, MM-15 and MM-B1 calculators.
+code (Section 20). MM-41 unifies the earlier MM-11, MM-14, MM-15 and MM-B1 calculators.
 
 The design has a few fixed points worth knowing before you start.
 
@@ -265,7 +268,7 @@ complex, n a whole number, A a matrix, v a vector, s a string, date, cf cash flo
 an execution token, …), and help spells each one out. Examples that would change the
 session—storing registers, switching modes, installing calendars, defining words—are
 shown but not run. Outside the calculator there is man mm41, and mm41 –commands prints
-the complete reference as Markdown (it is also Appendix 23 of this manual).
+the complete reference as Markdown (it is also Appendix 24 of this manual).
 
 ========================================================================================
 3  ENTERING DATA
@@ -305,7 +308,7 @@ operand is.
 
 Strings are double-quoted: "hello world". The escapes \", \\, \n and \t are recognised.
 Strings are used for dates, file names, word names ("sq" usage), and as input to eval;
-see Section 11.
+see Section 12.
 
 3.4  Matrices
 -------------
@@ -350,7 +353,7 @@ scripts, in word definitions and in program files.
 ---------------------
 
 @name does not run name; it pushes a reference to it, an execution token, as a real
-number. The numerical methods (Section 14) and exec consume these: 0 pi @sin integrate
+number. The numerical methods (Section 15) and exec consume these: 0 pi @sin integrate
 integrates the sine over [0,π]. Any command or word, from any module, can be referenced
 this way.
 
@@ -575,7 +578,7 @@ scalar compared with a matrix is compared with every element.
     "abc" "abc" eq             \ 1
     [1 3 $ 1 5 3] 2 gt pm      \ | 0 1 1 |
 
-Flags are what the control words inside user words test (Section 13).
+Flags are what the control words inside user words test (Section 14).
 
 ========================================================================================
 6  DECIMAL NUMBERS
@@ -623,7 +626,7 @@ defined for decimals are
   functions     sqrt exp ln log intg frac round
   percentages   % %t %chg
   comparisons   eq neq lt leq gt geq and or not
-  elsewhere     sto and rcl, savestack and loadstack, int2str, the control words, and the finance module (Section 17), which computes in decimals throughout
+  elsewhere     sto and rcl, savestack and loadstack, int2str, the control words, and the finance module (Section 18), which computes in decimals throughout
   ------------- ----------------------------------------------------------------------------------------------------------------------------------------------
 
 Everything else—trigonometry, complex numbers, matrices, the numerical methods—is binary
@@ -719,7 +722,7 @@ elementwise reciprocal; the matrix inverse is minv.
 
 Solving Ax = b is b A minv *—or, keeping the operands in the natural order,
 A b swap minv *. The std word module adds cond (condition number), norm2, normfro and
-XprimeX (Appendix 24).
+XprimeX (Appendix 25).
 
 7.4  Elements and shape
 -----------------------
@@ -767,7 +770,7 @@ vector.
     [1 3 $ 1 -3 2] roots pm        \ | (1,0) (2,0) |
     [1 3 $ 1 0 1] roots pm         \ | (0,1) (0,-1) |   x^2 + 1
 
-The npv and irr words of the std module are built on these two commands (Appendix 24).
+The npv and irr words of the std module are built on these two commands (Appendix 25).
 
 ========================================================================================
 8  STATISTICS AND SIMULATION
@@ -1123,7 +1126,90 @@ parameters to all displayed digits. The residual sum of squares tells the famili
 apart: on the quintiles above Dagum and Singh-Maddala fit to 10⁻⁵, a Pareto to 7 × 10⁻³.
 
 ========================================================================================
-11  STRINGS
+11  GRAPHS
+========================================================================================
+
+The plot module draws graphs in the terminal, the way the HP-41 drew them on its
+printer, but with axes, ticks, a legend and colour—and writes the same figure as vector
+graphics for the document it is really for. A figure holds up to eight series; the plot
+words add a series and draw the figure, and a new plot replaces the figure unless hold
+is on. The picture is two pixels to a terminal cell, sized from the terminal (or psize),
+with ticks at round numbers.
+
+11.1  Plot words
+----------------
+
+  -------------- ---------- ------------------------------------------------------------------------------------------------------------------------
+  plot           x y –      y against x as a line; the vectors must have the same length
+  scatter        x y –      as points
+  steps          x y –      as a step function: a Kaplan-Meier curve, a cumulative count
+  bars           x h –      bars of height h at x
+  hplot          v k –      histogram of the data in v with k equal bins
+  mplot          M –        every column after the first against the first: the output of odeint, lorenzm, lifetab, km
+  fplot          a b xt –   the word x – y over [a,b], one point per pixel column; where it fails (a log of a negative number) the curve has a gap
+  hold, nohold   –          the following plots add to the figure, or start a new one (the default)
+  show           –          draw the figure again, after a change of title, legend, size or axes
+  pclear         –          forget the figure and its settings
+  -------------- ---------- ------------------------------------------------------------------------------------------------------------------------
+
+    "gompertz" [0.0001 0.09] setlaw
+    0 1 100 rrange dup surv "S(x)" pylabel "age" pxlabel pgrid plot
+           1 ┤▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄▄▄▄▄▄▖┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈┼
+             │┊          ┊          ┊  ▝▀▀▀▄▄  ┊          ┊          ┊
+         0.8 ┤┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈▀▚▄▖┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈┼
+             │┊          ┊          ┊          ┊▝▚▖       ┊          ┊
+         0.6 ┤┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈┼┈┈▝▚┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈┼
+             │┊          ┊          ┊          ┊    ▀▚    ┊          ┊
+             │┊          ┊          ┊          ┊      ▚▖  ┊          ┊
+         0.4 ┤┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈▝▖┈┼┈┈┈┈┈┈┈┈┈┈┼
+             │┊          ┊          ┊          ┊        ▝▀▖          ┊
+         0.2 ┤┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈▝▚┈┈┈┈┈┈┈┈┈┼
+             │┊          ┊          ┊          ┊          ┊ ▀▄       ┊
+           0 ┤┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈┈┈┈┈┈┈┈┼┈┈┈▀▀▚▄▄▄▄▄
+             └┬──────────┬──────────┬──────────┬──────────┬──────────┬
+              0         20         40         60         80         100
+              S(x)  vs  age
+
+11.2  Decoration and axes
+-------------------------
+
+  -------------------------- ---------- --------------------------------------------------------------------------------------------------
+  ptitle, pxlabel, pylabel   "s" –      title and axis labels
+  plegend                    "s" –      names of the series, comma-separated, in the order drawn (fplot names its series after the word)
+  pxlog, pylog, plin         –          logarithmic axes with decade ticks (values  ≤ 0 are left out); linear again
+  pgrid                      –          toggle a grid at the ticks
+  pxrange, pyrange           a b –      fix an axis instead of fitting it to the data; pauto fits again
+  psize                      w h –      the plot area in cells and rows; 0 0 follows the terminal
+  psvg                       "file" –   write the figure as SVG, 640 × 400, vector lines, every series, the legend and the labels
+  ptxt                       "file" –   write the last drawing as text
+  -------------------------- ---------- --------------------------------------------------------------------------------------------------
+
+The settings persist until pclear, so pylog pgrid once serves every plot of a session.
+In a pipeline, or with the output redirected, the drawing has no colour; the SVG always
+has.
+
+    30 1 100 rrange 1 sto                         \ ages
+    "makeham" [0.0005 0.00003 0.1] setlaw 1 rcl haz 2 sto
+    "gompertz" [0.0001 0.09] setlaw 1 rcl haz 3 sto
+    pylog pgrid 1 rcl 2 rcl plot hold 1 rcl 3 rcl plot
+    "Makeham,Gompertz" plegend "force of mortality" ptitle "age" pxlabel show
+    "hazard.svg" psvg
+
+[image]
+
+The Makeham floor shows as the flattening below 40; on a log axis a Gompertz law is a
+straight line.
+
+Some figures that come for free from the other modules:
+
+    [2 3 3 5 8 9] [1 1 0 1 1 0] km dup 0 getcol swap 1 getcol 0 1 pyrange steps   \ Kaplan-Meier
+    : f swap drop chs ; 1 0 5 100 @f odeint mplot                                 \ an ODE trajectory
+    "dagum" [3.5 20000 0.8] setdist 20 lorenzm mplot                              \ a Lorenz curve
+    1 seed 2000 0 1 normrnd 25 hplot                                              \ a histogram
+    0 10 @sin fplot hold 0 10 @cos fplot                                           \ two functions
+
+========================================================================================
+12  STRINGS
 ========================================================================================
 
   ---------- ------------------- ----------------------------------------
@@ -1146,7 +1232,7 @@ such as the one sunrise returns into decimal hours by cutting out the hour and m
 fields with substr and evaluating them.
 
 ========================================================================================
-12  REGISTERS
+13  REGISTERS
 ========================================================================================
 
 There are 64 storage registers, numbered 0–63, and each can hold any type—a matrix or a
@@ -1164,11 +1250,11 @@ sto_add, sto_sub, sto_mul and sto_div (in the std module) are the HP storage ari
 the configuration directory; clregs empties all registers.
 
 Registers are the natural way to pass parameters to a word used in a numerical method
-(Section 14): the word reads the parameter with rcl and you change it with sto between
+(Section 15): the word reads the parameter with rcl and you change it with sto between
 calls.
 
 ========================================================================================
-13  WORDS: PROGRAMMING THE CALCULATOR
+14  WORDS: PROGRAMMING THE CALCULATOR
 ========================================================================================
 
 A word is a named sequence of tokens. Defining one takes a single line that starts with
@@ -1193,7 +1279,7 @@ a word replaces it, and any word that calls it sees the new definition.
 A name must not be a built-in command or control word and must not start with a digit.
 Names are case sensitive.
 
-13.1  Conditionals
+14.1  Conditionals
 ------------------
 
 Inside a word, if consumes a flag from the stack and executes the following tokens when
@@ -1204,7 +1290,7 @@ it is true (non-zero); else introduces the alternative; then closes the construc
     : sign dup 0 lt if drop -1 else 0 gt if 1 else 0 then then ;
     -7 sign 0 sign 2 sign     \ -1 0 1
 
-13.2  Loops
+14.2  Loops
 -----------
 
 repeat until the flag is true (the body runs at least once).
@@ -1237,7 +1323,7 @@ Loops nest to 16 levels. Flags are reals; 0 is false.
 A definition occupies the whole line: nothing may follow the closing semicolon. Long
 bodies are best split into words, as collatz does with step.
 
-13.3  Saving words
+14.3  Saving words
 ------------------
 
 savewords writes all your words to user_words.txt in the configuration directory, one
@@ -1246,17 +1332,17 @@ reloads the file by hand. The file is plain text and you may edit it: forward re
 are fine (it is loaded in two passes), comments start with \, and a line that fails to
 compile is reported with its line number and skipped.
 
-13.4  Words from modules
+14.4  Words from modules
 ------------------------
 
 Words also arrive in word modules: files of definitions plugged in at startup, such as
-the shipped std module (Appendix 24). They behave exactly like your own words—the only
+the shipped std module (Appendix 25). They behave exactly like your own words—the only
 difference is where they are stored, so that clrwords does not remove them. listmacros
 lists them by module. If one of your words has the same name as a module’s word, yours
-wins. Section 19 explains how to write a module.
+wins. Section 20 explains how to write a module.
 
 ========================================================================================
-14  NUMERICAL METHODS
+15  NUMERICAL METHODS
 ========================================================================================
 
 The numerical methods take a function as an execution token—@name for any word or
@@ -1320,7 +1406,7 @@ The methods were cross-checked against SciPy on 62 cases with a worst relative e
 3.5 × 10⁻¹¹.
 
 ========================================================================================
-15  DIFFERENTIAL EQUATIONS
+16  DIFFERENTIAL EQUATIONS
 ========================================================================================
 
 The ode module integrates initial-value problems y′ = f(t,y) to the tolerance tol, using
@@ -1354,7 +1440,7 @@ t₁, or one too stiff for an explicit method at the current tol, ends in an err
 the t reached; nevals reports the evaluations of the last call.
 
 ========================================================================================
-16  DATES, TIME AND THE SUN
+17  DATES, TIME AND THE SUN
 ========================================================================================
 
 Dates are strings in the form d.m.yyyy; leading zeros are optional on input and present
@@ -1372,7 +1458,7 @@ on output ("1.2.2025" and "01.02.2025" are the same date). Times are strings HH:
   tz_offset         date zone – h              UTC offset in hours of an IANA zone on that date
   sunrise, sunset   date lat lon zone – time   local sunrise and sunset
   dawn, dusk        date lat lon zone – time   civil dawn and dusk (sun 6^(∘) below the horizon)
-  workdays …                                   workdays and holidays, Section 16.1
+  workdays …                                   workdays and holidays, Section 17.1
   ----------------- -------------------------- ---------------------------------------------------
 
     "1.1.2025" 30 dateplus         \ "31.01.2025"
@@ -1394,7 +1480,7 @@ module push latitude, longitude and zone in one go:
 Add your own with one line in user_words.txt or in a word module of your own:
 home 51.5 -0.12 "Europe/London".
 
-16.1  Workdays and holidays
+17.1  Workdays and holidays
 ---------------------------
 
 A workday is a Monday to Friday that is not in the holiday calendar, a list of dates the
@@ -1447,7 +1533,7 @@ A holiday that falls on a weekend changes nothing, duplicates are dropped, and t
 is sorted, so hol is also a tidy way to look at a calendar.
 
 ========================================================================================
-17  FINANCE
+18  FINANCE
 ========================================================================================
 
 The finance module is MM-B1, the decimal business calculator, rebuilt as a module: the
@@ -1465,7 +1551,7 @@ bonds and day counts. Three conventions hold throughout.
 -   Cash received is positive, cash paid is negative. A loan is a positive pv with a
     negative pmt; a savings plan is a negative pmt with a positive fv.
 
-17.1  Time value of money
+18.1  Time value of money
 -------------------------
 
 Like the HP-12C, the module keeps the registers n (periods), i% (rate per period), pv,
@@ -1513,7 +1599,7 @@ exact to the last displayed digit and report an error if no rate satisfies the e
 ?n with both g and fv non-zero (two exponentials, x^(n) and (1+r)^(−n)) does the same
 over 0 to 10 000 periods. The registers are not saved between sessions.
 
-17.2  Amortisation
+18.2  Amortisation
 ------------------
 
 amort prints the schedule of the loan in the registers, period by period: payment,
@@ -1532,7 +1618,7 @@ is g% and amort.
       --- -------------- -------------- -------------- --------------
       tot                         20.07        1000.00
 
-17.3  Cash flows: NPV and IRR
+18.3  Cash flows: NPV and IRR
 -----------------------------
 
 Cash flows are given as a column vector in time order, the first element at t = 0 (the
@@ -1555,7 +1641,7 @@ flows written latest first and the rate as a fraction. Those macros are gone; th
 finance words take the flows in time order and the rate in percent, like every other
 business calculator.
 
-17.4  Interest-rate conversions and depreciation
+18.4  Interest-rate conversions and depreciation
 ------------------------------------------------
 
   --------- ----------------------------------- -------------------------------------------------------------------------------------------
@@ -1574,7 +1660,7 @@ business calculator.
     10000 1000 5 1 2 db     \ 4000   first year, double declining
     10000 1000 5 5 2 db     \ 296    fifth year: capped by the salvage value
 
-17.5  Bonds
+18.5  Bonds
 -----------
 
 Two bond words work in periods, for a bond settled on a coupon date: price per 100 of
@@ -1611,7 +1697,7 @@ basis:
     "1.1.2007" "1.1.2008" 3 yearfrac                 \ 1.0000    actual/365
     20070101 20080101 2 yearfrac                     \ 1.0139    actual/360
 
-17.6  Dates in the finance module
+18.6  Dates in the finance module
 ---------------------------------
 
 A date argument to any finance word is either a date string of the dates module,
@@ -1623,7 +1709,7 @@ combine with the finance words:
     20260315 ymd>date          \ "15.03.2026"
     today 90 dateplus date>ymd \ the numeric date 90 days from now
 
-17.7  Dated cash flows: XNPV and XIRR
+18.7  Dated cash flows: XNPV and XIRR
 -------------------------------------
 
 Irregularly spaced flows are an N × 2 matrix of amount and numeric date, in date order.
@@ -1641,7 +1727,7 @@ also be built up with join_v from 1 × 2 rows, or read from a file with
 [4, 2, "flows.txt"].
 
 ========================================================================================
-18  PROGRAMS
+19  PROGRAMS
 ========================================================================================
 
 Besides words, MM-41 runs HP-41 style programs: text files with one instruction per
@@ -1688,7 +1774,7 @@ prints the listing. Two related commands: batch runs a file of ordinary lines (n
 or tests), and eval evaluates a string.
 
 ========================================================================================
-19  MODULES
+20  MODULES
 ========================================================================================
 
 The HP-41 took plug-in ROMs; MM-41 takes modules. A module is a named set of commands
@@ -1698,7 +1784,7 @@ user would call a feature is a module alongside it. modules shows what is plugge
 
     MM-41>> modules
     module       version  words  summary
-    core         1.9         86  arithmetic, functions, logic, the stack, words and the session
+    core         2.0         86  arithmetic, functions, logic, the stack, words and the session
     decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
     finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
     complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -1708,6 +1794,7 @@ user would call a feature is a module alongside it. modules shows what is plugge
     ode          1.0          2  initial-value problems y' = f(t, y) over a word, scalar or system (RKF45)
     survival     1.1         31  lifetime laws (Gompertz-Makeham and others), survival and hazard, life tables, annuities, Kaplan-Meier, fits
     income       1.1         38  income distributions (Dagum, Singh-Maddala, Pareto, lognormal and more), inequality and poverty measures, fits
+    plot         1.0         25  graphs in the terminal: lines, points, steps, bars, histograms, functions; log axes, legend, SVG export
     matrices     1.1         43  linear algebra, matrix construction and reduction, polynomials, reading tables from files
     numerics     1.0         12  integration, roots, minima, derivatives and sums over any word
     strings      1.0          7  string construction and manipulation
@@ -1721,7 +1808,7 @@ not define the same name—a clash is reported when the second one loads, with t
 and line for a word module—so a command means the same thing whatever is plugged in.
 There are three kinds of module, and from the stack they are indistinguishable.
 
-19.1  Built-in modules
+20.1  Built-in modules
 ----------------------
 
 These are compiled into the calculator from the modules/ directory of the source tree,
@@ -1731,10 +1818,10 @@ is all of them, and
 make MODULES="matrices strings"
 
 builds a smaller calculator with only those two (and the core). The command reference in
-Appendix 23 is generated per module, so it always describes the binary it was built
+Appendix 24 is generated per module, so it always describes the binary it was built
 with.
 
-19.2  Word modules
+20.2  Word modules
 ------------------
 
 A word module is a text file of definitions, and it is the way to add commands without a
@@ -1764,7 +1851,7 @@ module that uses another’s words should sort after it (or simply not depend on
 Word modules cannot redefine a built-in command. They can be shadowed by your own words,
 which is deliberate: a word you type always wins.
 
-19.3  Compiled modules
+20.3  Compiled modules
 ----------------------
 
 A compiled module is a shared object exporting one function, mm41_module(), which
@@ -1813,7 +1900,7 @@ dispatch table), and loading one renumbers execution tokens, so do not keep an @
 token on the stack across a load. The api field guards against a module built for a
 different version of the interface.
 
-19.4  Which kind to write
+20.4  Which kind to write
 -------------------------
 
 A word module for anything that can be said in words—formulas, conventions, locations, a
@@ -1824,7 +1911,7 @@ is the second, and the only difference between it and a module you write is that
 happens to be compiled in.
 
 ========================================================================================
-20  BATCH MODE AND SCRIPTING
+21  BATCH MODE AND SCRIPTING
 ========================================================================================
 
 When MM-41 is given expressions or files on the command line, or when its standard input
@@ -1851,14 +1938,14 @@ Exit status: 0 on success, 1 if any error was reported in batch mode, 2 for a us
 error.
 
 ========================================================================================
-21  CONFIGURATION AND FILES
+22  CONFIGURATION AND FILES
 ========================================================================================
 
 Everything lives in $XDG_CONFIG_HOME/mm41/, which defaults to ~/.config/mm41/:
 
   ------------------ ----------------------------------------------------------------------------------------------------------------
   config.txt         print_precision, fixed_point, number_mode, holidays, verbose_mode, tol; written at exit
-  holidays/*.txt     holiday calendars (Section 16.1); the shipped example.txt is replaced by make install, your own files are kept
+  holidays/*.txt     holiday calendars (Section 17.1); the shipped example.txt is replaced by make install, your own files are kept
   modules/*.mm       word modules, loaded at startup in name order; the shipped ones are replaced by make install
   modules/*.so       compiled modules, loaded at startup
   user_words.txt     words saved by savewords; loaded at startup
@@ -1875,7 +1962,7 @@ The configuration directory is per user; the data/ directory in the source tree 
 the defaults that make install copies there if nothing exists yet.
 
 ========================================================================================
-22  ERRORS
+23  ERRORS
 ========================================================================================
 
 Every top-level token is atomic. When a command fails, the stack is restored to its
@@ -1908,7 +1995,7 @@ In batch mode any error makes the exit status 1, so a script can be checked with
 any other command.
 
 ========================================================================================
-23  COMMAND REFERENCE
+24  COMMAND REFERENCE
 ========================================================================================
 
 Generated from the dispatch table by mm41 –commands-tex; the same information is
@@ -1917,7 +2004,7 @@ available at run time from listfcns and "name" usage. Stack pictures read deepes
 The command reference is in COMMANDS.md and at the prompt: help <name>.
 
 ========================================================================================
-24  THE STD WORD MODULE
+25  THE STD WORD MODULE
 ========================================================================================
 
 The following words are loaded from modules/std.mm in the configuration directory. The
@@ -1951,7 +2038,7 @@ help const lists them with their values, and "const" unuse frees the names.
   alexandria, duluth, durham, kranj    lat lon "zone"                                            locations for the solar functions
 
 ========================================================================================
-25  COMING FROM MM-15, MM-14, MM-11 OR MM-B1
+26  COMING FROM MM-15, MM-14, MM-11 OR MM-B1
 ========================================================================================
 
 MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1’s decimal numbers and
@@ -1961,8 +2048,8 @@ modules, the rest of the special functions and the const word module; 1.4.1 the
 bare-name line forms use const, usehol us; 1.5 the g% register for growing payments; 1.6
 the display skins; 1.7 the survival and income modules and the bracket-only matrix
 literal; 1.8 reading tables from files and fitting published life tables and income
-shares; 1.9 the manual at the prompt. Every MM-15 command, word and program runs
-unchanged, with one exception noted below. What is different:
+shares; 1.9 the manual at the prompt; 2.0 graphs. Every MM-15 command, word and program
+runs unchanged, with one exception noted below. What is different:
 
 -   The binary is mm41, the configuration directory ~/.config/mm41/. Copy
     user_words.txt, registers.txt and config.txt across from mm_15 if you want them.
@@ -1978,7 +2065,7 @@ unchanged, with one exception noted below. What is different:
     from.
 
 -   The std macros npv and irr (latest flow first, rate as a fraction) are replaced by
-    the finance module’s npv and irr (time order, rate in percent); see Section 17.3.
+    the finance module’s npv and irr (time order, rate in percent); see Section 18.3.
 
 MM-11 and MM-14 users: MM-15 2.0 already contained both (the same core, words, control
 flow and numerical methods), so MM-41 is the one calculator to install.
@@ -1987,7 +2074,7 @@ MM-B1 users: every MM-B1 word is here with the same name and argument order, exc
 
 -   cash flows are matrices on the stack rather than a bank filled with cf/cfn/xcf:
     -1000 cf 300 cf 5 cfn becomes [2 2 $ -1000 1 300 5], and xcf rows become an N × 2
-    matrix of amount and date (Sections 17.3 and 17.6); cfs, clrcf, xcfs and clrxcf are
+    matrix of amount and date (Sections 18.3 and 18.6); cfs, clrcf, xcfs and clrxcf are
     not needed;
 
 -   i is spelled i% and ?i is ?i%; begin is beg (begin is a control word);

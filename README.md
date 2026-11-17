@@ -28,7 +28,7 @@ MM-41>> 2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
 [5] 𝔻 : -1798.65
 MM-41>> modules
 module       version  words  summary
-core         1.9         86  arithmetic, functions, logic, the stack, words and the session
+core         2.0         86  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -38,6 +38,7 @@ random       1.0         16  draws from named distributions, resampling and Mont
 ode          1.0          2  initial-value problems y' = f(t, y) over a word, scalar or system (RKF45)
 survival     1.1         31  lifetime laws (Gompertz-Makeham and others), survival and hazard, life tables, annuities, Kaplan-Meier, fits
 income       1.1         38  income distributions (Dagum, Singh-Maddala, Pareto, lognormal and more), inequality and poverty measures, fits
+plot         1.0         25  graphs in the terminal: lines, points, steps, bars, histograms, functions; log axes, legend, SVG export
 matrices     1.1         43  linear algebra, matrix construction and reduction, polynomials, reading tables from files
 numerics     1.0         12  integration, roots, minima, derivatives and sums over any word
 strings      1.0          7  string construction and manipulation
@@ -131,6 +132,10 @@ loads. `"name" usage` tells you which module a command comes from.
   `ginid theild atkinsond lorenzd decilesd palmad headcountd povgapd fgtd`;
   `incfits` fits a family to published quintile or decile shares, `incfitl`
   to Lorenz-curve points.
+- **Graphs**: `x y plot`, `scatter`, `steps`, `bars`, `v k hplot`, `M mplot`,
+  `a b @f fplot` draw in the terminal (two pixels a cell, round-number ticks,
+  a legend, colour); `hold` overlays, `pxlog pylog pgrid pxrange ptitle
+  plegend` decorate, `"fig.svg" psvg` writes the figure as vector graphics.
 - **Files**: `"table.txt" readmat` reads a table as it is (any separators,
   comments and a header skipped), `readvec` every number as a column,
   `"t.txt" 2 readcol` one column; `getcol`/`getrow` take one out of a

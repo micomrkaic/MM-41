@@ -1,5 +1,23 @@
 # MM-41 changes
 
+## MM-41 2.0
+
+- **plot** module (25 words): graphs in the terminal, two pixels to a cell
+  in quadrant blocks, round-number ticks, labelled axes, a legend, colour
+  on a terminal. `x y plot`, `scatter`, `steps`, `x h bars`, `v k hplot`,
+  `M mplot` (odeint, lorenzm, lifetab, km output as it is), `a b @f fplot`
+  (failures leave gaps); `hold` overlays up to eight series, `show`
+  redraws; `ptitle pxlabel pylabel plegend`, `pxlog pylog plin`, `pgrid`,
+  `pxrange pyrange pauto`, `psize`; `"fig.svg" psvg` writes the figure as
+  vector graphics (640 x 400, every series, legend, labels, log axes) for
+  a document, `ptxt` the text.
+- Fixed: a `bool` declared after `decimal.h` in a module was an `int`,
+  because decNumber's header redefines `_Bool` unless HAVE_STDBOOL_H is set;
+  it is now set for every compilation unit (ASan found it as a 4-byte read
+  of a 1-byte global).
+- Manual chapter Graphs with figures; `help plot`; README, MANUAL.md, man
+  page; golden plot.rpn.
+
 ## MM-41 1.9
 
 - **The manual at the prompt.** `manual` opens the user manual in the pager

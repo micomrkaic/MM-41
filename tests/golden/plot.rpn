@@ -1,0 +1,24 @@
+\ graphs: every plot word at a fixed size, decorations, log axes, errors
+60 14 psize
+0 0.1 6.3 rrange dup sin plot
+hold 0 0.1 6.3 rrange dup cos plot "sin,cos" plegend "two waves" ptitle "x" pxlabel "y" pylabel pgrid show
+nohold pclear 60 12 psize
+[1 2 3 4 5] [2.1 3.9 6.2 7.8 10.1] scatter
+0 1 pyrange [0 2 3 5 8] [1 0.833 0.667 0.444 0.222] steps pauto
+[1 2 3 4] [3 7 5 2] bars
+1 seed 500 0 1 normrnd 10 hplot
+: f swap drop chs ;
+1 0 3 30 @f odeint mplot
+"dagum" [3.5 20000 0.8] setdist 10 lorenzm mplot
+0 10 @sin fplot
+pylog 1 1 10 rrange dup 2 swap .^ plot plin
+-2 2 @ln fplot
+"/tmp/mm41-golden-fig.svg" psvg
+"/tmp/mm41-golden-fig.txt" ptxt
+"/nonexistent/dir/x.svg" psvg
+pclear
+[1 2 3] [1 2] plot
+[1 2 3] plot
+0 10 pxrange 10 0 pxrange
+5 5 psize
+show

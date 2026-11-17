@@ -64,7 +64,7 @@ GIT_DIRTY  := $(shell git diff-index --quiet HEAD -- 2>/dev/null || echo -dirty)
 GIT_VERSION:= $(GIT_HASH)$(GIT_DIRTY)
 
 # Force-include the generated header in every compile
-CPPFLAGS += -include $(GIT_HEADER) -DMM41_DOCDIR='"$(DOCDIR)"'
+CPPFLAGS += -include $(GIT_HEADER) -DMM41_DOCDIR='"$(DOCDIR)"' -DHAVE_STDBOOL_H=1 -DHAVE_STDINT_H=1
 
 
 # Executable (mode-specific)
@@ -74,7 +74,7 @@ TARGET = $(BIN_DIR)/$(APP)
 # Each built-in module is a directory modules/<name>/ exporting one `Module`
 # struct (see include/module.h). MODULES chooses which are compiled in;
 # the registry table is generated from the list. The core is always built.
-MODULES ?= decimal finance complex special stat random ode survival income matrices numerics strings registers dates programs
+MODULES ?= decimal finance complex special stat random ode survival income plot matrices numerics strings registers dates programs
 MODULE_SRCS := $(foreach m,$(MODULES),$(wildcard modules/$(m)/*.c))
 MODULE_TABLE := $(OBJ_DIR)/module_table.c
 CFLAGS += $(foreach m,$(MODULES),-Imodules/$(m))
@@ -295,7 +295,7 @@ docs: $(TARGET)
 .PHONY: shared-module
 shared-module:
 	@test -n "$(DIR)" || { echo "usage: make shared-module DIR=path/to/module"; exit 2; }
-	$(CC) -std=c17 -Wall -Wextra -O2 -fPIC -shared $(SHARED_LDFLAGS) -Iinclude -Ivendor/decNumber $(PLATFORM_CFLAGS) -o "$(DIR)/$$(basename "$(DIR)").so" $(DIR)/*.c -lm
+	$(CC) -std=c17 -Wall -Wextra -O2 -fPIC -shared $(SHARED_LDFLAGS) -Iinclude -Ivendor/decNumber -DHAVE_STDBOOL_H=1 -DHAVE_STDINT_H=1 $(PLATFORM_CFLAGS) -o "$(DIR)/$$(basename "$(DIR)").so" $(DIR)/*.c -lm
 
 # The user manual: doc/manual.tex + the generated command tables -> doc/mm41-manual.pdf.
 # Needs LuaLaTeX (or XeLaTeX: LATEX=xelatex) with fontspec, booktabs, longtable, tcolorbox.
