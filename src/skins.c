@@ -13,7 +13,7 @@
  *          with the 41C's annunciators; numbers in the 41's FIX/SCI
  *          format (ten-digit mantissa, comma separators, the exponent
  *          after a space or a minus, as in 1.234568-03)
- *   hp12c  a seven-segment display in block elements, two rows per
+ *   hp12c  a seven-segment display in block pixels, three rows per
  *          level, the same ten-digit arithmetic and the BEGIN annunciator
  *   hp48   the 48's screen at text size, and hp48px the same as a dot
  *          matrix: a 5 x 7 font rendered in quadrant blocks,
@@ -190,27 +190,38 @@ static unsigned char seg7(char c) {
 }
 
 /* Draw `text` as 11 positions (sign and ten digits) of seven-segment
-   glyphs in block elements, three cells wide and two high -- at the 1:2
-   shape of a terminal cell that is the proportion of a real digit. The
-   top bar is the upper half of the middle cell, the middle bar its lower
-   half (both lit: the whole cell), the bottom bar the lower half of the
-   cell below; the verticals are left and right half blocks. Punctuation
-   sits in the gap after a digit. Block elements are drawn by the terminal
-   itself, so the strokes are solid whatever the font. */
-#define SEG_ROWS 2
+   digits on a 3 x 5 pixel grid, packed two pixel rows to a terminal row
+   with the half blocks: three cells wide and three high, which at the
+   1:2 shape of a cell is the proportion of a real digit. The bars a, g and
+   d are the pixel rows 0, 2 and 4; f and b run from row 0 to 2, e and c
+   from 2 to 4, so the strokes meet at the corners. Every pixel is a full
+   or half cell, nothing thinner, so it looks the same in any font.
+   Punctuation sits in the gap after a digit. */
+#define SEG_ROWS 3
 static void seg_rows(const char *text, char rows[SEG_ROWS][256]) {
-  char cells[SEG_ROWS][512] = { "", "" };
+  char cells[SEG_ROWS][512] = { "", "", "" };
   int positions = 0;
   for (const char *p = text; *p; p++) {
     if (*p == '.' || *p == ',') {                   /* the gap after the previous glyph, bottom row */
-      size_t l = strlen(cells[1]);
-      if (l) cells[1][l - 1] = *p;
+      size_t l = strlen(cells[2]);
+      if (l) cells[2][l - 1] = *p;
       continue;
     }
     unsigned char g = *p == ' ' ? 0 : seg7(*p);
     int a = g & 0x01, b = g & 0x02, c = g & 0x04, d = g & 0x08, e = g & 0x10, f = g & 0x20, m = g & 0x40;
-    snprintf(cells[0] + strlen(cells[0]), 64, "%s%s%s ", f ? "▌" : " ", a && m ? "█" : a ? "▀" : m ? "▄" : " ", b ? "▐" : " ");
-    snprintf(cells[1] + strlen(cells[1]), 64, "%s%s%s ", e ? "▌" : " ", d ? "▄" : " ", c ? "▐" : " ");
+    int px[5][3] = { { 0 } };
+    for (int x = 0; x < 3; x++) { px[0][x] |= a; px[2][x] |= m; px[4][x] |= d; }
+    for (int y = 0; y <= 2; y++) { px[y][0] |= f; px[y][2] |= b; }
+    for (int y = 2; y <= 4; y++) { px[y][0] |= e; px[y][2] |= c; }
+    for (int r = 0; r < 3; r++) {
+      char *o = cells[r] + strlen(cells[r]);
+      for (int x = 0; x < 3; x++) {
+        int top = px[2 * r][x] != 0, bot = 2 * r + 1 < 5 && px[2 * r + 1][x] != 0;
+        const char *q = top && bot ? "█" : top ? "▀" : bot ? "▄" : " ";
+        size_t l = strlen(q); memcpy(o, q, l); o += l;
+      }
+      *o++ = ' '; *o = '\0';
+    }
     positions++;
   }
   /* right-justify in 11 positions: the 12C lights digits from the right */
@@ -237,8 +248,9 @@ static void frame12c(const char *text) {
   char rows[SEG_ROWS][256];
   seg_rows(text, rows);
   printf("      ┌─%.*s─┐\n", LCD12 * 3, bar);
-  printf("%4s  │ %s │\n", "X", rows[0]);
-  printf("      │ %s │\n", rows[1]);
+  printf("      │ %s │\n", rows[0]);
+  printf("%4s  │ %s │\n", "X", rows[1]);
+  printf("      │ %s │\n", rows[2]);
   printf("      │ %-*s │\n", LCD12, ann_begin ? "BEGIN" : "");
   printf("      └─%.*s─┘\n", LCD12 * 3, bar);
 }
@@ -249,7 +261,7 @@ static void print_hp12c(const Stack *s) {
     level_label(s->top - i, label, sizeof label);
     level_text_12c(&s->items[i], text, sizeof text);
     seg_rows(text, rows);
-    printf("%4s    %s\n        %s\n\n", label, rows[0], rows[1]);
+    printf("        %s\n%4s    %s\n        %s\n\n", rows[0], label, rows[1], rows[2]);
   }
   level_text_12c(&s->items[s->top], text, sizeof text);
   frame12c(text);
