@@ -13,6 +13,13 @@ help sq
 help Stack
 help words
 help syntax
+help numerics
+\ commands taking @f show an example with a word of your own
+help integrate
+help fzero
+help sims
+help odesol
+help fplot
 help holiday
 \ bare-name line forms: use/unuse/usehol with one unquoted name
 "data/modules/const.mm" use

@@ -255,7 +255,10 @@ static const Legend legend[] = {
   { "sub",      "a string" },
   { "name",     "a string with the name" },
   { "file.so",  "a string with the path of a shared object" },
-  { "xt",       "an execution token: @word or @command (see the numerics module)" },
+  { "xt",       "an execution token: @word or @command, for a word of your own as much as a built-in (help numerics)" },
+  { "S",        "a real number, the sum" },
+  { "P",        "a real number, the product" },
+  { "f'(x)",    "a real number, the derivative" },
   { "date",     "a date string \"d.m.yyyy\"; the finance and workday words also take the number YYYYMMDD" },
   { "date2",    "a date string \"d.m.yyyy\"; the finance and workday words also take the number YYYYMMDD" },
   { "d1",       "a date: \"d.m.yyyy\" or YYYYMMDD" },
@@ -317,6 +320,47 @@ static int side_tokens(const char *side, char out[][64], int max) {
     p = q;
   }
   return n;
+}
+
+/* Every command that takes an execution token, with what the word it is
+   given must do and an example that uses a word of your own. The results
+   are fixed here rather than run: running one would define the word in the
+   session. */
+typedef struct { const char *name, *does, *example, *result, *param, *presult; } OwnWord;
+static const OwnWord own_words[] = {
+  { "integrate", "x -- f(x)",  ": f dup * 2 - ;   0 3 @f integrate",      "3   (x^2 - 2 over [0, 3])",  "0 10 @j2 integrate", "0.980066" },
+  { "romberg",   "x -- f(x)",  ": f dup * 2 - ;   0 3 @f romberg",        "3",                          "0 10 @j2 romberg",   "0.980066" },
+  { "fzero",     "x -- f(x)",  ": f dup * 2 - ;   0 3 @f fzero",          "1.414214",                   "4 7 @j2 fzero",      "5.135622   (the second zero of J2)" },
+  { "solve",     "x -- f(x)",  ": f dup * 2 - ;   1 @f solve",            "1.414214",                   "5 @j2 solve",        "5.135622   (the zero of J2 near 5)" },
+  { "minimize",  "x -- f(x)",  ": f 3 - dup * 1 + ;   0 5 @f minimize",   "3",                          "0 10 @j2 minimize",  "6.706131" },
+  { "deriv",     "x -- f(x)",  ": f dup * 2 - ;   3 @f deriv",            "6",                          "10 @j2 deriv",       "-0.007453" },
+  { "fsum",      "i -- f(i)",  ": f dup * inv ;   1 1000 @f fsum",        "1.643935",                   "1 20 @j2 fsum",      "0.851575" },
+  { "fprod",     "i -- f(i)",  ": f 1 + ;   1 10 @f fprod",               "39916800   (11!)",           "1 5 @j2 fprod",      "0.000334" },
+  { "fplot",     "x -- y",     ": f dup * 2 - ;   -2 2 @f fplot",         "the parabola, drawn",        "0 20 @j2 fplot",     "J2 over [0, 20], drawn" },
+  { "exec",      "anything",   ": sq dup * ;   3 @sq exec",               "9",                          NULL, NULL },
+  { "odeint",    "t y -- y'",  ": lg swap drop dup 1 swap - * ;   0.1 0 10 20 @lg odeint",  "21 rows of t, y for the logistic y' = y(1-y)", NULL, NULL },
+  { "odesol",    "t y -- y'",  ": lg swap drop dup 1 swap - * ;   0.1 0 5 @lg odesol",      "0.942826   (the logistic curve at t = 5)",     NULL, NULL },
+  { "sims",      "-- x",       ": coin 0 1 runif 0 round ;   1000 @coin sims mean",         "about 0.5   (the share of heads)",             NULL, NULL },
+};
+
+static void describe_own_word(const Op *op) {
+  const OwnWord *w = NULL;
+  for (size_t i = 0; i < sizeof own_words / sizeof own_words[0]; i++)
+    if (strcmp(own_words[i].name, op->name) == 0) { w = &own_words[i]; break; }
+  printf("    with a word of your own (define it on its own line, then use @name):\n");
+  if (w) {
+    printf("      the word is  %s\n", w->does);
+    printf("      %s\n", w->example);
+    printf("      -> %s\n", w->result);
+  }
+  if (w && w->param) {
+    printf("    a function with a parameter: fix the parameter inside the word (besselj is x n -- Jn(x); here n = 2)\n");
+    printf("      : j2 2 besselj ;   %-22s -> %s\n", w->param, w->presult);
+    printf("      2 0 sto   : jn 0 rcl besselj ;             the same with n in register 0; 3 0 sto changes it\n");
+  } else {
+    printf("    a parameter the word needs: fix it inside the word or keep it in a register (help numerics)\n");
+  }
+  printf("    a word from a word module or a built-in command works the same way: @sin, @npdf\n");
 }
 
 /* Examples with side effects on the session are shown but not run. */
@@ -383,6 +427,7 @@ static void describe_op(int idx) {
     bool finance = m && strcmp(m->name, "finance") == 0;
     for (int i = 0; i < nr; i++) {
       const char *lg = legend_for(right[i]);
+      if (strcmp(op->cat, "Numerics") == 0 && strcmp(right[i], "I") == 0) lg = "a real number, the integral";
       if (finance && !strcmp(op->cat, "Finance") && strcmp(right[i], "M") != 0 && strcmp(right[i], "date") != 0 && strcmp(right[i], "yyyymmdd") != 0)
         lg = "a decimal (the finance words always compute in decimals)";
       printf("      %-10s %s\n", right[i], lg ? lg : "");
@@ -392,6 +437,9 @@ static void describe_op(int idx) {
     printf("    example:  %s\n", op->example);
     if (example_is_safe(op, m)) run_example(op);
   }
+  bool takes_xt = false;
+  for (int i = 0; i < nl; i++) if (strcmp(left[i], "xt") == 0) takes_xt = true;
+  if (takes_xt) describe_own_word(op);
   /* related: other commands of the same category in the same module */
   if (m) {
     int base = module_first_op(m), shown = 0;
@@ -608,7 +656,15 @@ static const Topic topics[] = {
     "The numerical methods take a function as an execution token: @name, for a word or a command.\n"
     "  a b @f integrate     a b @f romberg      a b @f fzero       x @f solve\n"
     "  a b @f minimize      x @f deriv          lo hi @f fsum      lo hi @f fprod     @f exec\n"
-    "The word takes x from the stack and leaves f(x):   : f dup * 2 - ;   0 3 @f fzero  -> 1.414214\n"
+    "The function is usually a word of your own, defined on its own line; it takes x from the\n"
+    "stack and leaves f(x):   : f dup * 2 - ;   0 3 @f fzero  -> 1.414214     0 3 @f integrate  -> 3\n"
+    "A function with a parameter: fix the parameter inside the word, or keep it in a register.\n"
+    "  : j2 2 besselj ;   0 10 @j2 integrate  -> 0.980066      (besselj is x n -- Jn(x); n fixed at 2)\n"
+    "  2 0 sto   : jn 0 rcl besselj ;   0 10 @jn integrate       (n in register 0; 3 0 sto changes it)\n"
+    "  : k 0 rcl * sin ;   0 pi @k integrate                   (sin kx with k in register 0)\n"
+    "Built-ins and words from word modules work the same way: @sin, @exp, @npdf. fsum and fprod\n"
+    "call the word with the integer i; odeint and odesol with t y (help odeint); sims with nothing.\n"
+    "help <command> shows an example with a word of your own for every command that takes @f.\n"
     "x tol sets the tolerance (kept in config.txt); nevals and interr report the last call.\n"
     "Manual: chapter Numerical methods.\n" },
   { "syntax",

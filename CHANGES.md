@@ -1,5 +1,18 @@
 # MM-41 changes
 
+## MM-41 2.1.1
+
+- **Help with your own words.** `help` for every command that takes an
+  execution token (`integrate romberg fzero solve minimize deriv fsum fprod
+  exec`, `odeint odesol`, `sims`, `fplot`) now says what the word it is
+  given must do (`x -- f(x)`, `t y -- y'`, `-- x`) and shows an example
+  with a word of your own, plus how to handle a function with a parameter:
+  fix it inside the word (`: j2 2 besselj ;` then `0 10 @j2 integrate`) or
+  keep it in a register (`: jn 0 rcl besselj ;`). `help numerics` and the
+  manual (Numerical methods, "Functions of your own") say the same at
+  more length. The result of `integrate` is described as the integral, not
+  a matrix.
+
 ## MM-41 2.1
 
 - **Scripts.** `mm41 script args...` runs a file given without an option

@@ -21,3 +21,10 @@ function Header(h)
   end
   return pandoc.RawBlock("plain", line)
 end
+
+-- Inside code, the LaTeX reader has turned -- into an en dash and --- into an
+-- em dash; a stack picture is "a b -- c", so put them back.
+function Code(c)
+  c.text = c.text:gsub("\u{2014}", "---"):gsub("\u{2013}", "--")
+  return c
+end

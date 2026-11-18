@@ -28,7 +28,7 @@ MM-41>> 2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
 [5] 𝔻 : -1798.65
 MM-41>> modules
 module       version  words  summary
-core         2.1         89  arithmetic, functions, logic, the stack, words and the session
+core         2.1.1       89  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -148,7 +148,9 @@ loads. `"name" usage` tells you which module a command comes from.
   elliptic, zeta, digamma, Lambert W; the `const` word module has the physical
   constants (`c h G kB qe NA ...`).
 - **Numerical methods** over any word or command: `integrate` (tanh-sinh),
-  `romberg`, `fzero`, `solve`, `minimize`, `deriv`, `fsum`, `fprod`.
+  `romberg`, `fzero`, `solve`, `minimize`, `deriv`, `fsum`, `fprod`; a
+  function with a parameter is a word that fixes it (`: j2 2 besselj ;` then
+  `0 10 @j2 integrate`), and `help` shows such an example for each of them.
 - **Strings, registers, dates and the sun**: 64 registers of any type; date
   arithmetic; workdays with holiday calendars (`workdays`, `workdayplus`,
   Excel's NETWORKDAYS/WORKDAY conventions; built-in US federal and Slovenian

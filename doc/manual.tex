@@ -57,7 +57,7 @@
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 
-\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 2.1}
+\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 2.1.1}
 \author{Mico Mrkaic}
 \date{November 2026}
 
@@ -1148,11 +1148,40 @@ The numerical methods take a function as an execution token---\code{@name} for a
 3 @par exec                     \ 1
 \end{rpn}
 
+\subsection{Functions of your own}
+\label{sec:ownfunctions}
+
+The examples above lean on built-ins because they are short, but the function is usually a word of your own. Define it on a line by itself---a definition is a whole line---and then refer to it with \code{@}:
+\begin{rpn}
+: f dup * 2 - ;                 \ f(x) = x^2 - 2
+0 3 @f fzero                    \ 1.414214
+0 3 @f integrate                \ 3
+1 @f solve                      \ 1.414214
+3 @f deriv                      \ 6
+\end{rpn}
+The word takes $x$ from the stack and must leave exactly one real: \code{x -- f(x)}. For \cmd{fsum} and \cmd{fprod} it is called with the integer $i$; \cmd{odeint} and \cmd{odesol} call it with $t$ and $y$ (Section~\ref{sec:ode}); \cmd{sims} calls it with nothing (Section~\ref{sec:stat}); \cmd{fplot} with $x$ (Section~\ref{sec:plot}). \code{help \emph{command}} shows this picture and an example with a word of your own for every command that takes an execution token.
+
+\paragraph{A function with a parameter.} The methods pass one argument, so a function of two---a Bessel function of order $n$, a density with a scale, $\sin kx$---needs the extra one fixed. Fix it inside the word:
+\begin{rpn}
+: j2 2 besselj ;                \ J_2(x): besselj is x n -- Jn(x), and the word supplies n = 2
+0 10 @j2 integrate              \ 0.980066
+4 7 @j2 fzero                   \ 5.135622        the second zero of J_2
+0 10 @j2 minimize               \ 6.706131
+0 20 @j2 fplot                  \ the curve
+\end{rpn}
+or keep it in a register, so that one word serves every value:
+\begin{rpn}
+: jn 0 rcl besselj ;            \ J_n(x) with n in register 0
+2 0 sto  0 10 @jn integrate     \ 0.980066
+3 0 sto  0 10 @jn integrate     \ J_3 now
+: k 0 rcl * sin ;               \ sin kx with k in register 0
+\end{rpn}
+A word from a word module (Section~\ref{sec:modules}) and a built-in command are referenced the same way (\code{@sin}, \code{@npdf}), and so is a word that takes a decimal argument and returns one.
+
 Some practical notes.
 \begin{itemize}
   \item \cmd{integrate} uses the tanh--sinh rule, whose nodes cluster at the endpoints; an integrable singularity \emph{at} an endpoint converges to full precision, and the method is exponentially convergent for analytic integrands. Interior kinks or peaks are handled by bisecting the interval where the rule does not converge. If the error estimate stays above the tolerance a warning is printed and the result is returned anyway; \cmd{interr} tells you how good it is.
   \item \cmd{fzero} needs a sign change; \cmd{solve} needs only a guess and will grow a bracket around it, so it is the one to reach for interactively. Both are exact to the tolerance for simple roots.
-  \item A function may take parameters from registers: \code{: f 0 rcl * sin ;} integrates $\sin(kx)$ with $k$ in register 0, and \code{2 0 sto} changes $k$.
   \item The function may be a built-in (\code{@sin}, \code{@exp}) or a word from a module as well as your own word. It may also be a long-running word; the limit is two million evaluations per call, after which the method gives up with an error suggesting a looser tolerance.
   \item Loosen \cmd{tol} for expensive functions: \code{1e-6 tol}. The value is kept in \code{config.txt}.
 \end{itemize}
@@ -1480,7 +1509,7 @@ The HP-41 took plug-in ROMs; MM-41 takes modules. A module is a named set of com
 \begin{rpn}
 MM-41>> modules
 module       version  words  summary
-core         2.1         89  arithmetic, functions, logic, the stack, words and the session
+core         2.1.1       89  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -1723,7 +1752,7 @@ The following words are loaded from \code{modules/std.mm} in the configuration d
 \section{Coming from MM-15, MM-14, MM-11 or MM-B1}
 \label{app:changes}
 
-MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module; 1.3 added \code{help \emph{name}}; 1.4 added the \code{stat}, \code{random} and \code{ode} modules, the rest of the special functions and the \code{const} word module; 1.4.1 the bare-name line forms \code{use const}, \code{usehol us}; 1.5 the \code{g\%} register for growing payments; 1.6 the display skins; 1.7 the survival and income modules and the bracket-only matrix literal; 1.8 reading tables from files and fitting published life tables and income shares; 1.9 the manual at the prompt; 2.0 graphs; 2.1 scripts from the shell. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
+MM-41 1.0 was MM-15 2.1 restructured into modules; 1.1 added MM-B1's decimal numbers and finance words as the \code{decimal} and \code{finance} modules; 1.2 added workdays and holiday calendars to the dates module; 1.3 added \code{help \emph{name}}; 1.4 added the \code{stat}, \code{random} and \code{ode} modules, the rest of the special functions and the \code{const} word module; 1.4.1 the bare-name line forms \code{use const}, \code{usehol us}; 1.5 the \code{g\%} register for growing payments; 1.6 the display skins; 1.7 the survival and income modules and the bracket-only matrix literal; 1.8 reading tables from files and fitting published life tables and income shares; 1.9 the manual at the prompt; 2.0 graphs; 2.1 scripts from the shell; 2.1.1 help with your own words. Every MM-15 command, word and program runs unchanged, with one exception noted below. What is different:
 \begin{itemize}
   \item The binary is \code{mm41}, the configuration directory \code{\textasciitilde/.config/mm41/}. Copy \code{user\_words.txt}, \code{registers.txt} and \code{config.txt} across from \code{mm\_15} if you want them.
   \item \code{predefined\_macros.txt} is now the word module \code{modules/std.mm} and is installed there; the old file is not read. Your own additions belong in \code{user\_words.txt} or in a module of your own.

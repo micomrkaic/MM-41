@@ -1,4 +1,4 @@
-MM-41 USER MANUAL, version 2.1
+MM-41 USER MANUAL, version 2.1.1
 
 Type  manual <chapter or word>  at the prompt to open this file there; in the pager, n finds the next match, q returns.
 
@@ -66,6 +66,7 @@ CONTENTS
   14.3  Saving words
   14.4  Words from modules
   15  NUMERICAL METHODS
+  15.1  Functions of your own
   16  DIFFERENTIAL EQUATIONS
   17  DATES, TIME AND THE SUN
   17.1  Workdays and holidays
@@ -136,10 +137,10 @@ The design has a few fixed points worth knowing before you start.
 Commands are shown in bold monospace. Their effect on the stack is described by a stack
 picture, written deepest-first with the top of the stack at the right:
 
-y x – y+x
+y x -- y+x
 
 means that the command consumes two items—y below x—and leaves their sum. A picture that
-lists the same name on both sides (A – A rows cols) means the item stays on the stack.
+lists the same name on both sides (A -- A rows cols) means the item stays on the stack.
 
 Transcripts show what you type, followed by the calculator’s output. In the interactive
 session the whole stack is printed after every line; in the transcripts we usually show
@@ -267,7 +268,7 @@ The operand names in stack pictures are a small vocabulary (x and y numbers, z r
 complex, n a whole number, A a matrix, v a vector, s a string, date, cf cash flows, xt
 an execution token, …), and help spells each one out. Examples that would change the
 session—storing registers, switching modes, installing calendars, defining words—are
-shown but not run. Outside the calculator there is man mm41, and mm41 –commands prints
+shown but not run. Outside the calculator there is man mm41, and mm41 --commands prints
 the complete reference as Markdown (it is also Appendix 24 of this manual).
 
 ========================================================================================
@@ -371,18 +372,18 @@ string:
 
 The stack holds up to 100 items of any type. The classic FORTH words manipulate it:
 
-  ------- --------------- -----------------------------------------------------------------------------
-  dup     x – x x         duplicate the top
-  drop    x –             discard the top
-  swap    a b – b a       exchange the top two
-  over    a b – a b a     copy the second item to the top
-  nip     a b – b         discard the second item
-  tuck    a b – b a b     copy the top below the second item
-  pick    ... n – ... v   copy the item at depth n to the top (0 pick is dup, 1 pick is over)
-  roll    ... n – ...     move the item at depth n to the top (1 roll is swap, 2 roll is FORTH’s rot)
-  depth   – n             number of items on the stack
-  clst    ... –           clear the stack
-  ------- --------------- -----------------------------------------------------------------------------
+  ------- ---------------- -----------------------------------------------------------------------------
+  dup     x -- x x         duplicate the top
+  drop    x --             discard the top
+  swap    a b -- b a       exchange the top two
+  over    a b -- a b a     copy the second item to the top
+  nip     a b -- b         discard the second item
+  tuck    a b -- b a b     copy the top below the second item
+  pick    ... n -- ... v   copy the item at depth n to the top (0 pick is dup, 1 pick is over)
+  roll    ... n -- ...     move the item at depth n to the top (1 roll is swap, 2 roll is FORTH’s rot)
+  depth   -- n             number of items on the stack
+  clst    ... --           clear the stack
+  ------- ---------------- -----------------------------------------------------------------------------
 
     10 20 30 2 roll     \ 20 30 10
     10 20 30 1 pick     \ 10 20 30 20
@@ -488,18 +489,18 @@ column.
 +, -, *, / and ^ (also spelled pow) work on reals, complex numbers and matrices
 (Section 7 explains the matrix cases). Division by zero is an error, not inf.
 
-  ------ ---------------- --------------------------------------------------------------
-  chs    x – -x           change sign
-  inv    x – 1/x          reciprocal
-  abs    z – |z|          absolute value or complex magnitude
-  sqrt   x – sqrt(x)      square root
-  intg   x – int(x)       integer part, truncated toward zero (-3.7 intg is  − 3)
-  frac   x – frac(x)      fractional part, x − intg(x) (-3.7 frac is  − 0.7)
-  mod    y x – mod(y,x)   floored modulo; the result has the sign of x (-7 3 mod is 2)
-  fact   x – x!           factorial, Γ(x+1) for non-integers
-  ncr    n k – C(n,k)     combinations
-  npr    n k – P(n,k)     permutations
-  ------ ---------------- --------------------------------------------------------------
+  ------ ----------------- --------------------------------------------------------------
+  chs    x -- -x           change sign
+  inv    x -- 1/x          reciprocal
+  abs    z -- |z|          absolute value or complex magnitude
+  sqrt   x -- sqrt(x)      square root
+  intg   x -- int(x)       integer part, truncated toward zero (-3.7 intg is  − 3)
+  frac   x -- frac(x)      fractional part, x − intg(x) (-3.7 frac is  − 0.7)
+  mod    y x -- mod(y,x)   floored modulo; the result has the sign of x (-7 3 mod is 2)
+  fact   x -- x!           factorial, Γ(x+1) for non-integers
+  ncr    n k -- C(n,k)     combinations
+  npr    n k -- P(n,k)     permutations
+  ------ ----------------- --------------------------------------------------------------
 
 The three percentage functions follow the HP convention of keeping the base value y so
 that it is available for the next step:
@@ -548,19 +549,19 @@ The rest of the Math Pac is here too, each through GSL’s error-checked entry p
 an argument outside the domain is a calculator error rather than a nan; the one-argument
 functions apply elementwise to a real matrix.
 
-  ------------------ ------------- ---------------------------------------------------------
-  erf, erfc          x – y         error function and its complement
-  gammap, gammaq     a x – P       regularised incomplete gamma P(a,x) and Q = 1 − P
-  betainc            a b x – I     regularised incomplete beta I_(x)(a,b)
-  digamma            x – psi(x)    ψ(x) = Γ′(x)/Γ(x)
-  zeta               x – zeta(x)   Riemann zeta, x ≠ 1
-  besselj, bessely   x n – Jn(x)   Bessel functions of integer order n (Y_(n) needs x > 0)
-  besseli, besselk   x n – In(x)   modified Bessel functions (K_(n) needs x > 0)
-  airyai, airybi     x – Ai(x)     Airy functions
-  ellk, elle         k – K(k)      complete elliptic integrals, modulus |k| < 1
-  expint             x – E1(x)     exponential integral E₁
-  lambertw           x – W(x)      Lambert W, principal branch, x ≥  − 1/e
-  ------------------ ------------- ---------------------------------------------------------
+  ------------------ -------------- ---------------------------------------------------------
+  erf, erfc          x -- y         error function and its complement
+  gammap, gammaq     a x -- P       regularised incomplete gamma P(a,x) and Q = 1 − P
+  betainc            a b x -- I     regularised incomplete beta I_(x)(a,b)
+  digamma            x -- psi(x)    ψ(x) = Γ′(x)/Γ(x)
+  zeta               x -- zeta(x)   Riemann zeta, x ≠ 1
+  besselj, bessely   x n -- Jn(x)   Bessel functions of integer order n (Y_(n) needs x > 0)
+  besseli, besselk   x n -- In(x)   modified Bessel functions (K_(n) needs x > 0)
+  airyai, airybi     x -- Ai(x)     Airy functions
+  ellk, elle         k -- K(k)      complete elliptic integrals, modulus |k| < 1
+  expint             x -- E1(x)     exponential integral E₁
+  lambertw           x -- W(x)      Lambert W, principal branch, x ≥  − 1/e
+  ------------------ -------------- ---------------------------------------------------------
 
     2 3 0.5 betainc  \ 0.687500
     2.5 0 besselj    \ -0.048384
@@ -703,16 +704,16 @@ elementwise reciprocal; the matrix inverse is minv.
 7.3  Linear algebra
 -------------------
 
-  --------- ------------- ---------------------------------------------------------------------------
-  tran, ’   A – A^T       transpose
-  minv      A – A^-1      inverse of a square real or complex matrix; singular is an error
-  pinv      A – A^+       Moore–Penrose pseudoinverse (real, square), by SVD
-  det       A – det(A)    determinant
-  eig       A – V L       eigenvectors (columns of V) and eigenvalues (diagonal of L), both complex
-  chol      A – L         Cholesky factor of a symmetric positive definite matrix, A = LL^(T)
-  svd       A – U S V     singular value decomposition, A = USV^(T)
-  kron      A B – A(x)B   Kronecker product
-  --------- ------------- ---------------------------------------------------------------------------
+  --------- -------------- ---------------------------------------------------------------------------
+  tran, ’   A -- A^T       transpose
+  minv      A -- A^-1      inverse of a square real or complex matrix; singular is an error
+  pinv      A -- A^+       Moore–Penrose pseudoinverse (real, square), by SVD
+  det       A -- det(A)    determinant
+  eig       A -- V L       eigenvectors (columns of V) and eigenvalues (diagonal of L), both complex
+  chol      A -- L         Cholesky factor of a symmetric positive definite matrix, A = LL^(T)
+  svd       A -- U S V     singular value decomposition, A = USV^(T)
+  kron      A B -- A(x)B   Kronecker product
+  --------- -------------- ---------------------------------------------------------------------------
 
     [2 2 $ 4 7 2 6] det            \ 10
     [2 2 $ 4 7 2 6] minv pm        \ |  0.6 -0.7 |
@@ -729,17 +730,17 @@ XprimeX (Appendix 25).
 
 Indices are 0-based.
 
-  ----------- ----------------- ----------------------------------------------------------------
-  dim         A – A rows cols   dimensions; the matrix stays
-  get_aij     A i j – A a_ij    element (i,j); the matrix stays
-  set_aij     A i j x – A       set element (i,j) in place; a complex x promotes a real matrix
-  reshape     A rows cols – B   reshape in row-major order
-  split_mat   A – a11 a12 ...   push every element as a scalar, row by row
-  diag        A – v             the main diagonal as a row vector
-  to_diag     v – D             diagonal matrix from a row or column vector
-  join_v      A B – [A;B]       stack vertically (same number of columns)
-  join_h      A B – [A|B]       join side by side (same number of rows)
-  ----------- ----------------- ----------------------------------------------------------------
+  ----------- ------------------ ----------------------------------------------------------------
+  dim         A -- A rows cols   dimensions; the matrix stays
+  get_aij     A i j -- A a_ij    element (i,j); the matrix stays
+  set_aij     A i j x -- A       set element (i,j) in place; a complex x promotes a real matrix
+  reshape     A rows cols -- B   reshape in row-major order
+  split_mat   A -- a11 a12 ...   push every element as a scalar, row by row
+  diag        A -- v             the main diagonal as a row vector
+  to_diag     v -- D             diagonal matrix from a row or column vector
+  join_v      A B -- [A;B]       stack vertically (same number of columns)
+  join_h      A B -- [A|B]       join side by side (same number of rows)
+  ----------- ------------------ ----------------------------------------------------------------
 
     [2 2 $ 1 2 3 4] 0 1 get_aij        \ A 2
     [2 2 $ 1 2 3 4] 1 0 9 set_aij pm   \ | 1 2 | / | 9 4 |
@@ -785,14 +786,14 @@ reals where the matrix reductions of Section 7 would leave a 1 × 1 matrix:
 8.1  Describing a vector
 ------------------------
 
-  ----------------------- ---------- ---------------------------------------------------------------------
-  mean, median, sd, sem   v – x      mean, median, sample standard deviation, standard error of the mean
-  skew, kurt              v – x      skewness and excess kurtosis
-  quantile                v p – q    the p-quantile, interpolated between order statistics
-  cov, corr               x y – c    sample covariance and Pearson correlation of two vectors
-  movavg                  v n – v2   trailing moving average over n values
-  hist                    v k – M    histogram with k equal bins: bin centre, count
-  ----------------------- ---------- ---------------------------------------------------------------------
+  ----------------------- ----------- ---------------------------------------------------------------------
+  mean, median, sd, sem   v -- x      mean, median, sample standard deviation, standard error of the mean
+  skew, kurt              v -- x      skewness and excess kurtosis
+  quantile                v p -- q    the p-quantile, interpolated between order statistics
+  cov, corr               x y -- c    sample covariance and Pearson correlation of two vectors
+  movavg                  v n -- v2   trailing moving average over n values
+  hist                    v k -- M    histogram with k equal bins: bin centre, count
+  ----------------------- ----------- ---------------------------------------------------------------------
 
     [1 5 $ 2 4 4 4 6] mean               \ 4
     [1 5 $ 2 4 4 4 6] sd                 \ 1.414214
@@ -806,14 +807,14 @@ The four fits of the Advantage Pac take x and y vectors and leave a row vector o
 two coefficients and R² (on the transformed scale for the three non-linear ones, which
 are least squares on logarithms):
 
-  -------- ---------------- ----------------------------------------------------------------------------------------------------------
-  linfit   x y – [a,b,r2]   y = a + bx
-  expfit   x y – [a,b,r2]   y = a e^(bx), y > 0
-  logfit   x y – [a,b,r2]   y = a + bln x, x > 0
-  powfit   x y – [a,b,r2]   y = a x^(b), x, y > 0
-  ols      X y – beta       multiple regression of y on the columns of X, intercept added; coefficients as a column, intercept first
-  olstab   X y – M r2       the regression table: coefficient, standard error, t, two-sided p per row, and R²
-  -------- ---------------- ----------------------------------------------------------------------------------------------------------
+  -------- ----------------- ----------------------------------------------------------------------------------------------------------
+  linfit   x y -- [a,b,r2]   y = a + bx
+  expfit   x y -- [a,b,r2]   y = a e^(bx), y > 0
+  logfit   x y -- [a,b,r2]   y = a + bln x, x > 0
+  powfit   x y -- [a,b,r2]   y = a x^(b), x, y > 0
+  ols      X y -- beta       multiple regression of y on the columns of X, intercept added; coefficients as a column, intercept first
+  olstab   X y -- M r2       the regression table: coefficient, standard error, t, two-sided p per row, and R²
+  -------- ----------------- ----------------------------------------------------------------------------------------------------------
 
     [1 4 $ 1 2 3 4] [1 4 $ 2 8 18 32] powfit pm          \ | 2.0000 2.0000 1.0000 |   y = 2 x^2
     [4 1 $ 1 2 3 4] [4 1 $ 2 4 5 9] olstab swap pm
@@ -831,13 +832,13 @@ The cumulative distribution and its inverse for the test distributions, plus the
 binomial and Poisson probabilities; the normal ones are ncdf and nquant in the special
 module.
 
-  -------------------- ------------------------------ -----------------------------------------------------
-  tcdf, tinv           x df – p, p df – x             Student t
-  chi2cdf, chi2inv     x df – p, p df – x             chi-square
-  fcdf, finv           x df1 df2 – p, p df1 df2 – x   F
-  binompdf, binomcdf   k n p – P                      binomial: exactly / at most k successes in n trials
-  poispdf, poiscdf     k mu – P                       Poisson: exactly / at most k events
-  -------------------- ------------------------------ -----------------------------------------------------
+  -------------------- -------------------------------- -----------------------------------------------------
+  tcdf, tinv           x df -- p, p df -- x             Student t
+  chi2cdf, chi2inv     x df -- p, p df -- x             chi-square
+  fcdf, finv           x df1 df2 -- p, p df1 df2 -- x   F
+  binompdf, binomcdf   k n p -- P                       binomial: exactly / at most k successes in n trials
+  poispdf, poiscdf     k mu -- P                        Poisson: exactly / at most k events
+  -------------------- -------------------------------- -----------------------------------------------------
 
     0.975 10 tinv        \ 2.228139
     0.95 1 chi2inv       \ 3.841459
@@ -850,14 +851,14 @@ The random module draws from the calculator’s Mersenne-twister generator, whic
 makes reproducible. Scalar draws are for words that simulate one outcome; the -rnd words
 give n draws as a column.
 
-  ------------------------------------------------------------ ----------------------------------------- -----------------------------------------------------------------
-  seed                                                         n –                                       seed the generator
-  rnorm, runif, rpois, rexp                                    mu sigma – x, a b – x, mu – k, rate – x   one draw
-  normrnd, unifrnd, poisrnd, binomrnd, exprnd, trnd, chi2rnd   n params – v                              n draws as a column; the parameters follow the count
-  resample, shuffle                                            v – v2                                    a bootstrap resample (with replacement) / a random permutation
-  sims                                                         n xt – v                                  run a word n times, collecting the one real it leaves each time
-  mcstats                                                      v – [mean,sd, q05,q50,q95]                summary of simulated values
-  ------------------------------------------------------------ ----------------------------------------- -----------------------------------------------------------------
+  ------------------------------------------------------------ --------------------------------------------- -----------------------------------------------------------------
+  seed                                                         n --                                          seed the generator
+  rnorm, runif, rpois, rexp                                    mu sigma -- x, a b -- x, mu -- k, rate -- x   one draw
+  normrnd, unifrnd, poisrnd, binomrnd, exprnd, trnd, chi2rnd   n params -- v                                 n draws as a column; the parameters follow the count
+  resample, shuffle                                            v -- v2                                       a bootstrap resample (with replacement) / a random permutation
+  sims                                                         n xt -- v                                     run a word n times, collecting the one real it leaves each time
+  mcstats                                                      v -- [mean,sd, q05,q50,q95]                   summary of simulated values
+  ------------------------------------------------------------ --------------------------------------------- -----------------------------------------------------------------
 
     : pnl 0 1 rnorm 100 * 0 0.02 rnorm 1 + * ;   \ one simulated outcome
     42 seed 10000 @pnl sims mcstats pm           \ | 0.0054 ... 1.6451 |   mean sd q05 q50 q95
@@ -907,18 +908,18 @@ hazard H =  − ln S, the distribution function F = 1 − S. Q
 method on S, and the expectations by adaptive quadrature. The words that take an age
 apply elementwise to a matrix of ages.
 
-  -------------------------------------- ----------- --------------------------------------------------------------------------
-  surv, haz, cumhaz                      t – x       S(t), h(t) (the force of mortality), H(t)
-  lifepdf, lifecdf                       t – x       f(t) and F(t)
-  lifeinv                                p – t       the quantile, F(t) = p
-  lifemean, lifemed, lifevar, lifemode   – x         expected lifetime from birth, median, variance, modal age at death
-  elife                                  t – e       complete expectation of remaining life, e(t) = ∫_(t)^(∞)S/S(t)
-  curtate                                x – e       curtate expectation e_(x) = ∑_(k ≥ 1)_(k)p_(x), whole years
-  tpx, nqx                               x n – p     _(n)p_(x) and _(n)q_(x): survive, or die within, n more years from age x
-  px, qx                                 x – p       the one-year versions
-  lx                                     x – l       survivors at x from a radix of 100 000 at birth
-  lifetab                                x0 x1 – M   life table: age, l_(x) (radix 100 000 at x₀), d_(x), q_(x), e_(x)
-  -------------------------------------- ----------- --------------------------------------------------------------------------
+  -------------------------------------- ------------ --------------------------------------------------------------------------
+  surv, haz, cumhaz                      t -- x       S(t), h(t) (the force of mortality), H(t)
+  lifepdf, lifecdf                       t -- x       f(t) and F(t)
+  lifeinv                                p -- t       the quantile, F(t) = p
+  lifemean, lifemed, lifevar, lifemode   -- x         expected lifetime from birth, median, variance, modal age at death
+  elife                                  t -- e       complete expectation of remaining life, e(t) = ∫_(t)^(∞)S/S(t)
+  curtate                                x -- e       curtate expectation e_(x) = ∑_(k ≥ 1)_(k)p_(x), whole years
+  tpx, nqx                               x n -- p     _(n)p_(x) and _(n)q_(x): survive, or die within, n more years from age x
+  px, qx                                 x -- p       the one-year versions
+  lx                                     x -- l       survivors at x from a radix of 100 000 at birth
+  lifetab                                x0 x1 -- M   life table: age, l_(x) (radix 100 000 at x₀), d_(x), q_(x), e_(x)
+  -------------------------------------- ------------ --------------------------------------------------------------------------
 
     "gompertz" [0.0001 0.09] setlaw
     65 surv                     \ 0.680651   S(65)
@@ -936,12 +937,12 @@ apply elementwise to a matrix of ages.
 With an interest rate i% a year and the current law for mortality, the actuarial present
 values are sums over whole years (v = 1/(1+i)):
 
-  ----- ----------- --------------------------------------------------------------------------------------------------------------
-  ax    x i – a     whole-life annuity-due $\ddot a_x = \sum_{k\ge 0} v^k\,{}_kp_x$: 1 a year while (x) lives, first payment now
-  axn   x n i – a   n-year temporary annuity-due
-  Ax    x i – A     whole-life insurance A_(x) = ∑v^(k + 1) _(k)p_(x) q_(x + k): 1 at the end of the year of death
-  Axn   x n i – A   n-year term insurance
-  ----- ----------- --------------------------------------------------------------------------------------------------------------
+  ----- ------------ --------------------------------------------------------------------------------------------------------------
+  ax    x i -- a     whole-life annuity-due $\ddot a_x = \sum_{k\ge 0} v^k\,{}_kp_x$: 1 a year while (x) lives, first payment now
+  axn   x n i -- a   n-year temporary annuity-due
+  Ax    x i -- A     whole-life insurance A_(x) = ∑v^(k + 1) _(k)p_(x) q_(x + k): 1 at the end of the year of death
+  Axn   x n i -- A   n-year term insurance
+  ----- ------------ --------------------------------------------------------------------------------------------------------------
 
     "gompertz" [0.0001 0.09] setlaw
     65 3 ax                     \ 10.014379  a pension of 1 a year from 65 costs 10.01 at 3%
@@ -959,12 +960,12 @@ From data—times, and an indicator that is 1 for an observed event and 0 for a
 right-censored observation—the module gives the non-parametric estimates and the
 maximum-likelihood fit of any of the laws:
 
-  ------------- ---------------------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  km            t e – M                Kaplan-Meier: one row per distinct event time with time, Ŝ(t), number at risk, events
-  nelsonaalen   t e – M                Nelson-Aalen cumulative hazard, the same layout
-  logrank       t1 e1 t2 e2 – chi2 p   log-rank test that two groups share a survival curve
-  lifefit       t e – v ll             maximum-likelihood fit of the current law (its name; the parameters it was set with are ignored); leaves the estimates, which become the current parameters, and the log-likelihood
-  ------------- ---------------------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  ------------- ----------------------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  km            t e -- M                Kaplan-Meier: one row per distinct event time with time, Ŝ(t), number at risk, events
+  nelsonaalen   t e -- M                Nelson-Aalen cumulative hazard, the same layout
+  logrank       t1 e1 t2 e2 -- chi2 p   log-rank test that two groups share a survival curve
+  lifefit       t e -- v ll             maximum-likelihood fit of the current law (its name; the parameters it was set with are ignored); leaves the estimates, which become the current parameters, and the log-likelihood
+  ------------- ----------------------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     [2 3 3 5 8 9] [1 1 0 1 1 0] km pm        \ S = 0.833 0.667 0.444 0.222 at t = 2 3 5 8
     "weibull" [1 1] setlaw
@@ -986,10 +987,10 @@ law to such a table by least squares on log q_(x) (which spans orders of magni
 on log l_(x)/l_(x₀); the estimates become current, and everything above is then
 available for the table’s population.
 
-  --------- ------------- -----------------------------------------------------------------------
-  lawfit    x q – v rss   ages and q_(x); leaves the parameters and the residual sum of squares
-  lawfitl   x l – v rss   ages and l_(x), any radix
-  --------- ------------- -----------------------------------------------------------------------
+  --------- -------------- -----------------------------------------------------------------------
+  lawfit    x q -- v rss   ages and q_(x); leaves the parameters and the residual sum of squares
+  lawfitl   x l -- v rss   ages and l_(x), any radix
+  --------- -------------- -----------------------------------------------------------------------
 
     "gompertz" [1 1] setlaw                  \ the law to fit; its parameters are ignored
     [40 50 60 70 80] [0.002 0.004 0.009 0.022 0.055] lawfit
@@ -1038,24 +1039,24 @@ exist—Pareto with α ≤ 1, Dagum with a ≤ 1—is an error, not infi
 10.2  Measures of the distribution
 ----------------------------------
 
-  ---------------------------------- ------------- ---------------------------------------------------------------------------------------------------
-  incpdf, inccdf                     x – y         density; share of the population with income below x
-  incq                               p – x         quantile: the income below which a fraction p lies
-  incmean, incvar, incmed, incmode   – x           mean, variance, median, mode
-  gini                               – G           Gini coefficient, closed form
-  theil, mld                         – x           Theil index GE(1) and mean log deviation GE(0)
-  atkinson                           eps – A       Atkinson index with inequality aversion ε (ε = 1 allowed)
-  lorenz                             p – L         Lorenz curve: the share of income held by the poorest fraction p
-  lorenzm                            n – M         the curve at n + 1 points, columns p and L(p)
-  share                              p1 p2 – s     income share of those between the p₁ and p₂ quantiles
-  top                                p – s         share of the top fraction p: 0.1 top is the top 10 %
-  deciles                            – v           the ten decile shares
-  palma                              – r           Palma ratio, top 10 % share over bottom 40 % share
-  qratio                             p1 p2 – r     quantile ratio: 0.9 0.1 qratio is P90/P10
-  headcount, povgap                  z – x         poverty headcount ratio and poverty gap index at line z
-  fgt                                z alpha – x   Foster-Greer-Thorbecke P_(α): 0 headcount, 1 gap, 2 severity
-  incfit                             v – v2 ll     maximum-likelihood fit of the current family to a vector of incomes; the estimates become current
-  ---------------------------------- ------------- ---------------------------------------------------------------------------------------------------
+  ---------------------------------- -------------- ---------------------------------------------------------------------------------------------------
+  incpdf, inccdf                     x -- y         density; share of the population with income below x
+  incq                               p -- x         quantile: the income below which a fraction p lies
+  incmean, incvar, incmed, incmode   -- x           mean, variance, median, mode
+  gini                               -- G           Gini coefficient, closed form
+  theil, mld                         -- x           Theil index GE(1) and mean log deviation GE(0)
+  atkinson                           eps -- A       Atkinson index with inequality aversion ε (ε = 1 allowed)
+  lorenz                             p -- L         Lorenz curve: the share of income held by the poorest fraction p
+  lorenzm                            n -- M         the curve at n + 1 points, columns p and L(p)
+  share                              p1 p2 -- s     income share of those between the p₁ and p₂ quantiles
+  top                                p -- s         share of the top fraction p: 0.1 top is the top 10 %
+  deciles                            -- v           the ten decile shares
+  palma                              -- r           Palma ratio, top 10 % share over bottom 40 % share
+  qratio                             p1 p2 -- r     quantile ratio: 0.9 0.1 qratio is P90/P10
+  headcount, povgap                  z -- x         poverty headcount ratio and poverty gap index at line z
+  fgt                                z alpha -- x   Foster-Greer-Thorbecke P_(α): 0 headcount, 1 gap, 2 severity
+  incfit                             v -- v2 ll     maximum-likelihood fit of the current family to a vector of incomes; the estimates become current
+  ---------------------------------- -------------- ---------------------------------------------------------------------------------------------------
 
     "dagum" [3.5 20000 0.8] setdist
     incmean incmed                \ 20983.27  18247.66
@@ -1076,15 +1077,15 @@ and take a few milliseconds each; deciles and lorenzm call the curve once per po
 The same quantities from a vector of incomes, no distribution assumed. The data are
 sorted; the Lorenz curve interpolates between individuals.
 
-  --------------------- --------------- -------------------------------------
-  ginid, theild, mldd   v – x           Gini, Theil, mean log deviation
-  atkinsond             v eps – A       Atkinson
-  lorenzd               v n – M         Lorenz curve at n + 1 points
-  decilesd, palmad      v – x           decile shares; Palma ratio
-  topd                  v p – s         share of the top fraction p
-  headcountd, povgapd   v z – x         headcount and poverty gap at line z
-  fgtd                  v z alpha – x   P_(α)
-  --------------------- --------------- -------------------------------------
+  --------------------- ---------------- -------------------------------------
+  ginid, theild, mldd   v -- x           Gini, Theil, mean log deviation
+  atkinsond             v eps -- A       Atkinson
+  lorenzd               v n -- M         Lorenz curve at n + 1 points
+  decilesd, palmad      v -- x           decile shares; Palma ratio
+  topd                  v p -- s         share of the top fraction p
+  headcountd, povgapd   v z -- x         headcount and poverty gap at line z
+  fgtd                  v z alpha -- x   P_(α)
+  --------------------- ---------------- -------------------------------------
 
     [1 2 3 4 10] ginid            \ 0.4
     [1 2 3 4 10] theild           \ 0.276364
@@ -1109,10 +1110,10 @@ so only the shape parameters are fitted and the scale (b, x_(m), μ, θ, λ) kee
 current value; the Gini, the quantile ratios, the Palma ratio and every share then
 follow from the fitted family.
 
-  --------- ------------- -----------------------------------------
-  incfits   v – v2 rss    shares of k equal groups, poorest first
-  incfitl   p L – v rss   points of the Lorenz curve
-  --------- ------------- -----------------------------------------
+  --------- -------------- -----------------------------------------
+  incfits   v -- v2 rss    shares of k equal groups, poorest first
+  incfitl   p L -- v rss   points of the Lorenz curve
+  --------- -------------- -----------------------------------------
 
     "dagum" [3 1 1] setdist                  \ the family; the scale 1 is kept
     [3.1 8.3 14.1 22.7 51.9] incfits         \ US household quintile shares, 2019
@@ -1139,18 +1140,18 @@ with ticks at round numbers.
 11.1  Plot words
 ----------------
 
-  -------------- ---------- ------------------------------------------------------------------------------------------------------------------------
-  plot           x y –      y against x as a line; the vectors must have the same length
-  scatter        x y –      as points
-  steps          x y –      as a step function: a Kaplan-Meier curve, a cumulative count
-  bars           x h –      bars of height h at x
-  hplot          v k –      histogram of the data in v with k equal bins
-  mplot          M –        every column after the first against the first: the output of odeint, lorenzm, lifetab, km
-  fplot          a b xt –   the word x – y over [a,b], one point per pixel column; where it fails (a log of a negative number) the curve has a gap
-  hold, nohold   –          the following plots add to the figure, or start a new one (the default)
-  show           –          draw the figure again, after a change of title, legend, size or axes
-  pclear         –          forget the figure and its settings
-  -------------- ---------- ------------------------------------------------------------------------------------------------------------------------
+  -------------- ----------- -------------------------------------------------------------------------------------------------------------------------
+  plot           x y --      y against x as a line; the vectors must have the same length
+  scatter        x y --      as points
+  steps          x y --      as a step function: a Kaplan-Meier curve, a cumulative count
+  bars           x h --      bars of height h at x
+  hplot          v k --      histogram of the data in v with k equal bins
+  mplot          M --        every column after the first against the first: the output of odeint, lorenzm, lifetab, km
+  fplot          a b xt --   the word x -- y over [a,b], one point per pixel column; where it fails (a log of a negative number) the curve has a gap
+  hold, nohold   --          the following plots add to the figure, or start a new one (the default)
+  show           --          draw the figure again, after a change of title, legend, size or axes
+  pclear         --          forget the figure and its settings
+  -------------- ----------- -------------------------------------------------------------------------------------------------------------------------
 
     "gompertz" [0.0001 0.09] setlaw
     0 1 100 rrange dup surv "S(x)" pylabel "age" pxlabel pgrid plot
@@ -1173,16 +1174,16 @@ with ticks at round numbers.
 11.2  Decoration and axes
 -------------------------
 
-  -------------------------- ---------- --------------------------------------------------------------------------------------------------
-  ptitle, pxlabel, pylabel   "s" –      title and axis labels
-  plegend                    "s" –      names of the series, comma-separated, in the order drawn (fplot names its series after the word)
-  pxlog, pylog, plin         –          logarithmic axes with decade ticks (values  ≤ 0 are left out); linear again
-  pgrid                      –          toggle a grid at the ticks
-  pxrange, pyrange           a b –      fix an axis instead of fitting it to the data; pauto fits again
-  psize                      w h –      the plot area in cells and rows; 0 0 follows the terminal
-  psvg                       "file" –   write the figure as SVG, 640 × 400, vector lines, every series, the legend and the labels
-  ptxt                       "file" –   write the last drawing as text
-  -------------------------- ---------- --------------------------------------------------------------------------------------------------
+  -------------------------- ----------- --------------------------------------------------------------------------------------------------
+  ptitle, pxlabel, pylabel   "s" --      title and axis labels
+  plegend                    "s" --      names of the series, comma-separated, in the order drawn (fplot names its series after the word)
+  pxlog, pylog, plin         --          logarithmic axes with decade ticks (values  ≤ 0 are left out); linear again
+  pgrid                      --          toggle a grid at the ticks
+  pxrange, pyrange           a b --      fix an axis instead of fitting it to the data; pauto fits again
+  psize                      w h --      the plot area in cells and rows; 0 0 follows the terminal
+  psvg                       "file" --   write the figure as SVG, 640 × 400, vector lines, every series, the legend and the labels
+  ptxt                       "file" --   write the last drawing as text
+  -------------------------- ----------- --------------------------------------------------------------------------------------------------
 
 The settings persist until pclear, so pylog pgrid once serves every plot of a session.
 In a pipeline, or with the output redirected, the drawing has no colour; the SVG always
@@ -1212,15 +1213,15 @@ Some figures that come for free from the other modules:
 12  STRINGS
 ========================================================================================
 
-  ---------- ------------------- ----------------------------------------
-  scon       s1 s2 – s1s2        concatenate
-  substr     s start end – sub   substring, 0-based, end exclusive
-  slen       s – n               length in bytes
-  s2u, s2l   s – s               upper and lower case
-  srev       s – s               reverse
-  int2str    x – s               integer part of x as a string
-  eval       s –                 evaluate the string as a line of input
-  ---------- ------------------- ----------------------------------------
+  ---------- -------------------- ----------------------------------------
+  scon       s1 s2 -- s1s2        concatenate
+  substr     s start end -- sub   substring, 0-based, end exclusive
+  slen       s -- n               length in bytes
+  s2u, s2l   s -- s               upper and lower case
+  srev       s -- s               reverse
+  int2str    x -- s               integer part of x as a string
+  eval       s --                 evaluate the string as a line of input
+  ---------- -------------------- ----------------------------------------
 
     "abcdef" 1 3 substr        \ "bc"
     "foo" "bar" scon s2u       \ "FOOBAR"
@@ -1350,19 +1351,19 @@ command—and treat it as a map x ↦ f(x): the function is called with x on
 must leave exactly one real number. An error inside the function aborts the method, and
 the stack is restored.
 
-  ------------- -------------- --------------------------------------------------------------------
-  integrate     a b xt – I     ∫_(a)^(b)f by tanh–sinh quadrature with adaptive bisection
-  romberg       a b xt – I     ∫_(a)^(b)f by Romberg extrapolation
-  fzero         a b xt – x     root in a bracket [a,b] where f changes sign (Brent)
-  solve         g xt – x       root near one guess g (HP-15C style: expand a bracket, then Brent)
-  minimize      a b xt – x     argument of the minimum of f on [a,b] (Brent)
-  deriv         x xt – f’(x)   derivative by Ridders’ extrapolation
-  fsum, fprod   lo hi xt – S   ∑f(i) or ∏f(i) over the integers lo..hi
-  exec          xt –           run the token
-  tol           x –            set the tolerance, relative to max (1,|result|); default 10⁻¹⁰
-  nevals        – n            function evaluations used by the last call
-  interr        – e            error estimate of the last integrate
-  ------------- -------------- --------------------------------------------------------------------
+  ------------- --------------- --------------------------------------------------------------------
+  integrate     a b xt -- I     ∫_(a)^(b)f by tanh–sinh quadrature with adaptive bisection
+  romberg       a b xt -- I     ∫_(a)^(b)f by Romberg extrapolation
+  fzero         a b xt -- x     root in a bracket [a,b] where f changes sign (Brent)
+  solve         g xt -- x       root near one guess g (HP-15C style: expand a bracket, then Brent)
+  minimize      a b xt -- x     argument of the minimum of f on [a,b] (Brent)
+  deriv         x xt -- f’(x)   derivative by Ridders’ extrapolation
+  fsum, fprod   lo hi xt -- S   ∑f(i) or ∏f(i) over the integers lo..hi
+  exec          xt --           run the token
+  tol           x --            set the tolerance, relative to max (1,|result|); default 10⁻¹⁰
+  nevals        -- n            function evaluations used by the last call
+  interr        -- e            error estimate of the last integrate
+  ------------- --------------- --------------------------------------------------------------------
 
     12 setprec
     0 2 @exp integrate              \ 6.389056098931   (e^2 - 1)
@@ -1379,6 +1380,46 @@ the stack is restored.
     1 1000 @invsq fsum              \ 1.643934566682   (pi^2/6 - 1/1000 + ...)
     3 @par exec                     \ 1
 
+15.1  Functions of your own
+---------------------------
+
+The examples above lean on built-ins because they are short, but the function is usually
+a word of your own. Define it on a line by itself—a definition is a whole line—and then
+refer to it with @:
+
+    : f dup * 2 - ;                 \ f(x) = x^2 - 2
+    0 3 @f fzero                    \ 1.414214
+    0 3 @f integrate                \ 3
+    1 @f solve                      \ 1.414214
+    3 @f deriv                      \ 6
+
+The word takes x from the stack and must leave exactly one real: x -- f(x). For fsum and
+fprod it is called with the integer i; odeint and odesol call it with t and y
+(Section 16); sims calls it with nothing (Section 8); fplot with x (Section 11).
+help command shows this picture and an example with a word of your own for every command
+that takes an execution token.
+
+A function with a parameter.
+
+The methods pass one argument, so a function of two—a Bessel function of order n, a
+density with a scale, sin kx—needs the extra one fixed. Fix it inside the word:
+
+    : j2 2 besselj ;                \ J_2(x): besselj is x n -- Jn(x), and the word supplies n = 2
+    0 10 @j2 integrate              \ 0.980066
+    4 7 @j2 fzero                   \ 5.135622        the second zero of J_2
+    0 10 @j2 minimize               \ 6.706131
+    0 20 @j2 fplot                  \ the curve
+
+or keep it in a register, so that one word serves every value:
+
+    : jn 0 rcl besselj ;            \ J_n(x) with n in register 0
+    2 0 sto  0 10 @jn integrate     \ 0.980066
+    3 0 sto  0 10 @jn integrate     \ J_3 now
+    : k 0 rcl * sin ;               \ sin kx with k in register 0
+
+A word from a word module (Section 20) and a built-in command are referenced the same
+way (@sin, @npdf), and so is a word that takes a decimal argument and returns one.
+
 Some practical notes.
 
 -   integrate uses the tanh–sinh rule, whose nodes cluster at the endpoints; an
@@ -1391,9 +1432,6 @@ Some practical notes.
 -   fzero needs a sign change; solve needs only a guess and will grow a bracket around
     it, so it is the one to reach for interactively. Both are exact to the tolerance for
     simple roots.
-
--   A function may take parameters from registers: : f 0 rcl * sin ; integrates sin (kx)
-    with k in register 0, and 2 0 sto changes k.
 
 -   The function may be a built-in (@sin, @exp) or a word from a module as well as your
     own word. It may also be a long-running word; the limit is two million evaluations
@@ -1413,10 +1451,10 @@ The ode module integrates initial-value problems y′ = f(t,y) to the tolera
 GSL’s adaptive Runge–Kutta–Fehlberg driver of orders 4 and 5. The right-hand side is a
 word that takes t and y and leaves y′:
 
-  -------- ------------------- --------------------------------------------------------------------------------------------
-  odeint   y0 t0 t1 n xt – M   the trajectory at n + 1 equally spaced times: t in the first column, the state in the rest
-  odesol   y0 t0 t1 xt – y     the state at t₁ only
-  -------- ------------------- --------------------------------------------------------------------------------------------
+  -------- -------------------- --------------------------------------------------------------------------------------------
+  odeint   y0 t0 t1 n xt -- M   the trajectory at n + 1 equally spaced times: t in the first column, the state in the rest
+  odesol   y0 t0 t1 xt -- y     the state at t₁ only
+  -------- -------------------- --------------------------------------------------------------------------------------------
 
     : f swap drop chs ;          \ y' = -y   (t is dropped)
     1 0 2 4 @f odeint pm
@@ -1446,20 +1484,20 @@ the t reached; nevals reports the evaluations of the last call.
 Dates are strings in the form d.m.yyyy; leading zeros are optional on input and present
 on output ("1.2.2025" and "01.02.2025" are the same date). Times are strings HH:MM.
 
-  ----------------- -------------------------- ---------------------------------------------------
-  today             – date                     today’s date
-  now               – time                     current local time
-  dateplus          date n – date              n days later (n may be negative)
-  ddays             d1 d2 – n                  days from d1 to d2
-  dow               date – name                weekday name
-  edmy              date – y m d               split into year, month, day
-  num2date          d m y – date               build a date
-  days2eoy          date – n                   days from the date to the end of its year
-  tz_offset         date zone – h              UTC offset in hours of an IANA zone on that date
-  sunrise, sunset   date lat lon zone – time   local sunrise and sunset
-  dawn, dusk        date lat lon zone – time   civil dawn and dusk (sun 6^(∘) below the horizon)
-  workdays …                                   workdays and holidays, Section 17.1
-  ----------------- -------------------------- ---------------------------------------------------
+  ----------------- --------------------------- ---------------------------------------------------
+  today             -- date                     today’s date
+  now               -- time                     current local time
+  dateplus          date n -- date              n days later (n may be negative)
+  ddays             d1 d2 -- n                  days from d1 to d2
+  dow               date -- name                weekday name
+  edmy              date -- y m d               split into year, month, day
+  num2date          d m y -- date               build a date
+  days2eoy          date -- n                   days from the date to the end of its year
+  tz_offset         date zone -- h              UTC offset in hours of an IANA zone on that date
+  sunrise, sunset   date lat lon zone -- time   local sunrise and sunset
+  dawn, dusk        date lat lon zone -- time   civil dawn and dusk (sun 6^(∘) below the horizon)
+  workdays …                                    workdays and holidays, Section 17.1
+  ----------------- --------------------------- ---------------------------------------------------
 
     "1.1.2025" 30 dateplus         \ "31.01.2025"
     "1.1.2025" "31.12.2025" ddays  \ 364
@@ -1488,17 +1526,17 @@ dates module keeps for the session. These words take dates as strings "d.m.yyyy"
 numbers YYYYMMDD, like the finance words, and follow Excel’s conventions so that the
 results can be checked against a spreadsheet.
 
-  ------------- ---------------- -------------------------------------------------------------------------------------------------------------------------------------------------
-  workdays      d1 d2 – n        workdays from d1 to d2, both ends inclusive (NETWORKDAYS); negative when d2 precedes d1
-  workdayplus   date n – date2   the date n workdays after date, the start day itself not counted (WORKDAY); n may be negative
-  isworkday     date – flag      for a workday
-  holidays      name – H         a calendar as a vector of YYYYMMDD: the file holidays/name.txt in the configuration directory, or the built-in rules for the years around today
-  yholidays     year name – H    the built-in rules for one year
-  sethol        H –              install a vector of dates as the calendar for this session
-  usehol        name –           install a calendar by name and remember it in config.txt
-  clrhol        –                no holidays (weekends only), and forget the name
-  hol           – H              the installed calendar
-  ------------- ---------------- -------------------------------------------------------------------------------------------------------------------------------------------------
+  ------------- ----------------- -------------------------------------------------------------------------------------------------------------------------------------------------
+  workdays      d1 d2 -- n        workdays from d1 to d2, both ends inclusive (NETWORKDAYS); negative when d2 precedes d1
+  workdayplus   date n -- date2   the date n workdays after date, the start day itself not counted (WORKDAY); n may be negative
+  isworkday     date -- flag      for a workday
+  holidays      name -- H         a calendar as a vector of YYYYMMDD: the file holidays/name.txt in the configuration directory, or the built-in rules for the years around today
+  yholidays     year name -- H    the built-in rules for one year
+  sethol        H --              install a vector of dates as the calendar for this session
+  usehol        name --           install a calendar by name and remember it in config.txt
+  clrhol        --                no holidays (weekends only), and forget the name
+  hol           -- H              the installed calendar
+  ------------- ----------------- -------------------------------------------------------------------------------------------------------------------------------------------------
 
 Until a calendar is installed only weekends are skipped:
 
@@ -1566,13 +1604,13 @@ ordinary annuity factor ((1+r)^(n)−1)/r and the equation is the 12C’s; with 
 n(1+r)^(n − 1). Store a value with the register’s name, solve for the unknown with a
 question mark:
 
-  ------------------------- ----- --------------------------------------------------------------------------
-  n i% pv pmt fv g%         x –   store into the register
-  ?n ?i% ?pv ?pmt ?fv ?g%   – x   solve for that register from the others; the result is stored and pushed
-  beg, end                  –     payments at the beginning or the end of the period
-  clrtvm                    –     clear the registers (g% to 0) and select end
-  tvm                       –     show the registers
-  ------------------------- ----- --------------------------------------------------------------------------
+  ------------------------- ------ --------------------------------------------------------------------------
+  n i% pv pmt fv g%         x --   store into the register
+  ?n ?i% ?pv ?pmt ?fv ?g%   -- x   solve for that register from the others; the result is stored and pushed
+  beg, end                  --     payments at the beginning or the end of the period
+  clrtvm                    --     clear the registers (g% to 0) and select end
+  tvm                       --     show the registers
+  ------------------------- ------ --------------------------------------------------------------------------
 
     2 setprec
     clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt      \ -1798.65   30-year mortgage at 6%
@@ -1627,10 +1665,10 @@ the amounts in the first column and the repeat counts in the second; the shape d
 so [1 2 $ 1000 100] is one hundred payments of 1000 and two single flows are the column
 [2 1 $ 1000 100].
 
-  ----- ------------- ----------------------------------------------
-  npv   cf rate – x   net present value at rate percent per period
-  irr   cf – x        internal rate of return, percent per period
-  ----- ------------- ----------------------------------------------
+  ----- -------------- ----------------------------------------------
+  npv   cf rate -- x   net present value at rate percent per period
+  irr   cf -- x        internal rate of return, percent per period
+  ----- -------------- ----------------------------------------------
 
     [5 1 $ -5000 1500 1500 1500 1500] 8 npv     \ -31.81    not worth it at 8%
     [5 1 $ -5000 1500 1500 1500 1500] irr       \ 7.71
@@ -1644,13 +1682,13 @@ business calculator.
 18.4  Interest-rate conversions and depreciation
 ------------------------------------------------
 
-  --------- ----------------------------------- -------------------------------------------------------------------------------------------
-  nom>eff   nom m – eff                         nominal annual rate compounded m times a year to the effective annual rate
-  eff>nom   eff m – nom                         the inverse
-  sl        cost salvage life – d               straight-line depreciation per period
-  soyd      cost salvage life year – d          sum-of-the-years’-digits depreciation in year
-  db        cost salvage life year factor – d   declining-balance depreciation in year; factor 2 is double-declining; never below salvage
-  --------- ----------------------------------- -------------------------------------------------------------------------------------------
+  --------- ------------------------------------ -------------------------------------------------------------------------------------------
+  nom>eff   nom m -- eff                         nominal annual rate compounded m times a year to the effective annual rate
+  eff>nom   eff m -- nom                         the inverse
+  sl        cost salvage life -- d               straight-line depreciation per period
+  soyd      cost salvage life year -- d          sum-of-the-years’-digits depreciation in year
+  db        cost salvage life year factor -- d   declining-balance depreciation in year; factor 2 is double-declining; never below salvage
+  --------- ------------------------------------ -------------------------------------------------------------------------------------------
 
     6 12 nom>eff            \ 6.17   6% monthly is 6.17% effective
     6 365 nom>eff           \ 6.18
@@ -1683,12 +1721,12 @@ basis:
    4  30E/360 (European)
   --- ----------------------
 
-  ---------- --------------------------------------------------- --------------------------------------------
-  xprice     settle maturity cpn yld redeem freq basis – price   clean price per 100
-  xyield     settle maturity cpn price redeem freq basis – yld   annual yield from the clean price
-  xaccr      settle maturity cpn freq basis – accrued            accrued interest per 100 at settlement
-  yearfrac   d1 d2 basis – f                                     year fraction between two dates on a basis
-  ---------- --------------------------------------------------- --------------------------------------------
+  ---------- ---------------------------------------------------- --------------------------------------------
+  xprice     settle maturity cpn yld redeem freq basis -- price   clean price per 100
+  xyield     settle maturity cpn price redeem freq basis -- yld   annual yield from the clean price
+  xaccr      settle maturity cpn freq basis -- accrued            accrued interest per 100 at settlement
+  yearfrac   d1 d2 basis -- f                                     year fraction between two dates on a basis
+  ---------- ---------------------------------------------------- --------------------------------------------
 
     4 setprec
     20080215 20171115 5.75 6.5 100 2 0 xprice        \ 94.6344   (Excel's PRICE example)
@@ -1784,7 +1822,7 @@ user would call a feature is a module alongside it. modules shows what is plugge
 
     MM-41>> modules
     module       version  words  summary
-    core         2.1         89  arithmetic, functions, logic, the stack, words and the session
+    core         2.1.1       89  arithmetic, functions, logic, the stack, words and the session
     decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
     finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
     complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -1949,11 +1987,11 @@ a half result:
   -p                print the top of the stack plainly at the end (implies -q)
   -x                stop at the first error
   -n                do not load the saved words, the modules in the config directory, or the configuration
-  –                 end of options: what follows is a script and its arguments
-  –modules          list the built-in modules and exit
-  –commands         print the command reference as Markdown
-  –commands-tex     the same as LaTeX tables (used to build this manual)
-  –version, -h      version; usage
+  --                end of options: what follows is a script and its arguments
+  --modules         list the built-in modules and exit
+  --commands        print the command reference as Markdown
+  --commands-tex    the same as LaTeX tables (used to build this manual)
+  --version, -h     version; usage
   ----------------- ----------------------------------------------------------------------------------------
 
 Exit status: 0 on success, 1 if any error was reported (or the status given to exit), 2
@@ -2020,7 +2058,7 @@ any other command.
 24  COMMAND REFERENCE
 ========================================================================================
 
-Generated from the dispatch table by mm41 –commands-tex; the same information is
+Generated from the dispatch table by mm41 --commands-tex; the same information is
 available at run time from listfcns and "name" usage. Stack pictures read deepest-first.
 
 The command reference is in COMMANDS.md and at the prompt: help <name>.
@@ -2070,9 +2108,9 @@ modules, the rest of the special functions and the const word module; 1.4.1 the
 bare-name line forms use const, usehol us; 1.5 the g% register for growing payments; 1.6
 the display skins; 1.7 the survival and income modules and the bracket-only matrix
 literal; 1.8 reading tables from files and fitting published life tables and income
-shares; 1.9 the manual at the prompt; 2.0 graphs; 2.1 scripts from the shell. Every
-MM-15 command, word and program runs unchanged, with one exception noted below. What is
-different:
+shares; 1.9 the manual at the prompt; 2.0 graphs; 2.1 scripts from the shell; 2.1.1 help
+with your own words. Every MM-15 command, word and program runs unchanged, with one
+exception noted below. What is different:
 
 -   The binary is mm41, the configuration directory ~/.config/mm41/. Copy
     user_words.txt, registers.txt and config.txt across from mm_15 if you want them.
@@ -2081,7 +2119,7 @@ different:
     the old file is not read. Your own additions belong in user_words.txt or in a module
     of your own.
 
--   New commands: modules, use, unuse, load; the option –modules; make MODULES=... and
+-   New commands: modules, use, unuse, load; the option --modules; make MODULES=... and
     make shared-module.
 
 -   listfcns, "name" usage and the generated reference name the module a command comes

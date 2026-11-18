@@ -1,5 +1,5 @@
 module       version  words  summary
-core         2.1         89  arithmetic, functions, logic, the stack, words and the session
+core         2.1.1       89  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -37,10 +37,18 @@ programs     1.0          1  HP-41 style programs with labels, jumps and subrout
     takes 3 items (the last one named is on top):
       a          a real number
       b          a real number
-      xt         an execution token: @word or @command (see the numerics module)
+      xt         an execution token: @word or @command, for a word of your own as much as a built-in (help numerics)
     leaves 1 item:
-      I          a matrix
+      I          a real number, the integral
     example:  0 pi @sin integrate
+    with a word of your own (define it on its own line, then use @name):
+      the word is  x -- f(x)
+      : f dup * 2 - ;   0 3 @f integrate
+      -> 3   (x^2 - 2 over [0, 3])
+    a function with a parameter: fix the parameter inside the word (besselj is x n -- Jn(x); here n = 2)
+      : j2 2 besselj ;   0 10 @j2 integrate     -> 0.980066
+      2 0 sto   : jn 0 rcl besselj ;             the same with n in register 0; 3 0 sto changes it
+    a word from a word module or a built-in command works the same way: @sin, @npdf
     see also: exec romberg fzero solve minimize deriv fsum fprod tol nevals interr 
 
 {}

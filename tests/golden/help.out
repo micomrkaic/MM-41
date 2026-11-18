@@ -123,6 +123,136 @@ the same: use const, usehol us. Anything longer is evaluated as written.
 Manual: chapter Entering data.
 
 
+[1mnumerics[0m
+The numerical methods take a function as an execution token: @name, for a word or a command.
+  a b @f integrate     a b @f romberg      a b @f fzero       x @f solve
+  a b @f minimize      x @f deriv          lo hi @f fsum      lo hi @f fprod     @f exec
+The function is usually a word of your own, defined on its own line; it takes x from the
+stack and leaves f(x):   : f dup * 2 - ;   0 3 @f fzero  -> 1.414214     0 3 @f integrate  -> 3
+A function with a parameter: fix the parameter inside the word, or keep it in a register.
+  : j2 2 besselj ;   0 10 @j2 integrate  -> 0.980066      (besselj is x n -- Jn(x); n fixed at 2)
+  2 0 sto   : jn 0 rcl besselj ;   0 10 @jn integrate       (n in register 0; 3 0 sto changes it)
+  : k 0 rcl * sin ;   0 pi @k integrate                   (sin kx with k in register 0)
+Built-ins and words from word modules work the same way: @sin, @exp, @npdf. fsum and fprod
+call the word with the integer i; odeint and odesol with t y (help odeint); sims with nothing.
+help <command> shows an example with a word of your own for every command that takes @f.
+x tol sets the tolerance (kept in config.txt); nevals and interr report the last call.
+Manual: chapter Numerical methods.
+
+
+[1mmodule numerics 1.0[0m   integration, roots, minima, derivatives and sums over any word
+    exec         xt --                              run an execution token (@name pushes one)
+    integrate    a b xt -- I                        integral of f over [a,b] (tanh-sinh with adaptive bisection; handles endpoint singularities)
+    romberg      a b xt -- I                        integral of f over [a,b] by Romberg extrapolation
+    fzero        a b xt -- x                        root of f in the bracket [a,b] where f changes sign (Brent)
+    solve        guess xt -- x                      root of f near one guess (bracket search, then Brent)
+    minimize     a b xt -- x                        argument of the minimum of f in [a,b] (Brent)
+    deriv        x xt -- f'(x)                      derivative of f at x (Ridders extrapolation)
+    fsum         lo hi xt -- S                      sum of f(i) for integer i from lo to hi
+    fprod        lo hi xt -- P                      product of f(i) for integer i from lo to hi
+    tol          x --                               set the convergence tolerance (default 1e-10)
+    nevals       -- n                               function evaluations used by the last numerical call
+    interr       -- e                               error estimate of the last integrate
+    'help <name>' for any of them
+
+
+[1mintegrate[0m   a b xt -- I   [module numerics, Numerics]
+    integral of f over [a,b] (tanh-sinh with adaptive bisection; handles endpoint singularities)
+    takes 3 items (the last one named is on top):
+      a          a real number
+      b          a real number
+      xt         an execution token: @word or @command, for a word of your own as much as a built-in (help numerics)
+    leaves 1 item:
+      I          a real number, the integral
+    example:  0 pi @sin integrate
+    with a word of your own (define it on its own line, then use @name):
+      the word is  x -- f(x)
+      : f dup * 2 - ;   0 3 @f integrate
+      -> 3   (x^2 - 2 over [0, 3])
+    a function with a parameter: fix the parameter inside the word (besselj is x n -- Jn(x); here n = 2)
+      : j2 2 besselj ;   0 10 @j2 integrate     -> 0.980066
+      2 0 sto   : jn 0 rcl besselj ;             the same with n in register 0; 3 0 sto changes it
+    a word from a word module or a built-in command works the same way: @sin, @npdf
+    see also: exec romberg fzero solve minimize deriv fsum fprod tol nevals interr 
+
+
+[1mfzero[0m   a b xt -- x   [module numerics, Numerics]
+    root of f in the bracket [a,b] where f changes sign (Brent)
+    takes 3 items (the last one named is on top):
+      a          a real number
+      b          a real number
+      xt         an execution token: @word or @command, for a word of your own as much as a built-in (help numerics)
+    leaves 1 item:
+      x          a number: real, or complex, decimal or matrix where allowed
+    example:  2 4 @sin fzero
+    with a word of your own (define it on its own line, then use @name):
+      the word is  x -- f(x)
+      : f dup * 2 - ;   0 3 @f fzero
+      -> 1.414214
+    a function with a parameter: fix the parameter inside the word (besselj is x n -- Jn(x); here n = 2)
+      : j2 2 besselj ;   4 7 @j2 fzero          -> 5.135622   (the second zero of J2)
+      2 0 sto   : jn 0 rcl besselj ;             the same with n in register 0; 3 0 sto changes it
+    a word from a word module or a built-in command works the same way: @sin, @npdf
+    see also: exec integrate romberg solve minimize deriv fsum fprod tol nevals interr 
+
+
+[1msims[0m   n xt -- v   [module random, Random]
+    run a word n times, collecting the one real it leaves each time ( -- x ) into a column
+    takes 2 items (the last one named is on top):
+      n          a whole number (real or decimal)
+      xt         an execution token: @word or @command, for a word of your own as much as a built-in (help numerics)
+    leaves 1 item:
+      v          a vector: an N x 1 or 1 x N real matrix
+    example:  : pnl 0 1 rnorm 100 * ; 10000 @pnl sims mcstats
+    with a word of your own (define it on its own line, then use @name):
+      the word is  -- x
+      : coin 0 1 runif 0 round ;   1000 @coin sims mean
+      -> about 0.5   (the share of heads)
+    a parameter the word needs: fix it inside the word or keep it in a register (help numerics)
+    a word from a word module or a built-in command works the same way: @sin, @npdf
+    see also: seed rnorm runif rpois rexp normrnd unifrnd poisrnd binomrnd exprnd trnd chi2rnd 
+              resample shuffle mcstats 
+
+
+[1modesol[0m   y0 t0 t1 xt -- y   [module ode, Differential equations]
+    the state at t1 only
+    takes 4 items (the last one named is on top):
+      y0         the initial state: a real, or a row vector for a system
+      t0         a real number, the start
+      t1         a real number, the end
+      xt         an execution token: @word or @command, for a word of your own as much as a built-in (help numerics)
+    leaves 1 item:
+      y          a number: real, or complex, decimal or matrix where allowed
+    example:  : f swap drop chs ; 1 0 1 @f odesol
+    with a word of your own (define it on its own line, then use @name):
+      the word is  t y -- y'
+      : lg swap drop dup 1 swap - * ;   0.1 0 5 @lg odesol
+      -> 0.942826   (the logistic curve at t = 5)
+    a parameter the word needs: fix it inside the word or keep it in a register (help numerics)
+    a word from a word module or a built-in command works the same way: @sin, @npdf
+    see also: odeint 
+
+
+[1mfplot[0m   a b xt --   [module plot, Plot]
+    draw the word (x -- y) over [a, b], one point per pixel column; points where it fails are left out
+    takes 3 items (the last one named is on top):
+      a          a real number
+      b          a real number
+      xt         an execution token: @word or @command, for a word of your own as much as a built-in (help numerics)
+    leaves nothing
+    example:  0 10 @sin fplot
+    with a word of your own (define it on its own line, then use @name):
+      the word is  x -- y
+      : f dup * 2 - ;   -2 2 @f fplot
+      -> the parabola, drawn
+    a function with a parameter: fix the parameter inside the word (besselj is x n -- Jn(x); here n = 2)
+      : j2 2 besselj ;   0 20 @j2 fplot         -> J2 over [0, 20], drawn
+      2 0 sto   : jn 0 rcl besselj ;             the same with n in register 0; 3 0 sto changes it
+    a word from a word module or a built-in command works the same way: @sin, @npdf
+    see also: plot scatter steps bars hplot mplot hold nohold show pclear ptitle pxlabel 
+              pylabel plegend pxlog pylog plin pgrid pxrange pyrange pauto psize psvg ptxt 
+
+
 commands mentioning "holiday":
     workdays     d1 d2 -- n                         workdays from d1 to d2, both inclusive (Excel NETWORKDAYS): Mondays to Fridays not in the holiday calendar; negative if d2 < d1
     isworkday    date -- flag                       1 if the date is a Monday to Friday and not a holiday

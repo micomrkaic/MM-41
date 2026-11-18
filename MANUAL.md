@@ -171,7 +171,11 @@ script from stdin; `n exit` sets the status; `"NAME" env`. Exit status 0 / 1 (an
 
 `a b @f integrate` · `a b @f romberg` · `a b @f fzero` · `g @f solve` ·
 `a b @f minimize` · `x @f deriv` · `lo hi @f fsum` / `fprod` · `@f exec` ·
-`x tol` · `nevals` · `interr`. The function takes x and must leave one real.
+`x tol` · `nevals` · `interr`. The function takes x and must leave one real;
+it is usually a word of your own, defined on its own line: `: f dup * 2 - ;`
+then `0 3 @f fzero`. A parameter is fixed inside the word (`: j2 2 besselj ;`
+then `0 10 @j2 integrate`) or kept in a register (`: jn 0 rcl besselj ;`).
+`help integrate` (any command taking `@f`) shows an example with your own word.
 
 ## Programs and batch
 
