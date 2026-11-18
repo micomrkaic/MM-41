@@ -28,7 +28,7 @@ MM-41>> 2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
 [5] 𝔻 : -1798.65
 MM-41>> modules
 module       version  words  summary
-core         2.1.1       89  arithmetic, functions, logic, the stack, words and the session
+core         2.2         91  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -159,6 +159,14 @@ loads. `"name" usage` tells you which module a command comes from.
 - **HP-41 style programs** from files (`LBL`, `GOTO`, `GOSUB`, `RTN`, tests).
 - **Batch mode**: `-e EXPR`, `-f FILE`, or piped stdin; exit status 1 on any
   error.
+
+## Learning it
+
+`tutor` at the prompt opens a fifteen-chapter tour you type along with, in
+the manner of vimtutor: a passage, a line to type, and the tutor moves on
+when your stack shows what the lesson expects. `examples 7` (or `examples
+finance`) prints a chapter as a cookbook with every result; `help <name>`
+describes any command; `manual <chapter>` opens the manual in the pager.
 
 ## A taste
 

@@ -44,6 +44,7 @@
 #include "eggs.h"
 #include "help.h"
 #include "manual.h"              // for help_topic
+#include "tutor.h"
 #include "ops.h"               // for print_ops_markdown
 #include "globals.h"           // for CONFIG_PATH, HISTORY_PATH, completed_...
 #include "print_fun.h"         // for print_stack
@@ -197,6 +198,7 @@ static const char *bare_name_form(const char *line, char *out, size_t cap) {
 
 /* One line of input, shared by the REPL and batch mode. Returns false on "q". */
 static bool handle_line(Stack *stack, Stack *old_stack, char *line) {
+  if (tutor_command(line, stack)) return true;   /* in a lesson: skip back again q */
   if (strcmp(line, "q") == 0) return false;
 
   if (line[0] == '!') {
@@ -220,6 +222,8 @@ static bool handle_line(Stack *stack, Stack *old_stack, char *line) {
     while (*p == ' ' || *p == '\t') p++;
     if (!strncmp(p, "help", 4) && (p[4] == ' ' || p[4] == '\t')) { help_topic(p + 4); return true; }
     if (!strncmp(p, "manual", 6) && (p[6] == ' ' || p[6] == '\t')) { manual_open(p + 6); return true; }
+    if (!strncmp(p, "tutor", 5) && (p[5] == ' ' || p[5] == '\t' || p[5] == '\0')) { tutor_line(p + 5, stack); return true; }
+    if (!strncmp(p, "examples", 8) && (p[8] == ' ' || p[8] == '\t' || p[8] == '\0')) { examples_line(p + 8); return true; }
   }
 
   if (egg_line(line)) return true;
@@ -240,6 +244,13 @@ static bool handle_line(Stack *stack, Stack *old_stack, char *line) {
   return true;
 }
 
+/* For --tutor-check: a line through the REPL's handler, with a throwaway undo stack. */
+static bool check_line(Stack *stack, char *line) {
+  static Stack old; static bool ready;
+  if (!ready) { init_stack(&old); ready = true; }
+  return handle_line(stack, &old, line);
+}
+
 int repl(void) {
   Stack stack, old_stack;
   splash_screen();
@@ -250,7 +261,8 @@ int repl(void) {
   rl_attempted_completion_function = function_name_completion;
 
   while (1) {
-    char *line = readline(decimal_mode ? "MM-41[dec]>> " : "MM-41>> ");
+    const char *tp = tutor_prompt();
+    char *line = readline(tp ? tp : decimal_mode ? "MM-41[dec]>> " : "MM-41>> ");
     if (!line) { putchar('\n'); break; }
     if (*line) add_history(line);
     bool go_on = handle_line(&stack, &old_stack, line);
@@ -261,6 +273,7 @@ int repl(void) {
     else if (!skip_stack_printing)
       print_stack_display(&stack);
     skip_stack_printing = false;
+    tutor_after(&stack);
   }
 
   write_history(HISTORY_PATH);
@@ -282,6 +295,7 @@ static int run_lines_from(Stack *stack, Stack *old_stack, FILE *f) {
     go_on = handle_line(stack, old_stack, line);
     skip_stack_printing = false;
     completed_batch = false;
+    if (go_on) tutor_after(stack);
   }
   free(line);
   return go_on;
@@ -290,7 +304,7 @@ static int run_lines_from(Stack *stack, Stack *old_stack, FILE *f) {
 static void usage_text(FILE *f) {
   fprintf(f,
     "usage: mm41 [-n] [-q] [-p] [-x] [-e EXPR]... [-f FILE]... [SCRIPT [ARG]...]\n"
-    "       mm41 --modules | --commands | --commands-tex | --version | -h\n"
+    "       mm41 --modules | --commands | --commands-tex | --tutor-check | --version | -h\n"
     "\n"
     "  (no args)   interactive calculator (reads stdin when it is not a terminal)\n"
     "  -e EXPR     evaluate EXPR as one line; may be repeated\n"
@@ -325,6 +339,14 @@ int main(int argc, char **argv) {
     if (!strcmp(a, "--commands-tex")) { load_modules(); print_ops_latex(); return 0; }
     if (!strcmp(a, "--modules")) { load_modules(); list_modules(); return 0; }
     if (!strcmp(a, "--version")) { printf("MM-41 %s (%s)\n", MM41_VERSION, VERSION); return 0; }
+    if (!strcmp(a, "--tutor-check")) {            /* every lesson against a fresh stack */
+      Stack s1, s2; autoload = false; batch_mode = true;
+      global_rng = gsl_rng_alloc(gsl_rng_mt19937);
+      startup(&s1, &s2);
+      if (access("data/modules/std.mm", R_OK) == 0) use_word_module("data/modules/std.mm");    /* what a session autoloads */
+      if (access("data/modules/const.mm", R_OK) == 0) use_word_module("data/modules/const.mm");
+      int bad = tutor_self_check(check_line); shutdown(&s1, &s2); gsl_rng_free(global_rng); return bad;
+    }
     if (!strcmp(a, "-n")) { autoload = false; continue; }
     if (!strcmp(a, "-q")) { quiet_mode = true; continue; }
     if (!strcmp(a, "-p")) { print_top_mode = true; quiet_mode = true; continue; }

@@ -19,6 +19,7 @@
 #include "errors.h"
 #include "globals.h"
 #include "skins.h"
+#include "tutor.h"
 #include "decimal.h"
 
 bool fixed_point = true;
@@ -119,6 +120,7 @@ void save_config(const char* filename) {
   fprintf(f, "number_mode = %s\n", decimal_mode ? "decimal" : "binary");
   if (holiday_calendar[0]) fprintf(f, "holidays = %s\n", holiday_calendar);
   if (skin != SKIN_PLAIN) fprintf(f, "skin = %s\n", skin_name(skin));
+  if (tutor_progress[0]) fprintf(f, "tutor = %s\n", tutor_progress);
 
   fclose(f);
 }
@@ -164,6 +166,8 @@ int load_config(const char* filename) {
       decimal_mode = strcmp(value, "decimal") == 0;
     } else if (strcmp(key, "holidays") == 0) {
       snprintf(holiday_calendar, sizeof holiday_calendar, "%s", value);
+    } else if (strcmp(key, "tutor") == 0) {
+      snprintf(tutor_progress, sizeof tutor_progress, "%s", value);
     } else if (strcmp(key, "skin") == 0) {
       int k = skin_from_name(value);
       if (k >= 0) skin = k;

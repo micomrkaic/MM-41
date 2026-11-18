@@ -1,0 +1,26 @@
+# the tutorial: a book of lessons checked against the stack, and the same book as a cookbook
+tutor list
+examples 1
+examples nosuch
+tutor 3
+: hyp dup * swap dup * + sqrt ;
+3 4 hyp
+again
+5 6 hyp
+retry
+3 4 hyp
+skip
+clst 20 fac
+back
+skip
+skip
+skip
+skip
+skip
+skip
+q
+tutor
+tutor help
+tutor reset
+examples 15
+depth

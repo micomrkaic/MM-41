@@ -1,4 +1,4 @@
-.TH MM41 1 "November 2026" "MM-41 2.1.1" "User Commands"
+.TH MM41 1 "November 2026" "MM-41 2.2" "User Commands"
 .SH NAME
 mm41 \- programmable RPN calculator for real, complex and decimal scalars, strings and matrices
 .SH SYNOPSIS
@@ -343,6 +343,23 @@ loads one, as does placing it in
 .B make shared-module DIR=...
 builds one (see
 .IR examples/modules/hello ).
+.SS The tutorial
+.B tutor
+opens a book of fifteen short chapters you type along with: each step shows a
+passage and a line to type, and the tutor moves on when the stack shows what the
+lesson expects (skip, back, again, retry; q leaves; progress is kept in config.txt).
+.B tutor
+.I n
+or
+.B tutor finance
+opens a chapter,
+.B tutor list
+shows them.
+.B examples
+.I n
+prints a chapter as a cookbook, every line with its result;
+.B mm41 --tutor-check
+verifies the whole book against the program.
 .SS Numerical methods
 A function is any word or command mapping x on the stack to f(x), usually a
 word of your own defined on a line of its own:

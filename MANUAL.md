@@ -167,6 +167,14 @@ prints the top plainly; `-q` no final stack; `-x` stop at the first error; `-` r
 script from stdin; `n exit` sets the status; `"NAME" env`. Exit status 0 / 1 (an error) / 2
 (usage, file not found).
 
+## The tutorial
+
+`tutor` — fifteen chapters you type along with (a passage, a line to type,
+`ok` when the stack matches; `skip back again retry`, `q` leaves, progress kept
+in config.txt); `tutor 7`, `tutor finance`, `tutor list`, `tutor reset`.
+`examples 7` prints a chapter as a cookbook with every result, `examples all`
+the book. `mm41 --tutor-check` verifies every line of it.
+
 ## Numerical methods
 
 `a b @f integrate` · `a b @f romberg` · `a b @f fzero` · `g @f solve` ·

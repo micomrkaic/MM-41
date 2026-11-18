@@ -27,6 +27,7 @@
 #include "ops.h"
 #include "skins.h"
 #include "manual.h"
+#include "tutor.h"
 #include "module.h"
 #include "dec_ops.h"
 #include "decimal.h"
@@ -290,6 +291,8 @@ static int op_savewords(Stack *stack) { (void)stack; (void)(save_words_to_file()
 static int op_delword(Stack *stack) { (void)stack; (void)(delete_word(stack)); return 0; }
 static int op_clrwords(Stack *stack) { (void)stack; (void)(clear_words()); return 0; }
 static int op_manual(Stack *stack) { (void)stack; manual_open(NULL); return 0; }
+static int op_tutor(Stack *stack) { tutor_line("", stack); return 0; }
+static int op_examples(Stack *stack) { (void)stack; examples_line(""); return 0; }
 static int op_dot(Stack *stack) { print_top_plain(stack); stack_element e = pop(stack); stack_element_free(&e); return 0; }
 static int op_exit(Stack *stack) {
   double n;
@@ -404,6 +407,8 @@ static const Op core_table[] = {
   { ".", 1, op_dot, "Session", "x --", "print the top of the stack plainly and drop it: a number as a number, a string without quotes, a matrix as rows of numbers; what a script pipes on", "2 3 + ." },
   { "exit", 1, op_exit, "Session", "n --", "end a script with exit status n (0 to 255); at the prompt, quits", "0 exit" },
   { "env", 1, op_env, "Session", "\"name\" -- \"value\"", "the value of an environment variable; an error if it is not set", "\"HOME\" env" },
+  { "tutor", 0, op_tutor, "Session", "--", "the tutorial: a book of lessons you type along with; shows a passage and a line to type, checks the stack, moves on (skip, back, again, q leaves; progress is kept in config.txt). tutor <n> or tutor <title> opens a chapter, tutor list the chapters, tutor reset forgets the progress", "tutor" },
+  { "examples", 0, op_examples, "Session", "--", "the tutorial as a cookbook: examples lists the chapters, examples <n> or examples <title> prints one with every line and its result (examples all: the whole book)", "examples" },
   { "manual", 0, op_manual, "Session", "--", "open the user manual in the pager ($PAGER, less or more); at the prompt, manual <chapter>, manual 9.3 or manual <word> opens it there (n for the next match, q to return)", "manual" },
   { "usage", 1, op_usage, "Session", "\"name\" --", "show the stack picture, description and example of a command, or a word's definition", "\"sin\" usage" },
   { "listfcns", 0, op_listfcns, "Session", "--", "list all commands by category", "listfcns" },

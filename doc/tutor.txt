@@ -1,0 +1,555 @@
+;; The MM-41 tutorial. `tutor` walks through it; `examples <n>` prints a chapter.
+;;   = Title        starts a chapter
+;;   prose          is shown before the step
+;;   > line         is the line to type (optional)
+;;   ? expectation  ends the step: a number, "a string", complex, matrix, matrix RxC,
+;;                  empty, depth N, word NAME, near X D, any
+;; `mm41 --tutor-check` runs every line and checks every expectation; it is part of
+;; `make test`, so what the book says the calculator does, it does.
+
+= The stack
+MM-41 is a Reverse Polish calculator: you put numbers on a stack and then say what to
+do with them. There is no = key and there are never any parentheses. 3 + 4 is typed as
+3, then 4, then +. Type the line below and press Enter. The calculator shows the stack
+after every line, and the tutor then says whether the lesson's expectation holds.
+> 3 4 +
+? 7
+
+The 7 is still on the stack. Every result stays there, ready for the next operation, so
+a calculation is a chain: type 3 * to multiply the 7 by 3.
+> 3 *
+? 21
+
+Longer expressions need no parentheses because the stack remembers the intermediate
+results. (2 + 3) * (4 + 5) is: 2 3 + makes 5, 4 5 + makes 9, * multiplies them.
+> 2 3 + 4 5 + *
+? 45
+
+The listing shows the stack from the bottom up: [0] is the oldest item and the last line
+is the top, the most recent one. Right now there are two items, 21 and 45. dup copies
+the top, drop removes it, swap exchanges the top two. Type dup to copy the 45.
+> dup
+? depth 3
+
+Now there are three items. Remove the copy again with drop, and then swap the 21 and
+the 45.
+> drop swap
+? 21
+
+A subtraction or division takes the second item minus (or divided by) the top, in the
+order you typed them: 10 4 - is 6. Here the stack holds 45 and 21, so - gives 24.
+> -
+? 24
+
+A wrong line is never fatal: undo restores the stack as it was before the last line,
+and clst clears it entirely. Clear the stack now.
+> clst
+? empty
+
+That is all there is to RPN: numbers go on the stack, commands take their arguments
+from it and leave their result on it. Other stack words you will meet: over (copy the
+second item to the top), roll and pick (reach deeper), depth (how many items). help
+Stack lists them all.
+? any
+
+= Numbers and functions
+Functions work the same way as +: the argument goes first. pi pushes pi, sin takes the
+sine (in radians) of the top. Two inverted commas make a string, (1,2) a complex
+number, 0.1d a decimal; all three live on the same stack as numbers.
+> pi 2 / sin
+? 1
+
+Powers, roots and logarithms: 2 10 ^ is 2 to the tenth, sqrt, exp, ln and log (base 10)
+take the top. Compute 2^10.
+> 2 10 ^
+? 1024
+
+The display shows six decimals by default. 10 setprec shows ten; sfs toggles fixed and
+scientific notation. Changing the display changes nothing about the numbers. Set the
+display to 10 places and look at pi.
+> 10 setprec pi
+? 3.141592653589793
+
+Back to 6 places. The percent words keep their base on the stack, as HP calculators
+do: 200 25 % leaves 200 and 50 -- the base and 25 percent of it. %chg gives the percent
+change from the second item to the top.
+> 6 setprec clst 80 100 %chg
+? 25
+
+Combinatorics: fact, ncr (combinations), npr (permutations). How many five-card hands
+does a deck of 52 allow?
+> clst 52 5 ncr
+? 2598960
+
+A negative number has a complex square root, and the calculator says so instead of
+complaining: the result below is (0,2), the complex number 2i. Complex numbers are typed
+the same way, (3,4), and abs, arg, re, im and conj work on them.
+> -4 sqrt
+? complex
+
+Money wants decimals. In decimal mode every number you type is an exact decimal with 34
+digits and half-even rounding, so 0.1 + 0.2 is exactly 0.3, which binary doubles
+cannot say. The prompt changes to MM-41[dec]>> while the mode is on.
+> clst decimal 0.1 0.2 +
+? 0.3
+
+The finance words always compute in decimals, whatever the mode. Everything else --
+matrices, the numerical methods -- is binary, and >bin converts a decimal when you need
+one there. Leave decimal mode with binary.
+> binary clst
+? empty
+
+help <name> describes any command with its stack picture and an example, which it also
+runs: try help ncr. help alone is the quick-start screen, and help <text> searches:
+help bessel finds the Bessel functions, help percent the percent words.
+? any
+
+= Your own words
+A word is a command you define, Forth style: a colon, the name, the body, a semicolon,
+all on one line. Once defined it is used like any built-in. Define hyp, the hypotenuse
+of the two numbers on the stack: square each, add, take the root.
+> : hyp dup * swap dup * + sqrt ;
+? word hyp
+
+Now use it.
+> 3 4 hyp
+? 5
+
+The body may use the stack freely and call other words, including itself. A recursive
+factorial: if the top is greater than 1, multiply by the factorial of one less.
+> : fac dup 1 gt if dup 1 - fac * then ;
+? word fac
+
+Twenty factorial.
+> clst 20 fac
+? 2432902008176640000
+
+if ... then and if ... else ... then test the top of the stack (0 is false), and
+begin ... until, begin ... while ... repeat and limit start do ... loop give you
+loops with i as the index. This word sums the integers from 1 to n with a do loop.
+> : sumto 0 swap 1 + 1 do i + loop ;
+? word sumto
+
+The sum of 1 to 100.
+> clst 100 sumto
+? 5050
+
+A word that merely names a constant is a word too, and a handy one: the const module
+shipped with MM-41 is nothing but such words (c, h, G, kB, qe, NA ...), and the std
+module has sq, cube, pctchg, f2c, c2f and friends. listmacros shows the words that
+came from modules, listwords your own.
+> listwords
+? any
+
+Your words vanish when you quit unless you save them: savewords writes them to
+user_words.txt in the config directory, which is loaded at startup. "hyp" delword
+removes one, clrwords all of them. A whole family of related words belongs in a word
+module: a text file name.mm in ~/.config/mm41/modules/, one word per line, loaded with
+use name. help modules explains the format.
+? any
+
+= Registers and strings
+There are 64 registers, numbered 0 to 63, which hold anything a stack item can hold.
+x n sto stores x in register n; n rcl pushes a copy. Store 2.5 in register 0.
+> clst 2.5 0 sto
+? empty
+
+Recall it, square it.
+> 0 rcl dup *
+? 6.25
+
+Registers are how a word gets at a value without having it passed on the stack. This
+word uses whatever is in register 0 as a scale factor.
+> : scale 0 rcl * ;
+? word scale
+
+10 scaled by the 2.5 in register 0.
+> clst 10 scale
+? 25
+
+The std module has sto_add, sto_sub, sto_mul, sto_div: 1 0 sto_add adds 1 to register
+0. pr shows which registers are occupied, clregs clears them all, saveregs and loadregs
+keep them across sessions.
+> 1 0 sto_add 0 rcl
+? 3.5
+
+Strings are items too. scon concatenates, slen measures, s2u and s2l change case, substr
+cuts, int2str makes a string from a number. Strings name files for readmat, batch and
+the other file words, and they are what the date words work with ("1.1.2025").
+> clst "MM-" "41" scon
+? "MM-41"
+
+A string can also be evaluated: "1 2 +" eval runs it as a line of input. That is the
+loophole through which a word can build and run code, and through which a line of a
+file becomes a calculation.
+> clst "6 7 *" eval
+? 42
+
+= Matrices
+A matrix is one item on the stack. [1 2 3] is a row vector, [1 2; 3 4] a 2 x 2 matrix
+(a semicolon ends a row). The arithmetic words work on them: * is the matrix product, a
+scalar is applied elementwise, .* ./ .^ are the elementwise operations. Enter a matrix.
+> clst [4 7; 2 6]
+? matrix 2x2
+
+det takes the determinant (and drops the matrix); dup first to keep a copy.
+> dup det
+? 10
+
+Drop the determinant and invert the matrix with minv. The listing shows a matrix by
+its size; pm prints it in full.
+> drop minv pm
+? matrix 2x2
+
+A linear system A x = b is solved with the inverse. With A = [4 7; 2 6] and b the
+column [1; 1], A^-1 b is [-0.1; 0.3]. (The inverse is already on the stack; put b on
+top and multiply.)
+> [1; 1] *
+? matrix 2x1
+
+Reductions work by column or by row: csum cmean cvar cmin cmax (a row of results),
+rsum rmean ... (a column). For a vector, mean, sd, median and quantile return a number.
+> clst [1 2 3 4 10] mean
+? 4
+
+rrange builds a row vector from start, step, end; eye, ones, zeroes, rand and randn
+build matrices; reshape, tran (or '), join_h, join_v, getcol, getrow, get_aij and
+set_aij rearrange them. 0 to 1 in steps of 0.25:
+> clst 0 0.25 1 rrange
+? matrix 1x5
+
+Polynomials are vectors of coefficients, highest power first. roots finds all the roots
+(as a complex row vector), pval evaluates. The roots of x^2 - 3x + 2:
+> clst [1 -3 2] roots
+? matrix 1x2
+
+eig, svd, chol, pinv, kron and the rest are in help matrices. A matrix can also come
+from a file: "table.txt" readmat reads one row per line, numbers separated by spaces,
+tabs or commas, skipping comments and a header line -- chapter 14 shows it.
+? any
+
+= Numerical methods
+Any word can be handed to a numerical method as a function: @name pushes a reference
+to it, an execution token, instead of running it. a b @f integrate integrates f over
+[a, b]. The integral of the sine over [0, pi]:
+> clst 0 pi @sin integrate
+? 2
+
+The function is usually a word of your own, which takes x from the stack and leaves
+f(x). Define f(x) = x^2 - 2 ...
+> : f dup * 2 - ;
+? word f
+
+... and find its root in the bracket [0, 3] with fzero (Brent's method), which is the
+square root of 2.
+> clst 0 3 @f fzero
+? 1.4142135624
+
+solve needs only a guess; minimize finds the argument of the minimum in an interval;
+deriv differentiates at a point; fsum and fprod sum or multiply f(i) over the integers.
+The sum of 1/i^2 from 1 to 1000 is close to pi^2/6:
+> : invsq dup * inv ;
+? word invsq
+
+> clst 1 1000 @invsq fsum
+? 1.643934567
+
+A function with a parameter -- a Bessel function of order n, sin kx -- is a word that
+fixes the parameter. besselj is x n -- Jn(x); this word supplies n = 2:
+> : j2 2 besselj ;
+? word j2
+
+The integral of J2 over [0, 10].
+> clst 0 10 @j2 integrate
+? 0.980066
+
+Keep the parameter in a register instead and one word serves every value: : jn 0 rcl
+besselj ; then 2 0 sto, 3 0 sto ... Built-ins and module words take @ as well
+(@sin, @npdf). x tol sets the tolerance (default 1e-10), nevals tells how many function
+evaluations the last call took. help numerics has the summary.
+> nevals
+? any
+
+= Finance
+The finance module is the HP-12C's financial registers: n i% pv pmt fv and, for
+payments that grow at a constant rate, g%. Set the ones you know, ask for the one you
+do not with ?n ?i% ?pv ?pmt ?fv ?g%. Cash received is positive, cash paid negative.
+A 30-year mortgage of 300,000 at 6% a year: 360 monthly periods at 0.5%, fv 0.
+> clst clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
+? -1798.651541
+
+The payment is a decimal (the finance words compute in decimals), and it is now in the
+pmt register. How long would 2,000 a month take? Store it and solve for n.
+> clst -2000 pmt ?n
+? 277.9514
+
+tvm shows the registers; amort prints the schedule, amortm leaves it as a matrix of
+payment, interest, principal and balance per period. beg makes payments fall at the
+beginning of each period. Show the registers.
+> tvm
+? any
+
+A payment growing at g% per period: a pension of 1,000 a month growing 0.25% a month
+(3% a year) for 20 years at 0.4% a month. Its present value:
+> clst clrtvm 240 n 0.4 i% -1000 pmt 0.25 g% 0 fv ?pv
+? 201006.41
+
+Cash flows: a column vector in time order, the first at t = 0 (or a matrix of amount
+and repeat count), npv at a rate in percent, irr for the internal rate of return.
+> clst clrtvm [-1000; 300; 400; 500] irr
+? 8.896339
+
+Conversions and more: nom>eff and eff>nom between nominal and effective rates, sl soyd
+db for depreciation, bprice byield for bonds on a coupon date and xnpv xirr xprice
+xyield for dated cash flows and bonds (Excel's conventions). 12% nominal, monthly:
+> clst 12 12 nom>eff
+? 12.6825
+
+= Dates and workdays
+Dates are strings d.m.yyyy. ddays counts the days between two, dateplus adds days, dow
+names the weekday, today is today. Days from New Year to Christmas 2026:
+> clst "1.1.2026" "25.12.2026" ddays
+? 358
+
+> clst "25.12.2026" dow
+? "Friday"
+
+Workdays follow Excel's conventions: d1 d2 workdays counts Mondays to Fridays from d1
+to d2 inclusive, less the holidays in the installed calendar; date n workdayplus steps
+n workdays ahead. The calendar is a vector of dates YYYYMMDD; sethol installs one for
+this session, usehol us (or si, or your own file in holidays/) installs one and
+remembers it. Install Thanksgiving and Christmas 2026 (a calendar you had installed is
+back at the next start, or now with usehol), then count the workdays of December.
+> clst [20261126 20261225] sethol "1.12.2026" "31.12.2026" workdays
+? 22
+
+20 workdays after 1 December 2026, skipping Christmas:
+> clst "1.12.2026" 20 workdayplus
+? "30.12.2026"
+
+The finance words take dates as the number YYYYMMDD; date>ymd and ymd>date convert.
+sunrise, sunset, dawn and dusk take a date, latitude, longitude and a time zone (an
+IANA name or an offset in hours); the std module has a few places ready: today
+alexandria sunset. Sunset in Kranj at midsummer:
+> clst "21.6.2026" kranj sunset
+? string
+
+= Statistics and simulation
+Vectors are data. mean, sd, sem, median, quantile, skew, kurt describe one; cov and corr
+relate two; linfit, expfit, logfit and powfit fit a curve and return [a, b, R^2]; ols
+and olstab regress on several columns. A least-squares line through four points:
+> clst [1 2 3 4] [2 4 5 9] linfit
+? matrix 1x3
+
+The row on the stack holds intercept, slope and R-squared; split_mat takes it apart into
+three numbers, A i j get_aij copies one element (0-based). The slope:
+> 0 1 get_aij
+? 2.2
+
+Distributions: ncdf nquant npdf for the normal, tcdf tinv, chi2cdf chi2inv, fcdf finv,
+binompdf binomcdf, poispdf poiscdf. The two-sided 95% critical value of Student's t
+with 10 degrees of freedom:
+> clst 0.975 10 tinv
+? 2.228139
+
+Random draws: n mu sigma normrnd makes n normal draws as a column (also unifrnd poisrnd
+binomrnd exprnd trnd chi2rnd), rnorm and runif make one. seed makes a run reproducible.
+The mean of 1000 standard normals:
+> clst 42 seed 1000 0 1 normrnd mean
+? near 0 0.15
+
+Monte Carlo over a word: n @w sims runs w n times and collects the number it leaves
+each time; mcstats summarises the result as mean, sd and the 5th, 50th and 95th
+percentiles. A game: the sum of two dice.
+> : dice 1 7 runif intg 1 7 runif intg + ;
+? word dice
+
+> clst 10000 @dice sims mcstats
+? matrix 1x5
+
+A histogram of the same draws: v k hist tabulates k bins, v k hplot draws them (chapter
+13). resample draws a bootstrap sample, shuffle permutes.
+> clst 10000 @dice sims 11 hist
+? matrix 11x2
+
+= Differential equations
+odeint integrates y' = f(t, y) from t0 to t1 with an adaptive Runge-Kutta-Fehlberg
+method. The right-hand side is a word that takes t and y and leaves y'. For y' = -y
+the word drops t and changes the sign of y:
+> : decay swap drop chs ;
+? word decay
+
+y0 t0 t1 @f odesol gives the state at t1 only. From y(0) = 1 to t = 1: e^-1.
+> clst 1 0 1 @decay odesol
+? 0.367879
+
+y0 t0 t1 n @f odeint leaves the trajectory at n + 1 equally spaced times, t in the
+first column and the state in the rest. The logistic equation y' = y (1 - y) from
+y(0) = 0.1 over [0, 10] in 20 steps:
+> : logistic swap drop dup 1 swap - * ;
+? word logistic
+
+> clst 0.1 0 10 20 @logistic odeint
+? matrix 21x2
+
+A system is a row vector state: the word takes t and the vector and leaves the vector
+of derivatives. mplot draws every column of the trajectory against the first (chapter
+13); getcol takes a column out, get_aij one element. The last value of y, row 20,
+column 1, has all but reached the carrying capacity:
+> 20 1 get_aij
+? near 1 0.001
+
+= Survival analysis
+The survival module works from a lifetime law chosen once with setlaw: exponential,
+weibull, gompertz, makeham, siler, loglogistic, lognormal or gamma with its parameters.
+Gompertz with b = 0.0001 and c = 0.09 is a fair adult mortality:
+> clst "gompertz" [0.0001 0.09] setlaw
+? empty
+
+surv is the survival function, haz the hazard, lifepdf, lifecdf and lifeinv the density,
+distribution and quantile. The probability of reaching 65:
+> 65 surv
+? 0.680651
+
+elife is the complete expectation of remaining life at an age, lifemean the expectation
+at birth, lifemed the median, lifemode the modal age at death (ln(c/b)/c for Gompertz).
+Remaining life at 65:
+> clst 65 elife
+? 11.876902
+
+Actuarial words: x n tpx and nqx (survive or die within n years), px qx lx, x0 x1
+lifetab (a life table with lx, dx, qx and ex per age), and the present values x i ax
+(whole-life annuity-due at i%), axn, Ax (whole-life insurance), Axn. The value of 1 a
+year for life from 65 at 3%:
+> clst 65 3 ax
+? 10.014379
+
+A life table from 60 to 70:
+> clst 60 70 lifetab
+? matrix 11x5
+
+Data: t e km is the Kaplan-Meier estimate from times and event indicators (1 event,
+0 censored), nelsonaalen the cumulative hazard, logrank compares two groups, lifefit
+fits the current law by maximum likelihood, lawfit and lawfitl fit it to a published
+life table's qx or lx. help survival has the overview, manual survival the chapter.
+> clst [2 3 3 5 8 9] [1 1 0 1 0 1] km
+? matrix
+
+= Income distribution
+The income module does the same for the distribution of income: setdist picks a family
+(pareto, lognormal, dagum, singhmaddala, fisk, gamma, weibull) and its parameters. A
+Dagum distribution with a = 3.5, b = 20000, p = 0.8:
+> clst "dagum" [3.5 20000 0.8] setdist
+? empty
+
+gini, theil, mld and eps atkinson measure inequality in closed form or by quadrature;
+incmean incvar incmed incmode describe the distribution; incpdf inccdf incq evaluate it.
+> gini
+? 0.302546
+
+The income below which 90% of the population lies, and the share of the top 10%:
+> clst 0.9 incq
+? 35019.96
+
+> clst 0.1 top
+? 0.238405
+
+deciles gives the ten decile shares as a row, palma the Palma ratio, p1 p2 share the
+share between two quantiles, z headcount, z povgap and z alpha fgt the poverty
+measures at a poverty line z. The share living on less than 10,000:
+> clst 10000 headcount
+? 0.134180
+
+Fitting: v incfit fits the current family to a vector of incomes by maximum likelihood,
+v incfits to the quintile or decile shares of a published table, p L incfitl to points
+of a Lorenz curve. The data words ginid theild lorenzd decilesd topd palmad headcountd
+povgapd fgtd work directly on a vector of incomes:
+> clst [1 2 3 4 10] ginid
+? 0.4
+
+= Graphs
+The plot module draws in the terminal, two pixels to a character cell, with round-number
+ticks. a b @f fplot draws a word over an interval:
+> clst 0 10 @sin fplot
+? any
+
+hold keeps the figure, so the next plot is added; plegend names the series and show
+redraws with the legend.
+> hold 0 10 @cos fplot "sin,cos" plegend show
+? any
+
+x y plot draws data as a line, scatter as points, steps as a step function (a Kaplan-
+Meier curve), bars as bars, v k hplot a histogram, M mplot every column of a matrix
+against the first (an odeint trajectory, a Lorenz curve, a life table). ptitle,
+pxlabel and pylabel label it; pxlog and pylog make an axis logarithmic; pxrange,
+pyrange and psize fix the ranges and the size. A histogram of 2000 normal draws:
+> nohold clst 2000 0 1 normrnd 25 hplot
+? any
+
+"fig.svg" psvg writes the figure as vector graphics for a document, "fig.txt" ptxt as
+text. pclear forgets the figure and its settings.
+> pclear
+? any
+
+= Files, scripts and the shell
+A line starting with ! runs a shell command and pushes what it printed as a string.
+Write a small table to a file this way (the command prints nothing, so the string is
+empty):
+> !printf '1 2\n3 4\n5 6\n' > /tmp/mm41-tutor.txt
+? string
+
+"file" readmat reads a table, one row per line, numbers separated by spaces, tabs,
+commas or semicolons; readvec reads every number as one column; "file" j readcol one
+column. Blank lines, comments and a header line are skipped.
+> clst "/tmp/mm41-tutor.txt" readmat
+? matrix 3x2
+
+"file" batch runs the lines of a file as if typed. From the shell, mm41 -e 'line' runs
+one line, mm41 file args... runs a script (so #!/usr/bin/env mm41 makes one a
+program), the arguments pushed first; the word . prints the top plainly and n exit
+sets the exit status. The exit status is 1 if any error was reported, which lets a
+script live in a Makefile or a cron job. help syntax and manual Scripts have the
+details.
+? any
+
+savewords, saveregs and savestack keep words, registers and the stack between sessions;
+the display settings, number mode, tolerance, holiday calendar, skin and this tutor's
+progress are kept in config.txt in ~/.config/mm41/.
+? any
+
+= Finding your way
+help <name> describes a command: its stack picture, what each item means, an example
+that is run for you, and the related commands. Try it on %chg.
+> help %chg
+? any
+
+help <module> lists a module's commands, help <category> a category, help <text>
+searches names and descriptions, and help <topic> explains one subject: finance,
+numerics, survival, income, plot, words, syntax, modules. TAB completes all of them.
+> help finance
+? any
+
+manual opens the user manual in the pager; manual <chapter> or manual <word> opens it
+at the right place (n finds the next match, q returns). The manual has the long
+explanations and the worked examples that help leaves out; the PDF is in doc/.
+? any
+
+listfcns lists every command by category, modules the loaded modules with their
+versions, listmacros the words that came from word modules, "name" usage a word's
+definition.
+> modules
+? any
+
+The stack can be shown as a classic calculator would show it: skin hp41, skin hp12c,
+skin hp48, skin hp48px; skin plain returns to the listing. The choice is remembered.
+Try the HP-41 and come back.
+> skin hp41
+? any
+
+> skin plain
+? any
+
+That is the tour. examples <chapter> prints any chapter of this book with every line and
+its result, tutor <chapter> replays one, and the manual goes deeper on each subject.
+The rest is practice.
+? any

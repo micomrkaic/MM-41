@@ -25,7 +25,8 @@
 #include <string.h>             // for strdup, strncmp, NULL, strlen
 #include "globals.h"            // for app_path
 #include "help.h"               // for help_topic_name
-#include "manual.h"             // for manual_titles
+#include "manual.h"
+#include "tutor.h"             // for manual_titles
 #include "skins.h"              // for skin_name
 #include "module.h"             // for modules_count, module_at
 #include "ops.h"                // for ops, n_ops
@@ -103,6 +104,10 @@ static char **argument_completion(const char *word, size_t wl, const char *text,
     for (int i = 0; i < nt; i++) { add_name(titles[i]); free(titles[i]); }
   } else if (!strncmp(word, "skin", wl) && wl == 4) {
     for (int i = 0; i < SKIN_COUNT; i++) add_name(skin_name(i));
+  } else if ((!strncmp(word, "tutor", wl) && wl == 5) || (!strncmp(word, "examples", wl) && wl == 8)) {
+    char *titles[64]; int nt = tutor_titles(titles, 64);
+    for (int i = 0; i < nt; i++) { add_name(titles[i]); free(titles[i]); }
+    if (wl == 5) { add_name("list"); add_name("reset"); } else { add_name("all"); }
   } else if (!strncmp(word, "usehol", wl) && wl == 6) {
     int nf; char **f = dir_names("holidays", ".txt", &nf);
     names = calloc((size_t)nf + 2, sizeof *names);

@@ -1,4 +1,4 @@
-MM-41 USER MANUAL, version 2.1.1
+MM-41 USER MANUAL, version 2.2
 
 Type  manual <chapter or word>  at the prompt to open this file there; in the pager, n finds the next match, q returns.
 
@@ -10,7 +10,8 @@ CONTENTS
   2.1  Building and installing
   2.2  A first session
   2.3  Line forms: help npv, use const
-  2.4  Getting help inside the calculator
+  2.4  The tutorial
+  2.5  Getting help inside the calculator
   3  ENTERING DATA
   3.1  Numbers
   3.2  Complex numbers
@@ -164,8 +165,8 @@ sudo apt install build-essential libreadline-dev libgsl-dev
 and on macOS with Homebrew, brew install gsl readline. Then:
 
 git clone https://github.com/micomrkaic/MM-41 cd MM-41 make # builds bin/release/mm41
-make test # 21 unit cases + golden files, run under AddressSanitizer make install # into
- /.local: bin/mm41, the man page, this manual, and docs
+make test # 21 unit cases + golden files + the tutorial, under AddressSanitizer make
+install # into  /.local: bin/mm41, the man page, this manual, and docs
 
 make install also seeds ~/.config/mm41/ with the default configuration (kept if you
 already have one) and the shipped word modules (always replaced, so they match the
@@ -205,7 +206,7 @@ everywhere, inside a word definition included. At the prompt, though, such comma
 typed far more often than they are programmed, and for them the line as a whole is read
 first:
 
-describes name instead of executing it (section 2.4).
+describes name instead of executing it (section 2.5).
 
 and likewise unuse, load, run, batch and usehol: a line that is exactly one of these
 commands followed by one bare name is read as "name" command: use const is "const" use,
@@ -218,8 +219,50 @@ what it says and use const c is still three tokens (and an error, since use find
 string on the stack). The rewriting is a convenience of the prompt and of batch files,
 which go through the same reader, not a change to the language.
 
-2.4  Getting help inside the calculator
+2.4  The tutorial
+-----------------
+
+MM-41 has grown a lot of corners, and a tour is the quickest way to see what is in them.
+tutor opens a book of fifteen short chapters—the stack, numbers, words, registers and
+strings, matrices, the numerical methods, finance, dates, statistics, differential
+equations, survival, income, graphs, files and scripts, finding your way—in the manner
+of vimtutor: each step shows a passage and a line to type, you type it (or anything you
+like), and when the stack shows what the lesson expects the tutor says ok and moves on.
+
+    MM-41>> tutor
+      Welcome. Each step shows a passage and a line to type; ...
+
+    1  The stack  ----------------------------------------------------  (1/15)
+
+    MM-41 is a Reverse Polish calculator: you put numbers on a stack and then ...
+
+      type:  3 4 +
+    tutor 1.1>> 3 4 +
+    [0] ℝ : 7.000000
+      ok
+
+    The 7 is still on the stack. Every result stays there, ...
+
+The prompt shows where you are. In a lesson, skip moves on without answering, back
+returns a step, again repeats the passage, retry puts the stack back as the step found
+it (for when an experiment has left it in a state the lesson does not expect), and q
+leaves the tutor, not the calculator. Progress is kept in config.txt, so a later tutor
+resumes where you stopped; tutor 7 or tutor finance opens a chapter, tutor list shows
+them with your position, tutor reset starts over. TAB completes the chapter names.
+
+The same book is a cookbook: examples 7 (or examples finance) prints a chapter with
+every line and its result, examples all the whole book. Every line and every result in
+it is checked against the program by mm41 --tutor-check, which make test runs, so the
+book cannot drift from the calculator. The text is doc/tutor.txt, compiled into the
+binary; its format is three markers—= Title starts a chapter, > line is the line to
+type, ? expectation ends a step (a number, a string, matrix 2x2, word name, empty, any
+…)—so chapters of your own are a text file away: MM41_TUTOR=mybook.txt mm41 reads
+another book.
+
+2.5  Getting help inside the calculator
 ---------------------------------------
+
+the tutorial and its cookbook (section 2.4).
 
 a one-screen summary of the input syntax and the command families.
 
@@ -1822,7 +1865,7 @@ user would call a feature is a module alongside it. modules shows what is plugge
 
     MM-41>> modules
     module       version  words  summary
-    core         2.1.1       89  arithmetic, functions, logic, the stack, words and the session
+    core         2.2         91  arithmetic, functions, logic, the stack, words and the session
     decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
     finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
     complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -2109,8 +2152,8 @@ bare-name line forms use const, usehol us; 1.5 the g% register for growing payme
 the display skins; 1.7 the survival and income modules and the bracket-only matrix
 literal; 1.8 reading tables from files and fitting published life tables and income
 shares; 1.9 the manual at the prompt; 2.0 graphs; 2.1 scripts from the shell; 2.1.1 help
-with your own words. Every MM-15 command, word and program runs unchanged, with one
-exception noted below. What is different:
+with your own words; 2.2 the tutorial. Every MM-15 command, word and program runs
+unchanged, with one exception noted below. What is different:
 
 -   The binary is mm41, the configuration directory ~/.config/mm41/. Copy
     user_words.txt, registers.txt and config.txt across from mm_15 if you want them.

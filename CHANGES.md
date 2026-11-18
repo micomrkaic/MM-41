@@ -1,5 +1,24 @@
 # MM-41 changes
 
+## MM-41 2.2
+
+- **The tutorial.** `tutor` opens a book of fifteen short chapters you type
+  along with, in the manner of vimtutor: each step shows a passage and a
+  line to type; type it (or anything you like) and when the stack shows
+  what the lesson expects the tutor says ok and moves on. `skip`, `back`,
+  `again`, `retry` (the stack as the step found it), `q` leaves the tutor;
+  progress is kept in config.txt so `tutor` resumes; `tutor 7` or `tutor
+  finance` opens a chapter, `tutor list` shows them, `tutor reset` starts
+  over; TAB completes the chapter names. The prompt shows the position
+  (`tutor 3.2>>`).
+- **`examples`.** The same book as a cookbook: `examples 7` prints a chapter
+  with every line and its result, `examples all` the whole book.
+- The book is `doc/tutor.txt`, compiled into the binary (`MM41_TUTOR=file`
+  reads another); `= Title`, `> line`, `? expectation` are its whole
+  format. `mm41 --tutor-check` runs every line against a fresh stack and
+  checks every expectation; `make test` runs it, so the book cannot drift
+  from the program.
+
 ## MM-41 2.1.1
 
 - **Help with your own words.** `help` for every command that takes an
