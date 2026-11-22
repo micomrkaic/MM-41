@@ -1,5 +1,7 @@
 # MM-41 — a modular RPN calculator
 
+[![ci](https://github.com/micomrkaic/MM-41/actions/workflows/ci.yml/badge.svg)](https://github.com/micomrkaic/MM-41/actions/workflows/ci.yml)
+
 MM-41 is a programmable, stack-based RPN calculator for the terminal, written in
 C17 on top of the GNU Scientific Library and GNU Readline. It handles **real,
 complex and exact decimal scalars, strings, and real and complex matrices**; it

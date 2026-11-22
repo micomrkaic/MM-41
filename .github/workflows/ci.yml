@@ -1,0 +1,19 @@
+# MM-41 CI: release build with warnings as errors, then the full test
+# suite (cases, golden transcripts, scripts, tutor) under AddressSanitizer.
+name: ci
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: deps
+        run: sudo apt-get update && sudo apt-get install -y libgsl-dev libreadline-dev
+      - name: release build
+        run: make -j4
+      - name: test suite (ASan build)
+        run: make test
