@@ -371,7 +371,8 @@ static int op_mplot(Stack *s) {
   for (size_t j = 1; j < cols; j++) {
     double *x = malloc(n * sizeof *x), *y = malloc(n * sizeof *y);
     for (size_t i = 0; i < n; i++) { x[i] = gsl_matrix_get(m, i, 0); y[i] = gsl_matrix_get(m, i, j); }
-    char name[16]; snprintf(name, sizeof name, cols > 2 ? "col %zu" : "", j);
+    char name[16] = "";
+    if (cols > 2) snprintf(name, sizeof name, "col %zu", j);
     if (add_series(x, y, n, K_LINE, cols > 2 ? name : NULL) != 0) { fig.hold = hold0; return -1; }
   }
   fig.hold = hold0;

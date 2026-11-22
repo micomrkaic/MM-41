@@ -44,7 +44,7 @@ PLATFORM_LDFLAGS :=
 SHARED_LDFLAGS   :=
 ifeq ($(UNAME_S),Darwin)
   GSL_PREFIX       := $(shell brew --prefix gsl 2>/dev/null || echo /opt/homebrew/opt/gsl)
-  PLATFORM_CFLAGS  += -I$(GSL_PREFIX)/include
+  PLATFORM_CFLAGS  += -isystem $(GSL_PREFIX)/include
   PLATFORM_LDFLAGS += -L$(GSL_PREFIX)/lib
   SHARED_LDFLAGS   += -undefined dynamic_lookup
 endif

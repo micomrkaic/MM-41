@@ -1,5 +1,5 @@
-# MM-41 CI: release build with warnings as errors, then the full test
-# suite (cases, golden transcripts, scripts, tutor) under AddressSanitizer.
+# MM-41 CI: release build with warnings as errors, then the test suite
+# (cases, golden transcripts, scripts, tutor) under AddressSanitizer.
 name: ci
 on:
   push:
@@ -17,3 +17,22 @@ jobs:
         run: make -j4
       - name: test suite (ASan build)
         run: make test
+
+  # The golden transcripts are not run here yet: three of them (income, ode,
+  # survival) differ from the Linux output in the last printed digits.
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: deps
+        run: brew install gsl readline
+      - name: release build
+        run: make -j4
+      - name: ASan build
+        run: make asan examples/modules/hello/hello.so
+      - name: case tests
+        run: bash tests/run_tests.sh
+      - name: script tests
+        run: ASAN_OPTIONS=detect_leaks=0 sh tests/run_scripts.sh bin/asan/mm41
+      - name: tutor
+        run: ASAN_OPTIONS=detect_leaks=0 ./bin/asan/mm41 --tutor-check
