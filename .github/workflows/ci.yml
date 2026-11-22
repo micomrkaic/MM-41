@@ -17,3 +17,14 @@ jobs:
         run: make -j4
       - name: test suite (ASan build)
         run: make test
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: deps
+        run: brew install gsl readline
+      - name: release build
+        run: make -j4
+      - name: test suite (ASan build)
+        run: make test
