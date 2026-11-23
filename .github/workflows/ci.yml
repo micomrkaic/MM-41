@@ -30,8 +30,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      # Installing Emscripten from the distribution now and then hangs on the
+      # runner; the limit turns that into a failure to re-run, not an hour's wait.
       - name: deps
-        run: sudo apt-get update && sudo apt-get install -y libgsl-dev libreadline-dev emscripten
+        timeout-minutes: 12
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            libgsl-dev libreadline-dev emscripten clang-15 lld-15 llvm-15 binaryen nodejs node-acorn
       - name: native build (generates the sources the web build shares)
         run: make -j4
       - name: web build
