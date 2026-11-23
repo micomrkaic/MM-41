@@ -30,14 +30,23 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      # Installing Emscripten from the distribution now and then hangs on the
-      # runner; the limit turns that into a failure to re-run, not an hour's wait.
       - name: deps
-        timeout-minutes: 12
+        run: sudo apt-get update && sudo apt-get install -y libgsl-dev libreadline-dev
+      # Emscripten from its own SDK, at the version of Ubuntu 24.04's package
+      # (which is what the committed docs/mm41.wasm is built with): the
+      # package itself is 174 MB from a mirror that can take an hour over it.
+      - name: Emscripten
+        timeout-minutes: 15
         run: |
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            libgsl-dev libreadline-dev emscripten clang-15 lld-15 llvm-15 binaryen nodejs node-acorn
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$RUNNER_TEMP/emsdk"
+          "$RUNNER_TEMP/emsdk/emsdk" install 3.1.6
+          "$RUNNER_TEMP/emsdk/emsdk" activate 3.1.6
+          . "$RUNNER_TEMP/emsdk/emsdk_env.sh"
+          echo "$RUNNER_TEMP/emsdk" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/emsdk/upstream/emscripten" >> "$GITHUB_PATH"
+          echo "EMSDK=$EMSDK" >> "$GITHUB_ENV"
+          echo "EM_CONFIG=$EM_CONFIG" >> "$GITHUB_ENV"
+          emcc --version
       - name: native build (generates the sources the web build shares)
         run: make -j4
       - name: web build
