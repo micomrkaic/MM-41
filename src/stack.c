@@ -138,9 +138,17 @@ void push_string(Stack* stack, const char* str) {
 
 /* The push takes ownership of the matrix, so it is released when the push
    cannot happen (a full stack): the caller has no handle to it any more. */
+/* A matrix on the stack has at least one row and one column: the routines
+   that take one (GSL's, and the calculator's own loops) are not written for
+   an empty one, and several of them crash on it. */
 void push_matrix_real(Stack* stack, gsl_matrix* matrix) {
   if (NULL == matrix) {
-    mm_error("NULL pointer to matrix, exiting!\n");
+    mm_error("no matrix to push (out of memory, or an empty result)");
+    return;
+  }
+  if (matrix->size1 == 0 || matrix->size2 == 0) {
+    mm_error("the result would be an empty matrix");
+    gsl_matrix_free(matrix);
     return;
   }
   if (stack->top >= STACK_SIZE - 1) {
@@ -155,7 +163,12 @@ void push_matrix_real(Stack* stack, gsl_matrix* matrix) {
 
 void push_matrix_complex(Stack* stack, gsl_matrix_complex* matrix) {
   if (NULL == matrix) {
-    mm_error("NULL pointer to matrix, exiting!\n");
+    mm_error("no matrix to push (out of memory, or an empty result)");
+    return;
+  }
+  if (matrix->size1 == 0 || matrix->size2 == 0) {
+    mm_error("the result would be an empty matrix");
+    gsl_matrix_complex_free(matrix);
     return;
   }
   if (stack->top >= STACK_SIZE - 1) {
@@ -327,6 +340,37 @@ int copy_stack(Stack* dest, const Stack* src) {
 
   dest->top = src->top;      // commit only on full success
   return 1; // success
+}
+
+/* A snapshot of src in dest, made silently: 1 if it was made, 0 if there
+   was no memory for it, in which case dest is empty. The interpreter takes
+   one before every token and every line; when it cannot, it says so itself
+   and carries on without, so that a full machine can still be emptied. */
+int snapshot_stack(Stack* dest, const Stack* src) {
+  free_stack(dest);
+  gsl_error_handler_t *old = gsl_set_error_handler_off();
+  int ok = 1;
+  for (int i = 0; i <= src->top && ok; ++i) {
+    if (stack_element_clone(&dest->items[i], &src->items[i]) != 0) {
+      for (int j = 0; j < i; ++j) stack_element_free(&dest->items[j]);
+      ok = 0;
+    }
+  }
+  gsl_set_error_handler(old);
+  dest->top = ok ? src->top : -1;
+  return ok;
+}
+
+/* dest becomes what src was and src becomes empty. Nothing is allocated, so
+   restoring the stack after an error cannot itself fail. */
+void move_stack(Stack* dest, Stack* src) {
+  free_stack(dest);
+  for (int i = 0; i <= src->top; ++i) {
+    dest->items[i] = src->items[i];
+    memset(&src->items[i], 0, sizeof src->items[i]);
+  }
+  dest->top = src->top;
+  src->top = -1;
 }
 
 void stack_nip(Stack* stack) {

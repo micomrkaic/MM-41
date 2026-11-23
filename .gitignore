@@ -51,3 +51,6 @@ doc/*.fdb_latexmk
 doc/*.xdv
 doc/manual.pdf
 *.so
+
+# python
+__pycache__/

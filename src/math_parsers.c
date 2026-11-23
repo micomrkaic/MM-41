@@ -17,6 +17,7 @@
  */
 
 #define _POSIX_C_SOURCE 200809L
+#include "ops.h"
 #include "errors.h"
 #include <ctype.h>                          // for isspace, isdigit
 #include <gsl/gsl_complex.h>                // for gsl_complex
@@ -58,7 +59,8 @@ gsl_matrix* parse_matrix_literal(const char* input) {
   while (isspace(*p)) p++;
 
   char* endptr;
-  size_t rows = strtoul(p, &endptr, 10);
+  double rows_given = strtod(p, &endptr);
+  size_t rows = (rows_given >= 1 && rows_given <= (double)MM41_MAX_CELLS) ? (size_t)rows_given : 0;
   if (p == endptr) {
     mm_error("Expected number of rows\n");
     return NULL;
@@ -67,7 +69,8 @@ gsl_matrix* parse_matrix_literal(const char* input) {
 
   while (isspace(*p)) p++;
 
-  size_t cols = strtoul(p, &endptr, 10);
+  double cols_given = strtod(p, &endptr);
+  size_t cols = (cols_given >= 1 && cols_given <= (double)MM41_MAX_CELLS) ? (size_t)cols_given : 0;
   if (p == endptr) {
     mm_error("Expected number of columns\n");
     return NULL;
@@ -82,6 +85,7 @@ gsl_matrix* parse_matrix_literal(const char* input) {
   }
   p++; // skip '$'
 
+  if (!matrix_dims_ok(rows_given, cols_given, "matrix literal")) return NULL;
   double* data = malloc(rows * cols * sizeof(double));
   if (!data) {
     mm_error("Memory allocation failed\n");
@@ -131,7 +135,8 @@ gsl_matrix_complex* parse_complex_matrix_literal(const char* input) {
   while (isspace(*p)) p++;
 
   char* endptr;
-  size_t rows = strtoul(p, &endptr, 10);
+  double rows_given = strtod(p, &endptr);
+  size_t rows = (rows_given >= 1 && rows_given <= (double)MM41_MAX_CELLS) ? (size_t)rows_given : 0;
   if (p == endptr) {
     mm_error("Expected number of rows\n");
     return NULL;
@@ -140,7 +145,8 @@ gsl_matrix_complex* parse_complex_matrix_literal(const char* input) {
 
   while (isspace(*p)) p++;
 
-  size_t cols = strtoul(p, &endptr, 10);
+  double cols_given = strtod(p, &endptr);
+  size_t cols = (cols_given >= 1 && cols_given <= (double)MM41_MAX_CELLS) ? (size_t)cols_given : 0;
   if (p == endptr) {
     mm_error("Expected number of columns\n");
     return NULL;
@@ -155,6 +161,7 @@ gsl_matrix_complex* parse_complex_matrix_literal(const char* input) {
   }
   p++; // skip '$'
 
+  if (!matrix_dims_ok(rows_given, cols_given, "matrix literal")) return NULL;
   gsl_complex* data = malloc(rows * cols * sizeof(gsl_complex));
   if (!data) {
     mm_error("Memory allocation failed\n");

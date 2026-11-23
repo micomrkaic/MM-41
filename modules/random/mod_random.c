@@ -41,7 +41,7 @@ static int push_col(Stack *s, const double *v, size_t n) {
 static int op_seed(Stack *s) {
   double v;
   if (pop_real_arg(s, "seed", &v) != 0) return -1;
-  if (v != floor(v) || v < 0) { push_real(s, v); return mm_error("seed: needs a whole number >= 0"); }
+  if (!whole_in(v, 0, 9007199254740992.0)) { push_real(s, v); return mm_error("seed: needs a whole number >= 0"); }
   gsl_rng_set(global_rng, (unsigned long)v);
   return 0;
 }
@@ -64,7 +64,7 @@ static int op_runif(Stack *s) {
 static int op_rpois(Stack *s) {
   double mu;
   if (pop_real_arg(s, "rpois", &mu) != 0) return -1;
-  if (mu <= 0) { push_real(s, mu); return mm_error("rpois: the mean must be positive"); }
+  if (!(mu > 0 && mu <= 1e9)) { push_real(s, mu); return mm_error("rpois: the mean must be positive (and at most 1e9)"); }
   push_real(s, (double)gsl_ran_poisson(global_rng, mu));
   return 0;
 }
@@ -110,8 +110,8 @@ static int draw(Stack *s, const char *what, int nparams, double *p, double *n) {
 
 VDRAW(op_normrnd,  "normrnd",  2, p[1] >= 0,                        p[0] + gsl_ran_gaussian(global_rng, p[1]))
 VDRAW(op_unifrnd,  "unifrnd",  2, 1,                                p[0] + (p[1] - p[0]) * gsl_rng_uniform(global_rng))
-VDRAW(op_poisrnd,  "poisrnd",  1, p[0] > 0,                         (double)gsl_ran_poisson(global_rng, p[0]))
-VDRAW(op_binomrnd, "binomrnd", 2, p[0] >= 0 && p[0] == floor(p[0]) && p[1] >= 0 && p[1] <= 1, (double)gsl_ran_binomial(global_rng, p[1], (unsigned)p[0]))
+VDRAW(op_poisrnd,  "poisrnd",  1, p[0] > 0 && p[0] <= 1e9,          (double)gsl_ran_poisson(global_rng, p[0]))
+VDRAW(op_binomrnd, "binomrnd", 2, whole_in(p[0], 0, 4294967295.0) && p[1] >= 0 && p[1] <= 1, (double)gsl_ran_binomial(global_rng, p[1], (unsigned)p[0]))
 VDRAW(op_exprnd,   "exprnd",   1, p[0] > 0,                         gsl_ran_exponential(global_rng, 1.0 / p[0]))
 VDRAW(op_trnd,     "trnd",     1, p[0] > 0,                         gsl_ran_tdist(global_rng, p[0]))
 VDRAW(op_chi2rnd,  "chi2rnd",  1, p[0] > 0,                         gsl_ran_chisq(global_rng, p[0]))
@@ -135,7 +135,7 @@ static int vector_top(const Stack *s, const char *what, double **out, size_t *n)
 static int op_resample(Stack *s) {
   double *v; size_t n;
   if (vector_top(s, "resample", &v, &n) != 0) return -1;
-  double *r = malloc(n * sizeof *r);
+  double *r = xmalloc(n * sizeof *r);
   gsl_ran_sample(global_rng, r, n, v, n, sizeof(double));
   free(v);
   stack_element e = pop(s); stack_element_free(&e);

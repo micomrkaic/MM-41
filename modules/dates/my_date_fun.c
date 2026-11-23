@@ -90,8 +90,12 @@ int date_plus_days(Stack* stack) {
     return 1;
   }
 
-  int delta = (int)days_elem->real;
-  t += delta * 86400;  // seconds per day
+  if (!(days_elem->real > -4000000 && days_elem->real < 4000000)) {   /* some eleven thousand years either way */
+    mm_error("dateplus: the number of days is out of range");
+    return 1;
+  }
+  long delta = (long)days_elem->real;
+  t += (time_t)(delta * 86400L);  // seconds per day
 
   struct tm* new_date = localtime(&t);
   if (!new_date) {

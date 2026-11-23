@@ -54,22 +54,31 @@ void evaluate_line(Stack *stack, char* line) {
     return;
   }
 
+  /* the snapshots are this function's own business: if one cannot be made
+     that is an ordinary error here, not a jump to whichever command, further
+     out, happens to be running this line */
+  jmp_buf *outer = mm_nomem_escape;
+  mm_nomem_escape = NULL;
   Stack before;
   init_stack(&before);
   Lexer lexer = (Lexer){ .input = line, .pos = 0 };
   Token tok;
+  int warned = 0;
   do {
     tok = next_token(&lexer);
     if (tok.type == TOK_EOF) break;
+    bool saved = snapshot_stack(&before, stack);
+    if (!saved && !warned++)
+      mm_warn("out of memory: no room to save the stack before '%.40s'; if it fails the stack stays as it leaves it. drop or clst to make room", tok.text);
     long errors_before = error_count;
-    copy_stack(&before, stack);
     evaluate_one_token(stack, &tok);
     if (error_count > errors_before) {
-      copy_stack(stack, &before);
+      if (saved) move_stack(stack, &before);       /* a move: restoring allocates nothing */
       break;
     }
   } while (1);
   free_stack(&before);
+  mm_nomem_escape = outer;
 }
 
 /* void evaluate_line(Stack *stack, char* line) { */
@@ -84,7 +93,27 @@ void evaluate_line(Stack *stack, char* line) {
 /* } */
 
 // **************** Process one token ****************
+static void run_token(Stack *stack, const Token *tok);
+
+/* One token, with the recovery point for running out of memory around it
+   (errors.h). The jump comes from the GSL error handler or from xmalloc,
+   somewhere below run_token; the error it turns into is handled by the
+   caller like any other: the stack goes back to what it was. */
 void evaluate_one_token(Stack *stack, const Token *tok) {
+  jmp_buf here;
+  jmp_buf *volatile outer = mm_nomem_escape;
+  mm_nomem_escape = &here;
+  if (setjmp(here) == 0) {
+    run_token(stack, tok);
+    mm_nomem_escape = outer;
+    return;
+  }
+  mm_nomem_escape = outer;
+  gsl_set_error_handler(&my_error_handler);      /* the command may have had it switched off */
+  mm_error("out of memory: '%.40s' was abandoned", tok->text);
+}
+
+static void run_token(Stack *stack, const Token *tok) {
   switch (tok->type) {
   case TOK_EOF:
     return;
@@ -114,15 +143,17 @@ void evaluate_one_token(Stack *stack, const Token *tok) {
   case TOK_MATRIX_FILE:
     read_matrix_from_file(stack, tok->text);
     return;
-  case TOK_MATRIX_INLINE_REAL:
-    push_matrix_real(stack,parse_matrix_literal(tok->text));
+  case TOK_MATRIX_INLINE_REAL: {                   /* a literal that does not parse has said why: push nothing */
+    gsl_matrix *m = parse_matrix_literal(tok->text);
+    if (m) push_matrix_real(stack, m);
     return;
+  }
   case TOK_MATRIX_INLINE_COMPLEX:
-    push_matrix_complex(stack,parse_complex_matrix_literal(tok->text));
+  case TOK_MATRIX_INLINE_MIXED: {
+    gsl_matrix_complex *m = parse_complex_matrix_literal(tok->text);
+    if (m) push_matrix_complex(stack, m);
     return;
-  case TOK_MATRIX_INLINE_MIXED:
-    push_matrix_complex(stack,parse_complex_matrix_literal(tok->text));
-    return;
+  }
   case TOK_PLUS: case TOK_MINUS: case TOK_STAR: case TOK_SLASH: case TOK_CARET:
   case TOK_DOT_STAR: case TOK_DOT_SLASH: case TOK_DOT_CARET: {
     int idx = find_op(tok->text);

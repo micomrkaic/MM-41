@@ -274,6 +274,11 @@ int exec_word(Stack *stack, user_word *w) {
   struct { double index, limit; } lp[MAX_LOOP_NEST];
   int nl = 0;
   long errors_before = error_count;
+  /* a word is run by a token, which has a recovery point for running out of
+     memory; each of the word's own tokens sets its own, and nothing in this
+     loop may jump past the bookkeeping below */
+  jmp_buf *outer = mm_nomem_escape;
+  mm_nomem_escape = NULL;
   word_depth++;
   for (int pc = 0; pc < w->ncode && error_count == errors_before; ) {
     WInstr *in = &w->code[pc];
@@ -329,6 +334,7 @@ int exec_word(Stack *stack, user_word *w) {
     }
   }
   word_depth--;
+  mm_nomem_escape = outer;
   if (error_count != errors_before && word_depth == 0) {
     fflush(stdout);
     fprintf(stderr, "  (in word '%s')\n", w->name);
@@ -358,7 +364,7 @@ void list_macros(void) {
 void delete_word(Stack *stack) {
   if (word_depth > 0) { mm_error("delword cannot run inside a word"); return; }
   stack_element a = pop(stack);
-  if (a.type != TYPE_REAL || !isfinite(a.real) || a.real != (int)a.real) {
+  if (a.type != TYPE_REAL || !whole_in(a.real, 0, 1e9)) {
     stack_element_free(&a);
     mm_error("delword: needs the word's number from listwords");
     return;
@@ -448,7 +454,7 @@ static int load_table(const char *path, bool is_macro, bool quiet_if_missing) {
         w = &(*tab)[(*count)++];
         memset(w, 0, sizeof *w);
         snprintf(w->name, sizeof w->name, "%s", name);
-        w->body = strdup("");
+        w->body = xstrdup("");
         w->is_macro = is_macro;
       }
     }
@@ -545,7 +551,7 @@ static int load_word_module(const char *path, const char *fallback_name) {
           char *sm = q + 6 + used;
           while (*sm && isspace((unsigned char)*sm)) sm++;
           free(wm.summary);
-          wm.summary = *sm ? strdup(sm) : NULL;
+          wm.summary = *sm ? xstrdup(sm) : NULL;
         }
       }
       continue;
@@ -556,18 +562,18 @@ static int load_word_module(const char *path, const char *fallback_name) {
       while (isspace((unsigned char)*q)) q++;
       char *ns = q;
       while (*q && !isspace((unsigned char)*q)) q++;
-      name = strndup(ns, (size_t)(q - ns));
+      name = xstrndup(ns, (size_t)(q - ns));
       while (isspace((unsigned char)*q)) q++;
       char *end = q + strlen(q);
       if (end > q && end[-1] == ';') { end--; while (end > q && isspace((unsigned char)end[-1])) end--; }
       else { mm_error("%s, line %d: definition does not end with ';'", path, lineno); free(name); rc = -1; continue; }
-      body = strndup(q, (size_t)(end - q));
+      body = xstrndup(q, (size_t)(end - q));
     } else {                                /* name body */
       char *ns = p;
       while (*p && !isspace((unsigned char)*p)) p++;
-      name = strndup(ns, (size_t)(p - ns));
+      name = xstrndup(ns, (size_t)(p - ns));
       while (isspace((unsigned char)*p)) p++;
-      body = strdup(p);
+      body = xstrdup(p);
     }
     if (!name || !body) { free(name); free(body); rc = mm_error("Out of memory"); break; }
     if (validate_name(name) != 0) {
@@ -604,7 +610,7 @@ static int load_word_module(const char *path, const char *fallback_name) {
     slot = &word_modules[word_module_count++];
   }
   *slot = wm;
-  slot->path = strdup(path);
+  slot->path = xstrdup(path);
   slot->nwords = 0;
 
   /* pass 1: names, so forward references resolve */
@@ -615,7 +621,7 @@ static int load_word_module(const char *path, const char *fallback_name) {
       memset(w, 0, sizeof *w);
       snprintf(w->name, sizeof w->name, "%s", ent[k].name);
       snprintf(w->module, sizeof w->module, "%s", wm.name);
-      w->body = strdup("");
+      w->body = xstrdup("");
       w->is_macro = true;
     }
   }
@@ -675,7 +681,7 @@ int autoload_word_modules(void) {
   struct dirent *e;
   while ((e = readdir(d)) != NULL && n < MAX_WORD_MODULES) {
     size_t l = strlen(e->d_name);
-    if (l > 3 && strcmp(e->d_name + l - 3, ".mm") == 0) names[n++] = strdup(e->d_name);
+    if (l > 3 && strcmp(e->d_name + l - 3, ".mm") == 0) names[n++] = xstrdup(e->d_name);
   }
   closedir(d);
   qsort(names, (size_t)n, sizeof names[0], cmp_str);

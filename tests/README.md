@@ -64,10 +64,57 @@ never allowed and always fail, even with `#ALLOW_LEAK`.** When the
 underlying bug is fixed, delete the `#ALLOW_LEAK` line and the case
 becomes a regression guard for the fix.
 
-## Currently known issues surfaced by the harness
+## The other suites
 
-- `det` (and likely the whole matrix→scalar reduction family) leaks the
-  input matrix — ASan reports ~96 bytes / 3 allocations per call. The
-  `matrix_det.t` and `matrix_add_det.t` cases carry `#ALLOW_LEAK` and
-  assert the numeric result. Remove those markers when the reduction
-  path is fixed.
+`make test` also runs
+
+- `tests/run_golden.sh`: every `tests/golden/NAME.rpn` in batch mode, its
+  whole output compared with `NAME.out` (`UPDATE=1` regenerates them;
+  read the diff). `robust.rpn` holds the inputs that once crashed or hung
+  the calculator: `nan` as an index, a matrix of minus one rows, a date
+  1e300 days away.
+- `tests/run_scripts.sh`: scripts run from the shell, with arguments.
+- `mm41 --tutor-check`: every line of the tutorial against a fresh stack.
+
+## Fuzzing: `make fuzz`
+
+`tests/fuzz.py` writes sessions nobody would type and runs them under the
+sanitizers (leak detection on). It reads the command table from `mm41
+--commands`, so a new command is fuzzed from the day it is added: each
+line is a command's own example, a damaged copy of it, or random operands
+(`nan`, `1e300`, empty strings, 300-character strings, matrices with zero
+or a million rows) followed by random commands. A failure is reduced to
+the shortest session that still fails in the same place and written to
+`build/fuzz/`.
+
+```
+python3 tests/fuzz.py -n 4000            # sessions
+python3 tests/fuzz.py -n 4000 --files    # damage the files the calculator reads back
+python3 tests/fuzz.py --seed 12345 -n 1  # one session again
+```
+
+With `--files` the session is fixed and the files vary: the saved stack,
+the registers, the words, the config, a program, a table, a holiday list
+are written by the calculator, one is cut short, has bytes flipped or
+numbers replaced, and everything is loaded again.
+
+A single allocation is limited to 64 MB in these runs, so a session that
+asks for a 20-million-row matrix exercises the out-of-memory path instead
+of spending a minute on it.
+
+## Out of memory: `make nomem`
+
+`tests/nomem.py` runs every command's example with some things on the
+stack and in the registers, once for each allocation the example makes,
+with that allocation failed (`tests/nomem_shim.c`, loaded with
+`LD_PRELOAD`). The command must be abandoned with an error, the stack must
+be what it was, and using the stack and the registers afterwards must not
+touch freed memory. `--scope all` also fails the interpreter's own
+allocations (the snapshots it takes before each token); `--run 1000000`
+makes every allocation from the chosen one on fail.
+
+How the calculator survives is described in `include/errors.h`: a recovery
+point around every token, to which the GSL error handler and `xmalloc`
+jump. The one rule it imposes on a command is in that comment too: never
+leave a freed pointer in the stack or in a register while allocating.
+This test is what checks it.

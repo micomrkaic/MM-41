@@ -223,6 +223,56 @@ static int sign_of(resfn f, void *ud, const mm_dec *x) {
   return decNumberIsNegative(&r) ? -1 : 1;
 }
 
+/* The root between xa (where the sign of f is sa) and xb (where it is the
+ * other). False position with the Illinois correction: the chord's crossing
+ * is the next point, and an end that is kept twice running has its value
+ * halved so that it cannot stall. Each step is one evaluation, and it takes
+ * about twenty to reach 34 digits where bisection takes over a hundred,
+ * which matters when one evaluation is eighteen 34-digit powers. A step that
+ * cannot be taken (no value there, or it falls outside the bracket) is a
+ * bisection step instead, so the bracket always shrinks. */
+static void bisect(resfn f, void *ud, mm_dec *xa, int sa, mm_dec *xb, mm_dec *root) {
+  mm_dec fa, fb, c, fc, num, den, half, width, tol, scale, one;
+  decNumberFromString(&half, "0.5", &dec_ctx);
+  decNumberFromString(&tol, "1E-31", &dec_ctx);
+  INT(&one, 1);
+  int have = f(xa, &fa, ud) == 0 && f(xb, &fb, ud) == 0 && !decNumberIsNaN(&fa) && !decNumberIsNaN(&fb)
+          && !decNumberIsInfinite(&fa) && !decNumberIsInfinite(&fb);
+  int side = 0;
+  for (int it = 0; it < 250; it++) {
+    SUB(&width, xb, xa); ABS(&width, &width);
+    ABS(&scale, xa); if (dec_compare(&scale, &one) < 0) CPY(&scale, &one);
+    MUL(&scale, &scale, &tol);
+    if (dec_compare(&width, &scale) <= 0) break;       /* the two ends agree to 31 digits */
+    int chord = 0;
+    if (have) {                                        /* c = xb - fb (xb - xa) / (fb - fa) */
+      SUB(&den, &fb, &fa);
+      if (!ISZERO(&den)) {
+        SUB(&num, xb, xa); MUL(&num, &num, &fb); DIV(&num, &num, &den); SUB(&c, xb, &num);
+        mm_dec lo, hi;
+        if (dec_compare(xa, xb) < 0) { CPY(&lo, xa); CPY(&hi, xb); } else { CPY(&lo, xb); CPY(&hi, xa); }
+        chord = !decNumberIsNaN(&c) && dec_compare(&c, &lo) > 0 && dec_compare(&c, &hi) < 0;
+      }
+    }
+    if (!chord) { ADD(&c, xa, xb); MUL(&c, &c, &half); }
+    int ok = f(&c, &fc, ud) == 0 && !decNumberIsNaN(&fc) && !decNumberIsInfinite(&fc);
+    if (!ok) break;
+    if (ISZERO(&fc)) { CPY(root, &c); decContextZeroStatus(&dec_ctx); return; }
+    int sc = decNumberIsNegative(&fc) ? -1 : 1;
+    if (sc == sa) {
+      CPY(xa, &c); CPY(&fa, &fc);
+      if (side == -1 && have) MUL(&fb, &fb, &half);
+      side = -1;
+    } else {
+      CPY(xb, &c); CPY(&fb, &fc);
+      if (side == 1 && have) MUL(&fa, &fa, &half);
+      side = 1;
+    }
+  }
+  ADD(root, xa, xb); MUL(root, root, &half);
+  decContextZeroStatus(&dec_ctx);           /* the search may have raised flags at extreme rates */
+}
+
 /* Scan [lo, hi] in steps for a sign change of f, then bisect. */
 static int scan_bisect(const char *what, resfn f, void *ud, double lo, double hi, double step, const char *range, mm_dec *root) {
   mm_dec xa, xb;
@@ -243,16 +293,30 @@ static int scan_bisect(const char *what, resfn f, void *ud, double lo, double hi
     CPY(&xa, &xb); sa = sb;
   }
   if (!found) { decContextZeroStatus(&dec_ctx); return mm_error("%s: no %s", what, range); }
-  mm_dec mid, half;
-  decNumberFromString(&half, "0.5", &dec_ctx);
-  for (int it = 0; it < 200; it++) {
-    ADD(&mid, &xa, &xb); MUL(&mid, &mid, &half);
-    int sm = sign_of(f, ud, &mid);
-    if (sm == 0 || sm == 2) break;
-    if (sm == sa) CPY(&xa, &mid); else CPY(&xb, &mid);
-  }
-  ADD(root, &xa, &xb); MUL(root, root, &half);
-  decContextZeroStatus(&dec_ctx);           /* the scan may have raised flags at extreme rates */
+  bisect(f, ud, &xa, sa, &xb, root);
+  return 0;
+}
+
+/* A rate for a residual that only falls, or only rises, across the range (a
+ * bond's price against its yield). The signs at the two ends say at once
+ * whether there is a root, and bisection between them finds it: about 120
+ * evaluations. Scanning the range in quarter-percent steps for the first
+ * change of sign, as scan_bisect must for a residual that may turn (an IRR
+ * with several roots), took 4400 evaluations in 34-digit arithmetic: two
+ * seconds for a bond with eighteen coupons, and fourteen before a mistyped
+ * price was told it has no yield. If the ends agree, a coarse scan still
+ * looks for a root that inputs outside finance might hide. */
+static int solve_rate_monotone(const char *what, resfn f, void *ud, mm_dec *root_pct) {
+  mm_dec xa, xb;
+  decContextZeroStatus(&dec_ctx);
+  decNumberFromString(&xa, "-99", &dec_ctx);
+  decNumberFromString(&xb, "1000", &dec_ctx);
+  int sa = sign_of(f, ud, &xa), sb = sign_of(f, ud, &xb);
+  if (sa == 0) { CPY(root_pct, &xa); decContextZeroStatus(&dec_ctx); return 0; }
+  if (sb == 0) { CPY(root_pct, &xb); decContextZeroStatus(&dec_ctx); return 0; }
+  if (sa == 2 || sb == 2 || sa == sb)
+    return scan_bisect(what, f, ud, -99.0, 1000.0, 5.0, "rate found between -99% and 1000% per period", root_pct);
+  bisect(f, ud, &xa, sa, &xb, root_pct);
   return 0;
 }
 
@@ -415,7 +479,7 @@ static int bond_residual(const mm_dec *yldpct, mm_dec *out, void *ud) {
 
 int fin_bond_yield(const mm_dec *price, const mm_dec *cpnpct, const mm_dec *nper, const mm_dec *redeem, mm_dec *out) {
   struct bond_args b = { cpnpct, nper, redeem, price };
-  return solve_rate("byield", bond_residual, &b, out);
+  return solve_rate_monotone("byield", bond_residual, &b, out);
 }
 
 /* ---- dated cash flows: XNPV discounts actual/365 from the first date ---- */
@@ -514,7 +578,7 @@ int fin_xbond_yield(long settle, long maturity, const mm_dec *ratepct, const mm_
   if (fin_coupon_geometry("xyield", settle, maturity, freq, basis, &N, &A, &E) != 0) return -1;  /* validate once, with messages */
   if (E == 0) return mm_error("xyield: degenerate coupon period");
   struct xbond_args b = { settle, maturity, ratepct, redeem, price, freq, basis };
-  return solve_rate("xyield", xbond_residual, &b, out);
+  return solve_rate_monotone("xyield", xbond_residual, &b, out);
 }
 
 int fin_xaccrued(long settle, long maturity, const mm_dec *ratepct, int freq, int basis, mm_dec *out) {

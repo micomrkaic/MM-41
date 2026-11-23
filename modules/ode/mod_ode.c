@@ -78,7 +78,7 @@ static int rhs(double t, const double y[], double dydt[], void *params) {
 static int read_y0(const Stack *s, int depth, const char *what, double **y, size_t *k) {
   const stack_element *e = &s->items[s->top - depth];
   if (e->type == TYPE_REAL || e->type == TYPE_DECIMAL) {
-    *y = malloc(sizeof **y);
+    *y = xmalloc(sizeof **y);
     (*y)[0] = e->type == TYPE_REAL ? e->real : dec_to_double(&e->dec);
     *k = 1;
     return 0;
@@ -86,7 +86,7 @@ static int read_y0(const Stack *s, int depth, const char *what, double **y, size
   if (e->type == TYPE_MATRIX_REAL && (e->matrix_real->size1 == 1 || e->matrix_real->size2 == 1)) {
     const gsl_matrix *m = e->matrix_real;
     *k = m->size1 * m->size2;
-    *y = malloc(*k * sizeof **y);
+    *y = xmalloc(*k * sizeof **y);
     for (size_t j = 0; j < *k; j++) (*y)[j] = m->size2 == 1 ? gsl_matrix_get(m, j, 0) : gsl_matrix_get(m, 0, j);
     return 0;
   }

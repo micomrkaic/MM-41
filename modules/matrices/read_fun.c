@@ -52,7 +52,7 @@ static gsl_matrix *read_table(const char *path, const char *what, int flatten) {
   FILE *f = fopen(path, "r");
   if (!f) { mm_error("%s: cannot open %s (%s)", what, path, strerror(errno)); return NULL; }
   size_t cap = 1024, n = 0; long cols = 0, rows = 0;
-  double *data = malloc(cap * sizeof *data);
+  double *data = xmalloc(cap * sizeof *data);
   char line[65536];
   long lineno = 0;
   while (fgets(line, sizeof line, f)) {
@@ -70,7 +70,7 @@ static gsl_matrix *read_table(const char *path, const char *what, int flatten) {
       if (cols == 0) cols = k;
       else if (k != cols) { mm_error("%s: line %ld of %s has %ld numbers, the first row %ld", what, lineno, path, k, cols); free(data); fclose(f); return NULL; }
     }
-    if (n + (size_t)k > cap) { while (n + (size_t)k > cap) cap *= 2; data = realloc(data, cap * sizeof *data); }
+    if (n + (size_t)k > cap) { while (n + (size_t)k > cap) cap *= 2; data = xrealloc(data, cap * sizeof *data); }
     memcpy(data + n, row, (size_t)k * sizeof *row);
     n += (size_t)k; rows++;
   }
@@ -117,7 +117,7 @@ int op_readcol(Stack *s) {
   if (pop_path(s, "readcol", path, sizeof path) != 0) return -1;
   gsl_matrix *m = read_table(path, "readcol", 0);
   if (!m) return -1;
-  if (j < 0 || j != floor(j) || (size_t)j >= m->size2) { size_t cols = m->size2; gsl_matrix_free(m); return mm_error("readcol: the table has %zu columns, numbered from 0", cols); }
+  if (!(j >= 0 && j < (double)m->size2) || j != floor(j)) { size_t cols = m->size2; gsl_matrix_free(m); return mm_error("readcol: the table has %zu columns, numbered from 0", cols); }
   gsl_matrix *v = gsl_matrix_alloc(m->size1, 1);
   for (size_t i = 0; i < m->size1; i++) gsl_matrix_set(v, i, 0, gsl_matrix_get(m, i, (size_t)j));
   gsl_matrix_free(m);
@@ -133,7 +133,7 @@ static int take_line(Stack *s, const char *what, int column) {
   if (e->type != TYPE_MATRIX_REAL) return mm_error("%s: needs a real matrix", what);
   gsl_matrix *m = e->matrix_real;
   size_t limit = column ? m->size2 : m->size1;
-  if (k < 0 || k != floor(k) || (size_t)k >= limit) return mm_error("%s: the matrix has %zu %s, numbered from 0", what, limit, column ? "columns" : "rows");
+  if (!(k >= 0 && k < (double)limit) || k != floor(k)) return mm_error("%s: the matrix has %zu %s, numbered from 0", what, limit, column ? "columns" : "rows");
   gsl_matrix *v = column ? gsl_matrix_alloc(m->size1, 1) : gsl_matrix_alloc(1, m->size2);
   if (column) for (size_t i = 0; i < m->size1; i++) gsl_matrix_set(v, i, 0, gsl_matrix_get(m, i, (size_t)k));
   else for (size_t j = 0; j < m->size2; j++) gsl_matrix_set(v, 0, j, gsl_matrix_get(m, (size_t)k, j));

@@ -1,0 +1,100 @@
+Error: roll: depth must be a non-negative integer
+Error: pick: depth must be a non-negative integer
+Error: pick: depth must be a non-negative integer
+Error: Precision value 1e+300 is out of valid range (0–20)
+Error: Precision value nan is out of valid range (0–20)
+Error: sto: invalid register index 1e+30 (0..63)
+Error: sto: invalid register index -3 (0..63)
+Error: Invalid register index: nan
+1000000000000000019884624838656
+Error: int2str: needs a finite number
+Error: int2str: needs a finite number
+Error: seed: needs a whole number >= 0
+Error: seed: needs a whole number >= 0
+Error: ncr: need integers 0 <= k <= n
+1.666667e+44
+2598960.000000
+Error: ncr: overflow
+Error: ncr: overflow
+Error: npr: need integers 0 <= k <= n
+Error: rpois: the mean must be positive (and at most 1e9)
+Error: binomrnd: invalid parameters
+Error: poisrnd: invalid parameters
+Error: matrix literal: a matrix needs at least one row and one column
+Error: matrix literal: 1000000000000000019884624838656 by 1000000000000000019884624838656 is too large a matrix (the limit is 16000000 cells)
+Error: matrix literal: a matrix needs at least one row and one column
+Error: Invalid reshape dimensions: must be positive integers.
+Error: Invalid reshape dimensions: must be positive integers.
+Error: Invalid reshape dimensions: must be positive integers.
+Error: get_aij: row and column must be non-negative (0-based)
+Error: get_aij: row and column must be non-negative (0-based)
+Error: set_aij: index (9,3) out of range
+Error: set_aij: row and column must be non-negative (0-based)
+Error: rrange: too many elements (1000000000000)
+Error: rrange: step must be nonzero and all arguments finite
+Error: rrange: too many elements (inf)
+Error: eye: dimensions must be positive
+Error: eye: a 1e+300 x 1e+300 matrix is too large (the limit is 50000000 elements)
+Error: rand: dimensions must be positive
+Error: randn: a 1e+10 x 1e+10 matrix is too large (the limit is 50000000 elements)
+Error: movavg: the window must be a whole number >= 1
+Error: movavg: the window must be a whole number >= 1
+Error: hist: the number of bins must be a whole number >= 1
+Error: hist: the number of bins must be a whole number >= 1
+Error: chi2cdf: needs x >= 0 and df > 0
+Error: chi2cdf: needs x >= 0 and df > 0
+Error: dateplus: the number of days is out of range
+Error: dateplus: the number of days is out of range
+Error: workdayplus: the number of workdays must be a whole number
+Error: latitude is -90..90 degrees, longitude -360..360 and the UTC offset -24..24 hours.
+Error: latitude is -90..90 degrees, longitude -360..360 and the UTC offset -24..24 hours.
+Error: latitude is -90..90 degrees, longitude -360..360 and the UTC offset -24..24 hours.
+Error: lifetab: needs x0 <= x1 within 1000 years
+Error: lifetab: needs x0 <= x1 within 1000 years
+Error: lifetab: needs x0 <= x1 within 1000 years
+
+       3 ┤                                                                    
+         │                                                                    
+         │                                                                    
+         │                                                                    
+     2.5 ┤                                                                    
+         │                                                                    
+         │                                                                    
+         │                                                                    
+       2 ┤                                  ▖                                 
+         │                                                                    
+         │                                                                    
+         │                                                                    
+         │                                                                    
+     1.5 ┤                                                                    
+         │                                                                    
+         │                                                                    
+         │                                                                    
+       1 ┤                                                                    
+         └┬──────┬─────┬──────┬──────┬──────┬─────┬──────┬──────┬──────┬─────┬
+          0     0.2   0.4    0.6    0.8     1    1.2    1.4    1.6    1.8    2
+Error: plot: nothing to draw
+
+       3 ┤                               ▄▄▀▘                                 
+         │                           ▄▄▀▀                                     
+         │                       ▄▄▀▀                                         
+         │                   ▄▄▀▀                                             
+     2.5 ┤               ▄▄▀▀                                                 
+         │           ▄▄▀▀                                                     
+         │       ▄▄▀▀                                                         
+         │   ▄▄▀▀                                                             
+       2 ┤▄█▀                                                                 
+         │  ▀▀▀▀▄▄▄▖                                                          
+         │         ▝▀▀▀▚▄▄▄                                                   
+         │                 ▀▀▀▀▄▄▄▖                                           
+         │                        ▝▀▀▀▚▄▄▄                                    
+     1.5 ┤                                ▀▀▀▀▄▄▄▖                            
+         │                                       ▝▀▀▀▚▄▄▄                     
+         │                                               ▀▀▀▀▄▄▄▖             
+         │                                                      ▝▀▀▀▚▄▄▄      
+       1 ┤                                                              ▀▀▀▀▄▄
+         └┬──────┬─────┬──────┬──────┬──────┬─────┬──────┬──────┬──────┬─────┬
+          -1e+300   -6e+299       -2e+299   0  2e+299 4e+299 6e+299 8e+299
+3.000000
+{}
+[exit 1]

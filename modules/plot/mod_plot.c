@@ -142,9 +142,9 @@ static void line_px(Canvas *c, int x0, int y0, int x1, int y1, int s) {
 }
 
 static int to_px(double v, double a, double b, int n) {
-  double t = (v - a) / (b - a);
-  int p = (int)floor(t * (n - 1) + 0.5);
-  return p;
+  double t = floor((v - a) / (b - a) * (n - 1) + 0.5);
+  if (!(t > -100000 && t < 100000)) return t > 0 ? 100000 : -100000;   /* off the canvas (or nan): clipped there */
+  return (int)t;
 }
 
 /* the extent of the data on each axis, after the log transform, with bars from 0 */
@@ -172,7 +172,7 @@ static int data_range(double *xa, double *xb, double *ya, double *yb) {
 
 /* expand a range to tick multiples; a degenerate range gets a width */
 static void expand(double *a, double *b, double *step, int want, int is_log) {
-  if (*b - *a < 1e-12 * fmax(fabs(*a), 1)) { *a -= 1; *b += 1; }
+  if (*b - *a < 1e-12 * fmax(fabs(*a), 1)) { double pad = fmax(1, 0.5 * fabs(*a)); *a -= pad; *b += pad; }   /* 1 is nothing beside 1e300 */
   if (is_log) { *a = floor(*a); *b = ceil(*b); *step = fmax(1, ceil((*b - *a) / want)); return; }
   *step = nice_step(*b - *a, want);
   *a = floor(*a / *step) * *step;
@@ -195,7 +195,7 @@ static void terminal_size(int *cols, int *rows) {
 typedef struct { char *s; size_t n, cap; } Buf;
 static void bput(Buf *b, const char *t) {
   size_t l = strlen(t);
-  if (b->n + l + 1 > b->cap) { b->cap = (b->n + l + 1) * 2; b->s = realloc(b->s, b->cap); }
+  if (b->n + l + 1 > b->cap) { b->cap = (b->n + l + 1) * 2; b->s = xrealloc(b->s, b->cap); }
   memcpy(b->s + b->n, t, l + 1); b->n += l;
 }
 static void bputf(Buf *b, const char *fmt, ...) {
@@ -261,7 +261,7 @@ static int render(Buf *out, int colour) {
     bput(out, "\n");
   }
   /* which rows and columns a tick falls in: each cell spans two pixels plus half a pixel each side, contiguous with its neighbours */
-  unsigned char *rowtick = calloc((size_t)H, 1), *coltick = calloc((size_t)W, 1);
+  unsigned char *rowtick = xcalloc((size_t)H, 1), *coltick = xcalloc((size_t)W, 1);
   double hpx = (yb - ya) / (c.py - 1), wpx = (xb - xa) / (c.px - 1);
   for (int r = 0; r < H; r++) {
     double y_top = yb - hpx * (2.0 * r) + hpx / 2, y_bot = yb - hpx * (2.0 * r + 1) - hpx / 2, eps = hpx * 1e-6;
@@ -307,7 +307,7 @@ static int render(Buf *out, int colour) {
   bput(out, "\n");
   free(rowtick); free(coltick);
   /* x tick labels */
-  char *row = calloc((size_t)W + 40, 1); memset(row, ' ', (size_t)W + 39);
+  char *row = xcalloc((size_t)W + 40, 1); memset(row, ' ', (size_t)W + 39);
   for (long k = lrint(floor(xa / xs)); k * xs <= xb + 1e-9 * xs; k++) {
     double t = k * xs;
     if (t < xa - 1e-9 * xs) continue;
@@ -369,7 +369,7 @@ static int op_mplot(Stack *s) {
   if (!fig.hold) free_series();
   fig.hold = 1;
   for (size_t j = 1; j < cols; j++) {
-    double *x = malloc(n * sizeof *x), *y = malloc(n * sizeof *y);
+    double *x = xmalloc(n * sizeof *x), *y = xmalloc(n * sizeof *y);
     for (size_t i = 0; i < n; i++) { x[i] = gsl_matrix_get(m, i, 0); y[i] = gsl_matrix_get(m, i, j); }
     char name[16] = "";
     if (cols > 2) snprintf(name, sizeof name, "col %zu", j);
@@ -390,7 +390,7 @@ static int op_fplot(Stack *s) {
   int cols, rows; terminal_size(&cols, &rows);
   int W = fig.W > 0 ? fig.W : (cols - 12 > 100 ? 100 : cols - 12);
   size_t n = (size_t)(2 * W);
-  double *x = malloc(n * sizeof *x), *y = malloc(n * sizeof *y);
+  double *x = xmalloc(n * sizeof *x), *y = xmalloc(n * sizeof *y);
   int depth0 = s->top + 1;
   bool quiet = errors_quiet; errors_quiet = true;
   for (size_t i = 0; i < n; i++) {
@@ -422,7 +422,7 @@ static int op_hplot(Stack *s) {
   for (size_t i = 0; i < n; i++) if (isfinite(v[i])) { if (v[i] < lo) lo = v[i]; if (v[i] > hi) hi = v[i]; }
   if (!(hi > lo)) { free(v); return mm_error("hplot: the data have no spread"); }
   size_t K = (size_t)k;
-  double *x = malloc(K * sizeof *x), *h = calloc(K, sizeof *h), w = (hi - lo) / (double)K;
+  double *x = xmalloc(K * sizeof *x), *h = xcalloc(K, sizeof *h), w = (hi - lo) / (double)K;
   for (size_t j = 0; j < K; j++) x[j] = lo + (j + 0.5) * w;
   for (size_t i = 0; i < n; i++) if (isfinite(v[i])) { size_t j = (size_t)((v[i] - lo) / w); if (j >= K) j = K - 1; h[j] += 1; }
   free(v);
@@ -470,8 +470,8 @@ static int op_pyrange(Stack *s) {
 }
 static int op_psize(Stack *s) {
   double w, h; if (pop_two_reals(s, "psize", &w, &h) != 0) return -1;
-  if (w != 0 && (w < 10 || w > 400)) return mm_error("psize: width 10 to 400 cells, or 0 for the terminal's");
-  if (h != 0 && (h < 4 || h > 200)) return mm_error("psize: height 4 to 200 rows, or 0 for the terminal's");
+  if (!(w == 0 || (w >= 10 && w <= 400))) return mm_error("psize: width 10 to 400 cells, or 0 for the terminal's");
+  if (!(h == 0 || (h >= 4 && h <= 200))) return mm_error("psize: height 4 to 200 rows, or 0 for the terminal's");
   fig.W = (int)w; fig.H = (int)h; return 0;
 }
 

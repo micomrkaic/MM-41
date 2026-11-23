@@ -1,5 +1,6 @@
 # MM-41 CI: release build with warnings as errors, then the test suite
-# (cases, golden transcripts, scripts, tutor) under AddressSanitizer.
+# (cases, golden transcripts, scripts, tutor) under AddressSanitizer, the
+# fuzzer and the out-of-memory test.
 name: ci
 on:
   push:
@@ -17,6 +18,10 @@ jobs:
         run: make -j4
       - name: test suite (ASan build)
         run: make test
+      - name: fuzz (random sessions, damaged files)
+        run: make fuzz FUZZ_N=1000
+      - name: out of memory (every command, each allocation failed in turn)
+        run: make nomem
 
   # The golden transcripts are not run here yet: three of them (income, ode,
   # survival) differ from the Linux output in the last printed digits.

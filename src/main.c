@@ -72,12 +72,19 @@ gsl_rng
 
 
 // Local declarations
-void my_error_handler(const char *reason, const char *file, int line,
-                      int gsl_errno);
 int repl(void);
+
+static void quiet_error_handler(const char *reason, const char *file, int line, int gsl_errno) {
+  (void)reason; (void)file; (void)line;
+  if (gsl_errno == GSL_ENOMEM && mm_nomem_escape) mm_out_of_memory();
+}
+
+mm_gsl_handler *mm_gsl_errors_off(void) { return gsl_set_error_handler(&quiet_error_handler); }
 
 void my_error_handler(const char *reason, const char *file, int line,
                       int gsl_errno) {
+  /* out of memory inside a command: abandon the command (see errors.h) */
+  if (gsl_errno == GSL_ENOMEM && mm_nomem_escape) mm_out_of_memory();
   mm_error("GSL ERROR: %s (%s:%d) [code=%d]\n", reason, file, line,
           gsl_errno);
   // Do NOT call abort(); this allows graceful recovery
@@ -231,13 +238,15 @@ static bool handle_line(Stack *stack, Stack *old_stack, char *line) {
   char rewritten[1024];
   const char *bare = bare_name_form(line, rewritten, sizeof rewritten);
 
+  static bool can_undo = true;                 /* false when there was no memory to keep the stack as it was */
   if (!strcmp(line, "undo")) {
-    copy_stack(stack, old_stack);
+    if (can_undo) copy_stack(stack, old_stack);
+    else mm_error("undo: the stack was not saved before the last line (out of memory)");
   } else {
-    copy_stack(old_stack, stack); // Preserve the stack
+    can_undo = snapshot_stack(old_stack, stack); // Preserve the stack
     long errs = error_count;
     evaluate_line(stack, bare ? rewritten : line);
-    if (bare && error_count != errs) copy_stack(stack, old_stack);   /* a failed `use x` leaves no "x" behind */
+    if (bare && can_undo && error_count != errs) copy_stack(stack, old_stack);   /* a failed `use x` leaves no "x" behind */
     if (stop_on_error && error_count != errs) return false;          /* -x: the first error ends the run */
   }
   if (exit_status >= 0) return false;                                /* n exit */
@@ -388,7 +397,7 @@ int main(int argc, char **argv) {
   } else {
     for (int j = 0; j < njobs && go_on; j++) {
       if (jobs[j].kind == 'e') {
-        char *copy = strdup(jobs[j].arg);
+        char *copy = xstrdup(jobs[j].arg);
         go_on = handle_line(&stack, &old_stack, copy);
         free(copy);
       } else {

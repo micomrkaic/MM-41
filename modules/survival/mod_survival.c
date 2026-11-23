@@ -134,7 +134,7 @@ static int integrate_inf(double (*f)(double, void *), double a, double *out, con
   gsl_integration_workspace *w = gsl_integration_workspace_alloc(2000);
   gsl_function F = { f, NULL };
   double r, err;
-  gsl_error_handler_t *old = gsl_set_error_handler_off();
+  gsl_error_handler_t *old = mm_gsl_errors_off();
   int st = gsl_integration_qagiu(&F, a, 0, 1e-9, 2000, w, &r, &err);
   gsl_set_error_handler(old);
   gsl_integration_workspace_free(w);
@@ -153,7 +153,7 @@ static int quantile(double p, double *out, const char *what) {
   if (S(hi) > target) return mm_error("%s: no finite quantile", what);
   gsl_function F = { qroot, &target };
   gsl_root_fsolver *s = gsl_root_fsolver_alloc(gsl_root_fsolver_brent);
-  gsl_error_handler_t *old = gsl_set_error_handler_off();
+  gsl_error_handler_t *old = mm_gsl_errors_off();
   int st = gsl_root_fsolver_set(s, &F, 0, hi);
   double r = hi;
   for (int it = 0; st == GSL_SUCCESS && it < 200; it++) {
@@ -286,7 +286,7 @@ static int op_lifemode(Stack *s) {
   if (best <= 0 || best >= hi) { push_real(s, best); return 0; }     /* the mode is at an end */
   gsl_function F = { neg_pdf, NULL };
   gsl_min_fminimizer *mn = gsl_min_fminimizer_alloc(gsl_min_fminimizer_brent);
-  gsl_error_handler_t *old = gsl_set_error_handler_off();
+  gsl_error_handler_t *old = mm_gsl_errors_off();
   int st = gsl_min_fminimizer_set(mn, &F, best, best - step, best + step);
   double m = best;
   for (int it = 0; st == GSL_SUCCESS && it < 200; it++) {
@@ -318,14 +318,14 @@ static int apv(Stack *s, const char *what, int term, int insurance) {
   if (pop_real_arg(s, what, &ipct) != 0) return -1;
   if (term && pop_real_arg(s, what, &n) != 0) return -1;
   if (pop_real_arg(s, what, &x) != 0) return -1;
-  if (term && (n < 1 || n != floor(n))) return mm_error("%s: n must be a whole number of years >= 1", what);
+  if (term && !whole_in(n, 1, 100000)) return mm_error("%s: n must be a whole number of years >= 1", what);
   if (ipct <= -100) return mm_error("%s: the rate must be above -100%%", what);
   double v = 1 / (1 + ipct / 100), sx = S(x);
   if (sx <= 0) return mm_error("%s: S(x) is zero at x = %g", what, x);
   double sum = 0, vk = 1;
   for (int k = 0; k < (term ? (int)n : 100000); k++) {
     double kpx = S(x + k) / sx;
-    if (kpx < 1e-15 && !term) break;
+    if (kpx < 1e-15) break;                          /* nobody is left: the later terms are zero */
     if (insurance) { double qxk = kpx > 0 ? 1 - S(x + k + 1) / S(x + k) : 0; sum += vk * v * kpx * qxk; }
     else sum += vk * kpx;
     vk *= v;
@@ -343,7 +343,7 @@ static int op_lifetab(Stack *s) {
   if (need_law("lifetab") != 0) return -1;
   double x0, x1;
   if (pop_two_reals(s, "lifetab", &x0, &x1) != 0) return -1;
-  if (x1 < x0 || x1 - x0 > 1000) return mm_error("lifetab: needs x0 <= x1 within 1000 years");
+  if (!(x1 >= x0 && x1 - x0 <= 1000)) return mm_error("lifetab: needs x0 <= x1 within 1000 years");
   size_t n = (size_t)floor(x1 - x0) + 1;
   double s0 = S(x0);
   if (s0 <= 0) return mm_error("lifetab: S(x0) is zero");
@@ -420,7 +420,7 @@ static int read_obs(const Stack *s, int depth, const char *what, Obs **out, size
   if (vector_at(s, depth + 1, what, &t, &nt) != 0) return -1;
   if (vector_at(s, depth, what, &d, &nd) != 0) { free(t); return -1; }
   if (nt != nd || nt == 0) { free(t); free(d); return mm_error("%s: times and event indicators must be vectors of the same length", what); }
-  Obs *o = malloc(nt * sizeof *o);
+  Obs *o = xmalloc(nt * sizeof *o);
   for (size_t i = 0; i < nt; i++) {
     if (t[i] < 0 || (d[i] != 0 && d[i] != 1)) { free(t); free(d); free(o); return mm_error("%s: times must be >= 0 and indicators 0 (censored) or 1 (event)", what); }
     o[i].t = t[i]; o[i].d = (int)d[i];
@@ -467,7 +467,7 @@ static int op_logrank(Stack *s) {
   if (read_obs(s, 0, "logrank", &b, &nb) != 0) { free(a); return -1; }
   /* merge the distinct event times */
   size_t N = na + nb;
-  Obs *all = malloc(N * sizeof *all);
+  Obs *all = xmalloc(N * sizeof *all);
   memcpy(all, a, na * sizeof *a); memcpy(all + na, b, nb * sizeof *b);
   qsort(all, N, sizeof *all, obs_cmp);
   double O1 = 0, E1 = 0, V = 0;
@@ -502,7 +502,7 @@ typedef struct { const Obs *o; size_t n; int l; } FitData;
 /* negative log-likelihood in log-parameters (mu of lognormal untransformed) */
 static double nll(const gsl_vector *x, void *q) {
   const FitData *fd = q;
-  double p[5];
+  double p[5] = { 0 };
   for (int i = 0; i < laws[fd->l].npar; i++) p[i] = (fd->l == L_LOGNORMAL && i == 0) ? gsl_vector_get(x, i) : exp(gsl_vector_get(x, i));
   double ll = 0;
   for (size_t i = 0; i < fd->n; i++) {
@@ -544,7 +544,7 @@ static int op_lifefit(Stack *s) {
   FitData fd = { o, n, law };
   gsl_multimin_function F = { nll, (size_t)np, &fd };
   gsl_multimin_fminimizer *mn = gsl_multimin_fminimizer_alloc(gsl_multimin_fminimizer_nmsimplex2, (size_t)np);
-  gsl_error_handler_t *old = gsl_set_error_handler_off();
+  gsl_error_handler_t *old = mm_gsl_errors_off();
   int st = gsl_multimin_fminimizer_set(mn, &F, x, step);
   int it = 0;
   for (int restart = 0; restart < 3 && st == GSL_SUCCESS; restart++) {
@@ -582,7 +582,7 @@ typedef struct { const double *x, *y; size_t n; int l; int from_lx; } TabFit;
    the survivors relative to the first age */
 static double table_rss(const gsl_vector *v, void *q) {
   const TabFit *tf = q;
-  double p[5];
+  double p[5] = { 0 };
   for (int i = 0; i < laws[tf->l].npar; i++) p[i] = (tf->l == L_LOGNORMAL && i == 0) ? gsl_vector_get(v, (size_t)i) : exp(gsl_vector_get(v, (size_t)i));
   double rss = 0, S0 = S_of(tf->l, p, tf->x[0]);
   if (!(S0 > 0)) return 1e300;
@@ -607,7 +607,7 @@ static int fit_table(Stack *s, const char *what, int from_lx) {
     if (from_lx ? !(y[i] > 0) : !(y[i] > 0 && y[i] < 1)) { free(x); free(y); return mm_error("%s: %s", what, from_lx ? "lx must be > 0" : "qx must be strictly between 0 and 1"); }
     if (i && x[i] <= x[i - 1]) { free(x); free(y); return mm_error("%s: ages must increase", what); }
   }
-  double *yl = malloc(nx * sizeof *yl);
+  double *yl = xmalloc(nx * sizeof *yl);
   for (size_t i = 0; i < nx; i++) yl[i] = from_lx ? log(y[i] / y[0]) : log(y[i]);
   TabFit tf = { x, yl, nx, law, from_lx };
   int np = laws[law].npar;
@@ -636,7 +636,7 @@ static int fit_table(Stack *s, const char *what, int from_lx) {
   }
   gsl_multimin_function F = { table_rss, (size_t)np, &tf };
   gsl_multimin_fminimizer *mn = gsl_multimin_fminimizer_alloc(gsl_multimin_fminimizer_nmsimplex2, (size_t)np);
-  gsl_error_handler_t *old = gsl_set_error_handler_off();
+  gsl_error_handler_t *old = mm_gsl_errors_off();
   int st = gsl_multimin_fminimizer_set(mn, &F, v, step), it = 0;
   for (int restart = 0; restart < 4 && st == GSL_SUCCESS; restart++) {
     for (it = 0; it < 5000; it++) {
@@ -650,7 +650,7 @@ static int fit_table(Stack *s, const char *what, int from_lx) {
   }
   gsl_set_error_handler(old);
   double rss = table_rss(mn->x, &tf);
-  double p[5];
+  double p[5] = { 0 };
   for (int i = 0; i < np; i++) p[i] = (law == L_LOGNORMAL && i == 0) ? gsl_vector_get(mn->x, (size_t)i) : exp(gsl_vector_get(mn->x, (size_t)i));
   gsl_multimin_fminimizer_free(mn);
   gsl_vector_free(v); gsl_vector_free(step);

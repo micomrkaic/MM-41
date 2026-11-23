@@ -92,11 +92,11 @@ int set_print_precision(Stack* stack) {
     mm_error("setprec: expected a real number");
     return 1;
   }
-  int precision = (int)elem->real;
-  if (precision < 0 || precision > 20) {
-    mm_error("Error: Precision value %d is out of valid range (0–20)\n", precision);
+  if (!(elem->real >= 0 && elem->real < 21)) {       /* nan and infinity fail this too */
+    mm_error("Error: Precision value %g is out of valid range (0–20)\n", elem->real);
     return 1;
   }
+  int precision = (int)elem->real;
   stack->top--;                      /* a real: nothing to free */
   print_precision = precision;
   return 0;

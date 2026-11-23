@@ -32,16 +32,16 @@
 static double deg2rad(double deg) { return deg * M_PI / 180.0; }
 static double rad2deg(double rad) { return rad * 180.0 / M_PI; }
 
+/* fmod, not a loop that adds 360 until the angle is in range: the loop never
+   ends for 1e300 (adding 360 changes nothing) or for infinity. */
 static double normalize_deg(double x) {
-  while (x < 0.0)   x += 360.0;
-  while (x >= 360.0) x -= 360.0;
-  return x;
+  x = fmod(x, 360.0);
+  return x < 0.0 ? x + 360.0 : x;
 }
 
 static double normalize_hours(double h) {
-  while (h < 0.0)   h += 24.0;
-  while (h >= 24.0) h -= 24.0;
-  return h;
+  h = fmod(h, 24.0);
+  return h < 0.0 ? h + 24.0 : h;
 }
 
 /*
@@ -195,6 +195,7 @@ static int compute_one_civil_twilight(const char *date_str,
 }
 
 static void format_time_hhmm(double h, char *buf, size_t len) {
+  if (!(h > -1000 && h < 1000)) { snprintf(buf, len, "--:--"); return; }   /* no such time (nan from a place the sun does not serve) */
   int hour   = (int)floor(h);
   int minute = (int)floor((h - hour) * 60.0 + 0.5);
   if (minute >= 60) {
@@ -266,6 +267,10 @@ static int fetch_astro_args(const Stack *stack,
     return 0;
   }
 
+  if (!(e_lat->real >= -90 && e_lat->real <= 90) || !(e_lon->real >= -360 && e_lon->real <= 360) || !(utc_offset >= -24 && utc_offset <= 24)) {
+    fprintf(stderr, "Error: latitude is -90..90 degrees, longitude -360..360 and the UTC offset -24..24 hours.\n");
+    return 0;
+  }
   *date_str_out   = e_date->string;
   *lat_out        = e_lat->real;
   *lon_out        = e_lon->real;

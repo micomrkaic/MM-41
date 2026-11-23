@@ -93,6 +93,8 @@ value_type stack_top_type(const Stack* stack);
 void stack_coerce_real(Stack* stack, int depth);
 value_type stack_next2_top_type(const Stack* stack);
 int copy_stack(Stack* dest, const Stack* src);
+int snapshot_stack(Stack* dest, const Stack* src);   /* a silent copy_stack: 0 when there is no memory for it */
+void move_stack(Stack* dest, Stack* src);            /* dest takes over src's contents; src is left empty */
 
 #endif // STACK_H
 

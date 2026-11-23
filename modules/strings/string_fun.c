@@ -142,13 +142,14 @@ void top_to_string(Stack* stack) {
 
   stack_element* el = &stack->items[stack->top];
 
-  char buf[DECNUMDIGITS + 16];
+  char buf[DECNUMDIGITS + 340];                         /* the largest double has 309 digits */
   if (el->type == TYPE_DECIMAL) {
     mm_dec i;
     dec_intg(&i, &el->dec);
     dec_to_string(&i, buf, sizeof buf);
   } else if (el->type == TYPE_REAL) {
-    snprintf(buf, sizeof buf, "%ld", (long)el->real);   /* truncate toward zero */
+    if (!isfinite(el->real)) { mm_error("int2str: needs a finite number"); return; }
+    snprintf(buf, sizeof buf, "%.0f", trunc(el->real) + 0.0);   /* truncate toward zero; no "-0" */
   } else {
     mm_error("int2str: needs a number");
     return;

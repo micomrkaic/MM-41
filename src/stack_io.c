@@ -382,6 +382,19 @@ int load_stack_from_file(Stack *stack, const char *filename) {
 
   int rc = -1;
 
+  /* The file is read into a stack of its own, which replaces the caller's
+   * only if all of it could be read. Reading straight into the caller's
+   * stack lost the stack the user had to a file that turned out to be
+   * damaged, and worse: `top` was set to the file's count before the
+   * elements were read, so a file cut short left slots that still held the
+   * types and pointers of values popped long ago, and the cleanup freed
+   * them a second time. */
+  Stack *dest = stack;
+  static Stack incoming;
+  memset(&incoming, 0, sizeof incoming);
+  incoming.top = -1;
+  stack = &incoming;
+
   /* Header */
   unsigned char magic[MM15_STK_MAGIC_LEN];
   if (read_exact(file, magic, MM15_STK_MAGIC_LEN, "read magic") != 0) goto done;
@@ -416,9 +429,6 @@ int load_stack_from_file(Stack *stack, const char *filename) {
     goto done;
   }
 
-  /* Clear stack first to avoid leaks */
-  stack_clear_for_load(stack);
-
   /* Populate */
   if (count == 0) {
     stack->top = -1;
@@ -426,10 +436,10 @@ int load_stack_from_file(Stack *stack, const char *filename) {
     goto done;
   }
 
-  stack->top = (int)count - 1;
-
   for (uint32_t i = 0; i < count; ++i) {
     stack_element *elem = &stack->items[i];
+    stack->top = (int)i;                       /* this far and no further is filled in (or being filled) */
+    memset(elem, 0, sizeof *elem);
 
     uint32_t type_u32 = 0;
     if (read_u32(file, &type_u32, "read elem type") != 0) goto done;
@@ -543,8 +553,12 @@ int load_stack_from_file(Stack *stack, const char *filename) {
 
  done:
   if (rc != 0) {
-    /* On failure, avoid leaving partially-loaded allocated stuff around. */
-    stack_clear_for_load(stack);
+    /* On failure, free what was read; the caller's stack is as it was. */
+    stack_clear_for_load(&incoming);
+    incoming.top = -1;
+  } else {
+    stack_clear_for_load(dest);
+    *dest = incoming;
   }
   fclose(file);
   return rc;

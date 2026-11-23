@@ -118,52 +118,59 @@ bool is_top_lte(Stack* stack) {
 }
 
 // **************** Comparisons with counters ****************
+/* The counter the number on top of the stack names, or -1 if it names none
+   (the number is only converted once it is known to be in range). */
+static int counter_index(const Stack *stack) {
+  double x = stack->items[stack->top].real;
+  return (x > -1 && x < MAX_COUNTERS) ? (int)x : -1;
+}
+
 bool is_ctr_eq_0(Stack* stack) {
   if (stack->top < 0 || stack->items[stack->top].type != TYPE_REAL) return false;
-  int index = (int)stack->items[stack->top].real;
-  if (index < 0 || index >= MAX_COUNTERS) return false;
+  int index = counter_index(stack);
+  if (index < 0) return false;
   return cond_counters[index] == 0.0;
 }
 
 bool is_ctr_neq_0(Stack* stack) {
   if (stack->top < 0 || stack->items[stack->top].type != TYPE_REAL) return false;
-  int index = (int)stack->items[stack->top].real;
-  if (index < 0 || index >= MAX_COUNTERS) return false;
+  int index = counter_index(stack);
+  if (index < 0) return false;
   return cond_counters[index] != 0.0;
 }
 
 bool is_ctr_gt_0(Stack* stack) {
   if (stack->top < 0 || stack->items[stack->top].type != TYPE_REAL) return false;
-  int index = (int)stack->items[stack->top].real;
-  if (index < 0 || index >= MAX_COUNTERS) return false;
+  int index = counter_index(stack);
+  if (index < 0) return false;
   return cond_counters[index] > 0.0;
 }
 
 bool is_ctr_lt_0(Stack* stack) {
   if (stack->top < 0 || stack->items[stack->top].type != TYPE_REAL) return false;
-  int index = (int)stack->items[stack->top].real;
-  if (index < 0 || index >= MAX_COUNTERS) return false;
+  int index = counter_index(stack);
+  if (index < 0) return false;
   return cond_counters[index] < 0.0;
 }
 
 bool is_ctr_gte_0(Stack* stack) {
   if (stack->top < 0 || stack->items[stack->top].type != TYPE_REAL) return false;
-  int index = (int)stack->items[stack->top].real;
-  if (index < 0 || index >= MAX_COUNTERS) return false;
+  int index = counter_index(stack);
+  if (index < 0) return false;
   return cond_counters[index] >= 0.0;
 }
 
 bool is_ctr_lte_0(Stack* stack) {
   if (stack->top < 0 || stack->items[stack->top].type != TYPE_REAL) return false;
-  int index = (int)stack->items[stack->top].real;
-  if (index < 0 || index >= MAX_COUNTERS) return false;
+  int index = counter_index(stack);
+  if (index < 0) return false;
   return cond_counters[index] <= 0.0;
 }
 
 bool is_ctr_compare(Stack* stack, const char* op) {
   if (stack->top < 0 || stack->items[stack->top].type != TYPE_REAL) return false;
-  int index = (int)stack->items[stack->top].real;
-  if (index < 0 || index >= MAX_COUNTERS) return false;
+  int index = counter_index(stack);
+  if (index < 0) return false;
 
   double value = cond_counters[index];
 

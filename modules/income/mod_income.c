@@ -177,7 +177,7 @@ static int integrate(double (*f)(double, void *), void *arg, double lo, double h
   gsl_integration_workspace *w = gsl_integration_workspace_alloc(2000);
   gsl_function F = { f, arg };
   double r, err;
-  gsl_error_handler_t *old = gsl_set_error_handler_off();
+  gsl_error_handler_t *old = mm_gsl_errors_off();
   int st = isinf(hi) ? gsl_integration_qagiu(&F, lo, 0, 1e-9, 2000, w, &r, &err)
                      : gsl_integration_qags(&F, lo, hi, 0, 1e-9, 2000, w, &r, &err);
   gsl_set_error_handler(old);
@@ -503,7 +503,10 @@ static int op_atkinsond(Stack *s) {
 
 /* L(p) from data: the share of the poorest fraction p, interpolated */
 static double lorenz_data(const double *v, size_t n, double p, double total) {
-  double pos = p * (double)n; size_t k = (size_t)floor(pos);
+  double pos = p * (double)n;
+  if (!(pos >= 0)) pos = 0;                          /* a share outside [0, 1], or nan, is the nearest end */
+  if (pos > (double)n) pos = (double)n;
+  size_t k = (size_t)floor(pos);
   double acc = 0;
   for (size_t i = 0; i < k && i < n; i++) acc += v[i];
   if (k < n) acc += (pos - (double)k) * v[k];
@@ -642,7 +645,7 @@ static int op_incfit(Stack *s) {
   FitData fd = { v, n, dist };
   gsl_multimin_function F = { nll, (size_t)np, &fd };
   gsl_multimin_fminimizer *mn = gsl_multimin_fminimizer_alloc(gsl_multimin_fminimizer_nmsimplex2, (size_t)np);
-  gsl_error_handler_t *old = gsl_set_error_handler_off();
+  gsl_error_handler_t *old = mm_gsl_errors_off();
   int st = gsl_multimin_fminimizer_set(mn, &F, x, step), it = 0;
   for (int restart = 0; restart < 3 && st == GSL_SUCCESS; restart++) {
     for (it = 0; it < 5000; it++) {
@@ -696,7 +699,7 @@ static double lorenz_model(int d, const double *par, double u) {
   FamCtx ctx = { d, par };
   double r, err;
   gsl_function F = { xf_family, &ctx };
-  gsl_error_handler_t *old = gsl_set_error_handler_off();
+  gsl_error_handler_t *old = mm_gsl_errors_off();
   int st = gsl_integration_qags(&F, lo, hi, 0, 1e-8, 1000, w, &r, &err);
   gsl_set_error_handler(old);
   gsl_integration_workspace_free(w);
@@ -737,7 +740,7 @@ static int fit_lorenz(Stack *s, const char *what, const double *p, const double 
   for (int k = 0; k < nshape; k++) { gsl_vector_set(x, (size_t)k, log(start[k])); gsl_vector_set(step, (size_t)k, 0.3); }
   gsl_multimin_function F = { lorenz_rss, (size_t)nshape, &lf };
   gsl_multimin_fminimizer *mn = gsl_multimin_fminimizer_alloc(gsl_multimin_fminimizer_nmsimplex2, (size_t)nshape);
-  gsl_error_handler_t *old = gsl_set_error_handler_off();
+  gsl_error_handler_t *old = mm_gsl_errors_off();
   int st = gsl_multimin_fminimizer_set(mn, &F, x, step), it = 0;
   for (int restart = 0; restart < 3 && st == GSL_SUCCESS; restart++) {
     for (it = 0; it < 3000; it++) {
@@ -783,7 +786,7 @@ static int op_incfits(Stack *s) {
   if (k < 2) { free(sh); return mm_error("incfits: needs the shares of at least two groups"); }
   double total = 0; for (size_t i = 0; i < k; i++) { if (sh[i] < 0) { free(sh); return mm_error("incfits: shares must be >= 0"); } total += sh[i]; }
   if (total <= 0) { free(sh); return mm_error("incfits: the shares sum to zero"); }
-  double *p = malloc((k - 1) * sizeof *p), *L = malloc((k - 1) * sizeof *L), acc = 0;
+  double *p = xmalloc((k - 1) * sizeof *p), *L = xmalloc((k - 1) * sizeof *L), acc = 0;
   for (size_t i = 0; i + 1 < k; i++) { acc += sh[i] / total; p[i] = (double)(i + 1) / (double)k; L[i] = acc; }
   free(sh);
   drop_n(s, 1);

@@ -32,6 +32,7 @@
 #include "ops.h"                // for ops, n_ops
 #include "tab_completion.h"     // for function_name_completion
 #include "words.h"              // for user_word, word_modules
+#include "errors.h"
 
 /* Names of the files in the config directory's `sub` folder that end in
    `ext`, without the extension; collected once per completion. */
@@ -45,8 +46,8 @@ static char **dir_names(const char *sub, const char *ext, int *count) {
   while ((e = readdir(d)) != NULL) {
     size_t l = strlen(e->d_name);
     if (l <= el || strcmp(e->d_name + l - el, ext) != 0) continue;
-    if (*count == cap) { cap = cap ? 2 * cap : 16; v = realloc(v, (size_t)cap * sizeof *v); }
-    v[(*count)++] = strndup(e->d_name, l - el);
+    if (*count == cap) { cap = cap ? 2 * cap : 16; v = xrealloc(v, (size_t)cap * sizeof *v); }
+    v[(*count)++] = xstrndup(e->d_name, l - el);
   }
   closedir(d);
   return v;
@@ -74,8 +75,8 @@ static void free_names(void) {
    After load, run and batch: file names (readline's own completion). */
 static void add_name(const char *n) {
   for (int i = 0; i < n_names; i++) if (strcmp(names[i], n) == 0) return;
-  names = realloc(names, (size_t)(n_names + 1) * sizeof *names);
-  names[n_names++] = strdup(n);
+  names = xrealloc(names, (size_t)(n_names + 1) * sizeof *names);
+  names[n_names++] = xstrdup(n);
 }
 
 /* After `help `: commands, words, modules, topics and categories. */
@@ -97,8 +98,8 @@ static char **argument_completion(const char *word, size_t wl, const char *text,
   } else if (!strncmp(word, "use", wl) && wl == 3) {
     names = dir_names("modules", ".mm", &n_names);
   } else if (!strncmp(word, "unuse", wl) && wl == 5) {
-    names = calloc((size_t)word_module_count + 1, sizeof *names);
-    for (int i = 0; i < word_module_count; i++) names[n_names++] = strdup(word_modules[i].name);
+    names = xcalloc((size_t)word_module_count + 1, sizeof *names);
+    for (int i = 0; i < word_module_count; i++) names[n_names++] = xstrdup(word_modules[i].name);
   } else if (!strncmp(word, "manual", wl) && wl == 6) {
     char *titles[128]; int nt = manual_titles(titles, 128);
     for (int i = 0; i < nt; i++) { add_name(titles[i]); free(titles[i]); }
@@ -110,8 +111,8 @@ static char **argument_completion(const char *word, size_t wl, const char *text,
     if (wl == 5) { add_name("list"); add_name("reset"); } else { add_name("all"); }
   } else if (!strncmp(word, "usehol", wl) && wl == 6) {
     int nf; char **f = dir_names("holidays", ".txt", &nf);
-    names = calloc((size_t)nf + 2, sizeof *names);
-    names[n_names++] = strdup("us"); names[n_names++] = strdup("si");
+    names = xcalloc((size_t)nf + 2, sizeof *names);
+    names[n_names++] = xstrdup("us"); names[n_names++] = xstrdup("si");
     for (int i = 0; i < nf; i++) names[n_names++] = f[i];
     free(f);
   } else if ((!strncmp(word, "load", wl) && wl == 4) || (!strncmp(word, "run", wl) && wl == 3) ||

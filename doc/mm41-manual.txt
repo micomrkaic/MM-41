@@ -1,4 +1,4 @@
-MM-41 USER MANUAL, version 2.2
+MM-41 USER MANUAL, version 2.2.1
 
 Type  manual <chapter or word>  at the prompt to open this file there; in the pager, n finds the next match, q returns.
 

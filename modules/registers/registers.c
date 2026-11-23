@@ -17,6 +17,7 @@
  */
 
 #define _POSIX_C_SOURCE 200809L
+#include <math.h>
 #include "errors.h"
 #include <gsl/gsl_complex.h>                // for GSL_IMAG, GSL_REAL, gsl_c...
 #include <gsl/gsl_complex_math.h>           // for gsl_complex_rect
@@ -27,7 +28,8 @@
 #include <stdlib.h>                         // for size_t, NULL, free
 #include <string.h>                         // for strchr, strcmp, strdup
 #include "stack.h"                          // for (anonymous struct)::(anon...
-#include "registers.h"                      // for registers, MAX_REG, Register
+#include "registers.h"
+#include "ops.h"                           // for MM41_MAX_CELLS                      // for registers, MAX_REG, Register
 
 Register registers[MAX_REG] = {0};
 
@@ -49,7 +51,7 @@ stack_element copy_element(const stack_element* src) {
     break;
 
   case TYPE_STRING:
-    copy.string = strdup(src->string);
+    copy.string = xstrdup(src->string);
     break;
 
   case TYPE_MATRIX_REAL:
@@ -109,15 +111,15 @@ void store_to_register(Stack* stack) {
   stack_element* reg_elem = &stack->items[stack->top];
   stack_element* value_elem = &stack->items[stack->top - 1];
 
-  if (reg_elem->type != TYPE_REAL || reg_elem->real != (int)reg_elem->real) {
+  if (reg_elem->type != TYPE_REAL || reg_elem->real != floor(reg_elem->real)) {
     mm_error("sto: register index must be an integer (value n sto)");
     return;
   }
-  int reg_index = (int)reg_elem->real;
-  if (reg_index < 0 || reg_index >= MAX_REG) {
-    mm_error("sto: invalid register index %d (0..%d)", reg_index, MAX_REG - 1);
+  if (!(reg_elem->real >= 0 && reg_elem->real < MAX_REG)) {
+    mm_error("sto: invalid register index %g (0..%d)", reg_elem->real, MAX_REG - 1);
     return;
   }
+  int reg_index = (int)reg_elem->real;
 
   if (registers[reg_index].occupied) free_element(&registers[reg_index].value);
   registers[reg_index].value = *value_elem;      /* take ownership, no copy */
@@ -139,11 +141,11 @@ void recall_from_register(Stack* stack) {
     return;
   }
 
-  int reg_index = (int)reg_elem->real;
-  if (reg_index < 0 || reg_index >= MAX_REG) {
-    mm_error("Invalid register index: %d\n", reg_index);
+  if (!(reg_elem->real > -1 && reg_elem->real < MAX_REG)) {     /* a fraction is cut off, as before; nan fails */
+    mm_error("Invalid register index: %g\n", reg_elem->real);
     return;
   }
+  int reg_index = (int)reg_elem->real;
 
   if (!registers[reg_index].occupied) {
     mm_error("Register %d is empty.\n", reg_index);
@@ -230,6 +232,8 @@ void save_registers_to_file(const char* filename) {
 	  fprintf(f, " (%.17g,%.17g)", GSL_REAL(z), GSL_IMAG(z));
         }
       }
+      fprintf(f, "\n");     /* without it the next register shared this line and was lost on loading */
+      break;
     }
     }
   }
@@ -237,6 +241,24 @@ void save_registers_to_file(const char* filename) {
   printf("Registers saved to %s\n", filename);
 }
 
+/* One number at *p, which moves past it; false if there is none. */
+static bool next_number(char **p, double *out) {
+  char *end;
+  *out = strtod(*p, &end);
+  if (end == *p) return false;
+  *p = end;
+  return true;
+}
+
+/* The registers file is read line by line, and a line is taken only if
+ * every part of it is there: the index in range, the type known, the sizes
+ * of a matrix sane and as many values as they call for. Anything else is
+ * skipped and counted. The file is the user's and may have been edited, cut
+ * short by a full disk, or written by another version; the loader this
+ * replaces trusted it, and a line it did not expect could crash the
+ * calculator or make it ask for all the memory there is. Lines are of any
+ * length (a 100 x 100 matrix is one line of some 200,000 characters, which
+ * the old 4096-byte buffer cut into pieces). */
 void load_registers_from_file(const char* filename) {
   FILE* f = fopen(filename, "r");
   if (!f) {
@@ -247,78 +269,78 @@ void load_registers_from_file(const char* filename) {
   // Clear all first
   free_all_registers();
 
-  char line[4096];
-  while (fgets(line, sizeof(line), f)) {
-    int index;
-    char type[32];
+  char *line = NULL;
+  size_t cap = 0;
+  int skipped = 0;
+  while (getline(&line, &cap, f) != -1) {
+    char *p = line;
+    while (*p == ' ' || *p == '\t') p++;
+    if (*p == '\0' || *p == '\n' || *p == '\r' || *p == '#') continue;
 
-    if (sscanf(line, "REG %d %31s", &index, type) != 2) continue;
-    if (index < 0 || index >= MAX_REG) continue;
+    int index = -1, used = 0;
+    char type[32];
+    if (sscanf(p, "REG %d %31s%n", &index, type, &used) != 2 || index < 0 || index >= MAX_REG) { skipped++; continue; }
+    p += used;
 
     stack_element el;
+    memset(&el, 0, sizeof el);
+    bool ok = false;
     if (strcmp(type, "REAL") == 0) {
-      double val;
-      sscanf(line, "REG %*d %*s %lf", &val);
       el.type = TYPE_REAL;
-      el.real = val;
+      ok = next_number(&p, &el.real);
     } else if (strcmp(type, "COMPLEX") == 0) {
       double re, im;
-      sscanf(line, "REG %*d %*s (%lf,%lf)", &re, &im);
+      ok = sscanf(p, " (%lf,%lf)", &re, &im) == 2;
       el.type = TYPE_COMPLEX;
-      el.complex_val = gsl_complex_rect(re,im);
+      if (ok) el.complex_val = gsl_complex_rect(re, im);
     } else if (strcmp(type, "DECIMAL") == 0) {
       char buf[128];
-      if (sscanf(line, "REG %*d %*s %127s", buf) != 1 || dec_from_string(&el.dec, buf) != 0) continue;
+      ok = sscanf(p, "%127s", buf) == 1 && dec_from_string(&el.dec, buf) == 0;
       el.type = TYPE_DECIMAL;
     } else if (strcmp(type, "STRING") == 0) {
-      char* start = strchr(line, '"');
-      char* end = strrchr(line, '"');
-      if (!start || !end || start == end) continue;
-      *end = '\0';
-      el.type = TYPE_STRING;
-      el.string = strdup(start + 1);
-    } else if (strcmp(type, "MATRIX_REAL") == 0) {
-      size_t r, c;
-      char* ptr = strchr(line, ' ') + 1; // skip "REG"
-      ptr = strchr(ptr, ' ') + 1; // skip index
-      ptr = strchr(ptr, ' ') + 1; // skip type
-      sscanf(ptr, "%zu %zu", &r, &c);
-      el.type = TYPE_MATRIX_REAL;
-      el.matrix_real = gsl_matrix_alloc(r, c);
-      ptr = strchr(ptr, ' ') + 1; // skip rows
-      ptr = strchr(ptr, ' ') + 1; // skip cols
-      for (size_t i = 0; i < r * c; ++i) {
-	double val;
-	sscanf(ptr, "%lf", &val);
-	el.matrix_real->data[i] = val;
-	ptr = strchr(ptr, ' ');
-	if (ptr) ptr++;
+      char* start = strchr(p, '"');
+      char* end = strrchr(p, '"');
+      if (start && end && end > start) {
+        *end = '\0';
+        el.type = TYPE_STRING;
+        el.string = strdup(start + 1);
+        ok = el.string != NULL;
       }
-    } else if (strcmp(type, "MATRIX_COMPLEX") == 0) {
-      size_t r, c;
-      char* ptr = strchr(line, ' ') + 1;
-      ptr = strchr(ptr, ' ') + 1;
-      ptr = strchr(ptr, ' ') + 1;
-      sscanf(ptr, "%zu %zu", &r, &c);
-      el.type = TYPE_MATRIX_COMPLEX;
-      el.matrix_complex = gsl_matrix_complex_alloc(r, c);
-      ptr = strchr(ptr, ' ') + 1;
-      ptr = strchr(ptr, ' ') + 1;
-      for (size_t i = 0; i < r * c; ++i) {
-	double re = 0, im = 0;
-	sscanf(ptr, " (%lf,%lf)", &re, &im);
-	gsl_matrix_complex_set(el.matrix_complex, i / c, i % c, gsl_complex_rect(re, im));
-	ptr = strchr(ptr + 1, '(');
+    } else if (strcmp(type, "MATRIX_REAL") == 0 || strcmp(type, "MATRIX_COMPLEX") == 0) {
+      bool cplx = type[7] == 'C';
+      double r, c;
+      if (next_number(&p, &r) && next_number(&p, &c) && r >= 1 && c >= 1 && r == floor(r) && c == floor(c)
+          && r * c <= (double)MM41_MAX_CELLS) {
+        size_t rows = (size_t)r, cols = (size_t)c, n = rows * cols, i = 0;
+        if (!cplx) {
+          gsl_matrix *m = gsl_matrix_alloc(rows, cols);
+          if (m) {
+            for (; i < n; i++) { double v; if (!next_number(&p, &v)) break; gsl_matrix_set(m, i / cols, i % cols, v); }
+            if (i == n) { el.type = TYPE_MATRIX_REAL; el.matrix_real = m; ok = true; } else gsl_matrix_free(m);
+          }
+        } else {
+          gsl_matrix_complex *m = gsl_matrix_complex_alloc(rows, cols);
+          if (m) {
+            for (; i < n; i++) {
+              double re, im; int len = 0;
+              if (sscanf(p, " (%lf,%lf)%n", &re, &im, &len) != 2 || len == 0) break;
+              p += len;
+              gsl_matrix_complex_set(m, i / cols, i % cols, gsl_complex_rect(re, im));
+            }
+            if (i == n) { el.type = TYPE_MATRIX_COMPLEX; el.matrix_complex = m; ok = true; } else gsl_matrix_complex_free(m);
+          }
+        }
       }
-    } else {
-      continue;
     }
+    if (!ok) { skipped++; continue; }
 
+    if (registers[index].occupied) free_element(&registers[index].value);   /* the same register twice: the last one stays */
     registers[index].value = el;
     registers[index].occupied = true;
   }
-
+  free(line);
   fclose(f);
+  if (skipped) mm_error("%d line%s of %s could not be read and %s skipped", skipped, skipped == 1 ? "" : "s", filename, skipped == 1 ? "was" : "were");
   printf("Registers loaded from %s\n", filename);
 }
 

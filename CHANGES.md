@@ -1,5 +1,53 @@
 # MM-41 changes
 
+## MM-41 2.2.1
+
+A robustness release: no new commands. The calculator was run through
+random sessions, damaged files and failed allocations under the address
+and undefined-behaviour sanitizers and valgrind, and what that found is
+fixed. Nothing that worked gives a different answer.
+
+- **Numbers used as counts, indices and sizes are checked.** A number
+  typed where a whole number in some range is expected (`roll`, `pick`,
+  `sto`, `rcl`, `setprec`, `seed`, `reshape`, `get_aij`, `set_aij`,
+  `rrange`, `movavg`, `hist`, `dateplus`, `workdayplus`, `int2str`, the
+  random draws, the loop counters of programs, ...) was converted to an
+  integer before it was looked at: `nan`, `inf`, `1e300` or a negative
+  number then became a wild index or a request for 16 exabytes. About
+  forty commands crashed or ran into undefined behaviour this way; all of
+  them now report an error and leave the stack alone.
+- **Matrices have at least one row and one column**, and no more than 16
+  million cells from a literal: `[-1 2 $ 1 2]` and `[0 0 $]` are errors,
+  not crashes.
+- **Nothing hangs on a large argument.** Angles and hours are reduced with
+  `fmod` instead of a loop that never ended for `1e300`; `ncr` and `npr`
+  use the log-gamma function beyond 10000 terms; `sunrise` and its family
+  check latitude, longitude and the UTC offset; `apv` stops when nobody is
+  left alive.
+- **`yield` and `xyield` are faster**: a bracketing solver (false position
+  with the Illinois correction) replaces a dense scan. The answers are the
+  same; a bond with no yield is reported in 0.7 s instead of 14 s.
+- **Files are not trusted.** A truncated or damaged `registers.txt` loads
+  what can be read and says how many lines were skipped, where it used to
+  crash; a damaged saved stack leaves the stack you have (it used to be
+  cleared first, and could free the same matrix twice). A complex matrix
+  in a register is now written with the newline it lacked.
+- **Running out of memory abandons the command, not the session.** A
+  failed allocation inside any command -- GSL's included -- now ends that
+  command with `out of memory: 'svd' was abandoned` and the stack as it
+  was. Before, about half of the matrix commands crashed. The stack is
+  restored after an error by moving the saved copy back, which needs no
+  memory; and when there is no room even to save the stack before a
+  command, the calculator says so and runs it anyway, so that a full
+  machine can still be emptied with `drop` or `clst`.
+- **Tests.** `tests/fuzz.py` (`make fuzz`) writes random sessions from the
+  command table and damages the files the calculator reads;
+  `tests/nomem.py` (`make nomem`) runs every command's example with its
+  allocations failed one at a time; `tests/golden/robust.rpn` keeps the
+  inputs that used to crash. The sanitizer build now also traps
+  floating-point conversions that do not fit
+  (`-fsanitize=float-cast-overflow`). CI runs all of it.
+
 ## MM-41 2.2
 
 - **The tutorial.** `tutor` opens a book of fifteen short chapters you type

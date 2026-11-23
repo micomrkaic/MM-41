@@ -124,6 +124,10 @@ int select_matrix_element(Stack *s) {
     mm_error("get_aij: need a matrix below the row and column");
     return -1;
   }
+  if (!(row_elem->real >= 0 && row_elem->real < 1e15) || !(col_elem->real >= 0 && col_elem->real < 1e15)) {
+    mm_error("get_aij: row and column must be non-negative (0-based)");
+    return -1;
+  }
   s->top -= 2;
 
   // Extract row and column numbers
@@ -187,7 +191,7 @@ int set_matrix_element(Stack *s) {
     mm_error("set_aij: row and column must be real numbers");
     return -1;
   }
-  if (row_elem->real < 0 || col_elem->real < 0) {
+  if (!(row_elem->real >= 0 && row_elem->real < 1e15) || !(col_elem->real >= 0 && col_elem->real < 1e15)) {
     mm_error("set_aij: row and column must be non-negative (0-based)");
     return -1;
   }
@@ -337,11 +341,11 @@ int make_row_range(Stack* stack) {
     mm_error("rrange: step has the wrong sign for the interval");
     return 1;
   }
-  size_t n = (size_t)floor(span + 1e-9) + 1;
-  if (n > 10000000) {
-    mm_error("rrange: too many elements (%zu)", n);
+  if (!(span < 1e7)) {
+    mm_error("rrange: too many elements (%.0f)", span + 1);
     return 1;
   }
+  size_t n = (size_t)floor(span + 1e-9) + 1;
   gsl_matrix* mat = gsl_matrix_alloc(1, n);
   if (!mat) {
     mm_error("Failed to allocate matrix.\n");
@@ -551,13 +555,12 @@ int reshape_matrix(Stack* stack) {
         return 1;
     }
 
-    int new_rows = (int)rows_elem.real;
-    int new_cols = (int)cols_elem.real;
-
-    if (new_rows <= 0 || new_cols <= 0) {
+    if (!(rows_elem.real >= 1 && rows_elem.real <= MAX_MATRIX_ELEMENTS) || !(cols_elem.real >= 1 && cols_elem.real <= MAX_MATRIX_ELEMENTS)) {
         mm_error("Invalid reshape dimensions: must be positive integers.\n");
         return 1;
     }
+    int new_rows = (int)rows_elem.real;
+    int new_cols = (int)cols_elem.real;
 
     stack_element* mat_elem = &stack->items[stack->top];
 

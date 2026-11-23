@@ -1,0 +1,77 @@
+# Numbers no command should trust. Every line here once crashed the
+# calculator, hung it, or ran into undefined behaviour (found by
+# tests/fuzz.py under the sanitizers). Each must end in an error message or
+# a sensible answer, and leave the calculator working.
+
+# counts, indices and sizes that are not whole numbers in range
+1 2 3 1e300 roll clst
+1 2 3 -1 pick clst
+1 2 3 nan pick clst
+1e300 setprec clst
+nan setprec clst
+1 1e30 sto clst
+7 -3 sto clst
+nan rcl clst
+1e30 int2str . clst
+nan int2str clst
+inf int2str clst
+1e300 seed clst
+nan seed clst
+5 1e300 ncr clst
+1e15 3 ncr . clst
+52 5 ncr . clst
+100000 50000 ncr clst
+1e15 5e14 ncr clst
+20 1e300 npr clst
+1e30 rpois clst
+3 1e300 0.5 binomrnd clst
+3 nan poisrnd clst
+
+# matrices of impossible sizes
+[-1 2 $ 1 2] clst
+[1e30 1e30 $ 1 2] clst
+[0 0 $] clst
+[4 1 $ 1 2 3 4] 0 3 reshape clst
+[4 1 $ 1 2 3 4] -2 -2 reshape clst
+[4 1 $ 1 2 3 4] 1e300 1e300 reshape clst
+[2 2 $ 1 2 3 4] nan 0 get_aij clst
+[2 2 $ 1 2 3 4] 1e300 1 get_aij clst
+[2 2 $ 1 2 3 4] 9 3 1 set_aij clst
+[2 2 $ 1 2 3 4] nan nan 1 set_aij clst
+1 1 1e12 rrange clst
+1 nan 5 rrange clst
+1 1e-300 1e300 rrange clst
+-1 eye clst
+1e300 eye clst
+nan 3 rand clst
+1e10 1e10 randn clst
+
+# statistics on bad arguments
+[5 1 $ 1 2 3 4 5] 1e300 movavg clst
+[5 1 $ 1 2 3 4 5] nan movavg clst
+[4 1 $ 1 2 3 4] nan * 3 hist clst
+[4 1 $ 1 2 3 4] 1e300 hist clst
+[4 1 $ 1 2 3 4] nan hist clst
+1 nan chi2cdf clst
+1 1e300 chi2cdf . clst
+
+# dates and the sky far out of range
+"1.1.2026" 1e300 dateplus clst
+"1.1.2026" nan dateplus clst
+"1.1.2026" 1e300 workdayplus clst
+"1.1.2026" 1e300 1e300 1 sunrise clst
+"1.1.2026" nan 0 0 sunrise clst
+"1.1.2026" 46 14.5 1e300 sunset clst
+
+# lifetimes
+"gompertz" [1 2 $ 0.0001 0.09] setlaw
+nan 65 lifetab clst
+60 1e300 lifetab clst
+60 nan lifetab clst
+
+# a plot of nothing much
+[3 1 $ 1 1 1] [3 1 $ 2 2 2] plot clst
+[3 1 $ 1 2 3] [3 1 $ 1 2 3] nan * plot clst
+[3 1 $ 1e300 -1e300 0] [3 1 $ 1 2 3] plot clst
+
+1 2 + .

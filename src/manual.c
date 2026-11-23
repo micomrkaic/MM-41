@@ -180,7 +180,7 @@ int manual_titles(char **out, int cap) {
     if (dots > 0) continue;                      /* chapters only: the list stays short */
     while (*p == ' ') p++;
     char *e = strchr(p, '\n'); if (e) *e = '\0';
-    char *t = strdup(p);
+    char *t = xstrdup(p);
     for (char *q = t; *q; q++) *q = (char)tolower((unsigned char)*q);
     out[n++] = t;
   }

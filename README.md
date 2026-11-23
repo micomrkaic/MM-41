@@ -30,7 +30,7 @@ MM-41>> 2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
 [5] 𝔻 : -1798.65
 MM-41>> modules
 module       version  words  summary
-core         2.2         91  arithmetic, functions, logic, the stack, words and the session
+core         2.2.1       91  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -211,6 +211,8 @@ Requires a C17 compiler, GNU make, GNU Readline and GSL
 ```sh
 make                 # release build in bin/release/
 make test            # .t cases + golden files, under AddressSanitizer
+make fuzz            # random sessions and damaged files under the sanitizers (FUZZ_N=2000)
+make nomem           # every command with its allocations failed one at a time
 make install         # ~/.local: bin/mm41, man page, manual, docs; modules into ~/.config/mm41
 make uninstall
 make MODE=asan       # or ubsan, harden
@@ -235,6 +237,6 @@ words, modules and registers live in `$XDG_CONFIG_HOME/mm41` (default
 | `data/` | default `config.txt`, the `std` word module, sample programs |
 | `doc/manual.tex` → `doc/mm41-manual.pdf` | the user manual |
 | `mm41.1`, `MANUAL.md`, `COMMANDS.md`, `CHANGES.md` | man page, quick reference, generated command list, changelog |
-| `tests/` | unit cases and golden files |
+| `tests/` | unit cases, golden files, the fuzzer and the out-of-memory test |
 
 MM-41 is free software under the GNU GPL, version 3 or later.

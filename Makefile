@@ -92,14 +92,17 @@ OBJS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)) \
 DEPS := $(OBJS:.o=.d)
 
 # -------- Mode flags (applied only when MODE matches) --------
+# float-cast-overflow is not part of -fsanitize=undefined: it reports a double
+# converted to an integer type it does not fit in, which is how a number typed
+# at the prompt becomes a wild count or index.
 ifeq ($(MODE),asan)
-  CFLAGS  += -O1 -g3 -fno-omit-frame-pointer -fsanitize=address,undefined
-  LDFLAGS += -fsanitize=address,undefined
+  CFLAGS  += -O1 -g3 -fno-omit-frame-pointer -fsanitize=address,undefined,float-cast-overflow
+  LDFLAGS += -fsanitize=address,undefined,float-cast-overflow
 endif
 
 ifeq ($(MODE),ubsan)
-  CFLAGS  += -O1 -g3 -fno-omit-frame-pointer -fsanitize=undefined
-  LDFLAGS += -fsanitize=undefined
+  CFLAGS  += -O1 -g3 -fno-omit-frame-pointer -fsanitize=undefined,float-cast-overflow
+  LDFLAGS += -fsanitize=undefined,float-cast-overflow
 endif
 
 ifeq ($(MODE),harden)
@@ -164,6 +167,19 @@ examples/modules/hello/hello.so: examples/modules/hello/hello.c include/module.h
 	$(MAKE) --no-print-directory shared-module DIR=examples/modules/hello
 
 # -------- Rules --------
+# The slower checks, not part of `make test` (see tests/README.md):
+#   make fuzz    random sessions and damaged files under the sanitizers
+#   make nomem   every command with its allocations failed one at a time
+FUZZ_N ?= 2000
+.PHONY: fuzz nomem
+fuzz: asan
+	python3 tests/fuzz.py -n $(FUZZ_N)
+	python3 tests/fuzz.py -n $(FUZZ_N) --files
+
+nomem: asan
+	python3 tests/nomem.py
+	python3 tests/nomem.py --scope all
+
 .PHONY: all install install-system uninstall clean doc docs manual
 
 # Regenerate git version header when HEAD or index changes

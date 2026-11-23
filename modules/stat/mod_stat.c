@@ -89,7 +89,7 @@ static double f_sem(const double *v, size_t n)    { return gsl_stats_sd(v, 1, n)
 static double f_skew(const double *v, size_t n)   { return gsl_stats_skew(v, 1, n); }
 static double f_kurt(const double *v, size_t n)   { return gsl_stats_kurtosis(v, 1, n); }
 static double f_median(const double *v, size_t n) {
-  double *c = malloc(n * sizeof *c);
+  double *c = xmalloc(n * sizeof *c);
   memcpy(c, v, n * sizeof *c);
   gsl_sort(c, 1, n);
   double r = gsl_stats_median_from_sorted_data(c, 1, n);
@@ -153,11 +153,11 @@ static int op_corr(Stack *s) {
 static int op_movavg(Stack *s) {
   double w;
   if (pop_real_arg(s, "movavg", &w) != 0) return -1;
-  if (w != floor(w) || w < 1) { push_real(s, w); return mm_error("movavg: the window must be a whole number >= 1"); }
+  if (!whole_in(w, 1, 1e9)) { push_real(s, w); return mm_error("movavg: the window must be a whole number >= 1"); }
   double *v; size_t n;
   if (vector_at(s, 0, "movavg", &v, &n) != 0) { push_real(s, w); return -1; }
   size_t k = (size_t)w;
-  double *r = malloc(n * sizeof *r);
+  double *r = xmalloc(n * sizeof *r);
   double sum = 0;
   for (size_t i = 0; i < n; i++) {
     sum += v[i];
@@ -175,7 +175,7 @@ static int op_movavg(Stack *s) {
 static int op_hist(Stack *s) {
   double kd;
   if (pop_real_arg(s, "hist", &kd) != 0) return -1;
-  if (kd != floor(kd) || kd < 1 || kd > 100000) { push_real(s, kd); return mm_error("hist: the number of bins must be a whole number >= 1"); }
+  if (!whole_in(kd, 1, 100000)) { push_real(s, kd); return mm_error("hist: the number of bins must be a whole number >= 1"); }
   double *v; size_t n;
   if (vector_at(s, 0, "hist", &v, &n) != 0) { push_real(s, kd); return -1; }
   size_t k = (size_t)kd;
@@ -185,8 +185,9 @@ static int op_hist(Stack *s) {
   double width = (hi - lo) / (double)k;
   for (size_t b = 0; b < k; b++) gsl_matrix_set(m, b, 0, lo + ((double)b + 0.5) * width);
   for (size_t i = 0; i < n; i++) {
-    size_t b = (size_t)((v[i] - lo) / width);
-    if (b >= k) b = k - 1;
+    double q = (v[i] - lo) / width;                  /* nan for a nan in the data, or when the range is infinite */
+    if (!(q >= 0)) continue;
+    size_t b = q >= (double)k ? k - 1 : (size_t)q;
     gsl_matrix_set(m, b, 1, gsl_matrix_get(m, b, 1) + 1);
   }
   free(v);
@@ -311,7 +312,7 @@ static int three_args(Stack *s, const char *what, double *a, double *b, double *
 }
 
 static int whole(const char *what, const char *which, double v, double lo) {
-  if (v != floor(v) || v < lo) return mm_error("%s: %s must be a whole number >= %g", what, which, lo);
+  if (!whole_in(v, lo, 4294967295.0)) return mm_error("%s: %s must be a whole number >= %g", what, which, lo);   /* they become unsigned ints */
   return 0;
 }
 
@@ -323,32 +324,32 @@ static int prob_ok(const char *what, double p) {
 /* x df tcdf, p df tinv */
 static int op_tcdf(Stack *s) {
   double x, df; if (two_args(s, "tcdf", &x, &df) != 0) return -1;
-  if (df <= 0) { push_real(s, x); push_real(s, df); return mm_error("tcdf: df must be positive"); }
+  if (!(df > 0 && df < 1e15)) { push_real(s, x); push_real(s, df); return mm_error("tcdf: df must be positive"); }
   push_real(s, gsl_cdf_tdist_P(x, df)); return 0;
 }
 static int op_tinv(Stack *s) {
   double p, df; if (two_args(s, "tinv", &p, &df) != 0) return -1;
-  if (prob_ok("tinv", p) != 0 || df <= 0) { push_real(s, p); push_real(s, df); return df <= 0 ? mm_error("tinv: df must be positive") : -1; }
+  if (prob_ok("tinv", p) != 0 || !(df > 0 && df < 1e15)) { push_real(s, p); push_real(s, df); return !(df > 0 && df < 1e15) ? mm_error("tinv: df must be positive") : -1; }
   push_real(s, gsl_cdf_tdist_Pinv(p, df)); return 0;
 }
 static int op_chi2cdf(Stack *s) {
   double x, df; if (two_args(s, "chi2cdf", &x, &df) != 0) return -1;
-  if (df <= 0 || x < 0) { push_real(s, x); push_real(s, df); return mm_error("chi2cdf: needs x >= 0 and df > 0"); }
+  if (!(df > 0 && df < 1e15) || x < 0) { push_real(s, x); push_real(s, df); return mm_error("chi2cdf: needs x >= 0 and df > 0"); }
   push_real(s, gsl_cdf_chisq_P(x, df)); return 0;
 }
 static int op_chi2inv(Stack *s) {
   double p, df; if (two_args(s, "chi2inv", &p, &df) != 0) return -1;
-  if (prob_ok("chi2inv", p) != 0 || df <= 0) { push_real(s, p); push_real(s, df); return df <= 0 ? mm_error("chi2inv: df must be positive") : -1; }
+  if (prob_ok("chi2inv", p) != 0 || !(df > 0 && df < 1e15)) { push_real(s, p); push_real(s, df); return !(df > 0 && df < 1e15) ? mm_error("chi2inv: df must be positive") : -1; }
   push_real(s, gsl_cdf_chisq_Pinv(p, df)); return 0;
 }
 static int op_fcdf(Stack *s) {
   double x, d1, d2; if (three_args(s, "fcdf", &x, &d1, &d2) != 0) return -1;
-  if (x < 0 || d1 <= 0 || d2 <= 0) { push_real(s, x); push_real(s, d1); push_real(s, d2); return mm_error("fcdf: needs x >= 0 and positive degrees of freedom"); }
+  if (x < 0 || !(d1 > 0 && d1 < 1e15) || !(d2 > 0 && d2 < 1e15)) { push_real(s, x); push_real(s, d1); push_real(s, d2); return mm_error("fcdf: needs x >= 0 and positive degrees of freedom"); }
   push_real(s, gsl_cdf_fdist_P(x, d1, d2)); return 0;
 }
 static int op_finv(Stack *s) {
   double p, d1, d2; if (three_args(s, "finv", &p, &d1, &d2) != 0) return -1;
-  if (prob_ok("finv", p) != 0 || d1 <= 0 || d2 <= 0) { push_real(s, p); push_real(s, d1); push_real(s, d2); return (d1 <= 0 || d2 <= 0) ? mm_error("finv: degrees of freedom must be positive") : -1; }
+  if (prob_ok("finv", p) != 0 || !(d1 > 0 && d1 < 1e15) || !(d2 > 0 && d2 < 1e15)) { push_real(s, p); push_real(s, d1); push_real(s, d2); return (!(d1 > 0 && d1 < 1e15) || !(d2 > 0 && d2 < 1e15)) ? mm_error("finv: degrees of freedom must be positive") : -1; }
   push_real(s, gsl_cdf_fdist_Pinv(p, d1, d2)); return 0;
 }
 /* k n p binompdf / binomcdf */

@@ -60,6 +60,30 @@ int pop_real_arg(Stack *stack, const char *what, double *out) {
   return 0;
 }
 
+int real_to_long(double x, long lo, long hi, const char *what, long *out) {
+  if (isnan(x)) return mm_error("%s: not a number", what);
+  if (!(x >= (double)lo && x <= (double)hi)) {
+    if (hi >= MM41_MAX_COUNT * 100) return mm_error("%s: must be at least %ld", what, lo);
+    return mm_error("%s: must be between %ld and %ld", what, lo, hi);
+  }
+  *out = (long)x;
+  return 0;
+}
+
+int pop_long_arg(Stack *stack, const char *what, long lo, long hi, long *out) {
+  double x;
+  if (pop_real_arg(stack, what, &x)) return -1;
+  return real_to_long(x, lo, hi, what, out);
+}
+
+int matrix_dims_ok(double rows, double cols, const char *what) {
+  if (isnan(rows) || isnan(cols) || rows < 1 || cols < 1)
+    return mm_error("%s: a matrix needs at least one row and one column", what), 0;
+  if (rows > (double)MM41_MAX_CELLS || cols > (double)MM41_MAX_CELLS || rows * cols > (double)MM41_MAX_CELLS)
+    return mm_error("%s: %.0f by %.0f is too large a matrix (the limit is %ld cells)", what, rows, cols, MM41_MAX_CELLS), 0;
+  return 1;
+}
+
 int pop_two_reals(Stack *stack, const char *what, double *y, double *x) {
   stack_coerce_real(stack, 0); stack_coerce_real(stack, 1);
   if (stack->items[stack->top].type != TYPE_REAL || stack->items[stack->top - 1].type != TYPE_REAL)
@@ -106,7 +130,7 @@ static int op_unuse(Stack *stack) {
 static int op_roll_n(Stack *stack) {
   stack_coerce_real(stack, 0);
   stack_element e = pop(stack);
-  if (e.type != TYPE_REAL || e.real != (int)e.real || e.real < 0) {
+  if (e.type != TYPE_REAL || !whole_in(e.real, 0, STACK_SIZE)) {
     stack_element_free(&e);
     return mm_error("roll: depth must be a non-negative integer");
   }
@@ -118,7 +142,7 @@ static int op_roll_n(Stack *stack) {
 static int op_pick(Stack *stack) {
   stack_coerce_real(stack, 0);
   stack_element e = pop(stack);
-  if (e.type != TYPE_REAL || e.real != (int)e.real || e.real < 0) {
+  if (e.type != TYPE_REAL || !whole_in(e.real, 0, STACK_SIZE)) {
     stack_element_free(&e);
     return mm_error("pick: depth must be a non-negative integer");
   }
@@ -211,18 +235,21 @@ static int op_fact(Stack *stack) {
 static int op_ncr(Stack *stack) {
   double n, k;
   if (pop_two_reals(stack, "ncr", &n, &k)) return 0;
-  if (n != floor(n) || k != floor(k) || n < 0 || k < 0 || k > n) return mm_error("ncr: need integers 0 <= k <= n");
+  if (!whole_in(n, 0, 1e15) || !whole_in(k, 0, n)) return mm_error("ncr: need integers 0 <= k <= n");
   if (k > n - k) k = n - k;
   double r = 1.0;
-  for (double i = 1.0; i <= k; i += 1.0) r = r * (n - k + i) / i;
+  if (k <= 10000) for (double i = 1.0; i <= k; i += 1.0) r = r * (n - k + i) / i;
+  else r = exp(lgamma(n + 1) - lgamma(k + 1) - lgamma(n - k + 1));     /* a loop of k steps would not end in a lifetime */
+  if (!isfinite(r)) return mm_error("ncr: overflow");
   push_real(stack, r < 9007199254740992.0 ? round(r) : r); return 0;
 }
 static int op_npr(Stack *stack) {
   double n, k;
   if (pop_two_reals(stack, "npr", &n, &k)) return 0;
-  if (n != floor(n) || k != floor(k) || n < 0 || k < 0 || k > n) return mm_error("npr: need integers 0 <= k <= n");
+  if (!whole_in(n, 0, 1e15) || !whole_in(k, 0, n)) return mm_error("npr: need integers 0 <= k <= n");
   double r = 1.0;
-  for (double i = n - k + 1.0; i <= n; i += 1.0) r *= i;
+  if (k <= 10000) for (double i = n - k + 1.0; i <= n && isfinite(r); i += 1.0) r *= i;
+  else r = exp(lgamma(n + 1) - lgamma(n - k + 1));
   if (!isfinite(r)) return mm_error("npr: overflow");
   push_real(stack, r); return 0;
 }

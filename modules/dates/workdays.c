@@ -257,7 +257,8 @@ int op_sethol(Stack *s) {
   for (size_t i = 0; i < n; i++) {
     double x = m->size2 == 1 ? gsl_matrix_get(m, i, 0) : gsl_matrix_get(m, 0, i);
     long serial;
-    if (x != floor(x) || cal_ymd_to_serial("sethol", (long)x, &serial) != 0) { free(l.v); return -1; }
+    if (!whole_in(x, 0, 99991231)) { free(l.v); return mm_error("sethol: dates are whole numbers YYYYMMDD"); }
+    if (cal_ymd_to_serial("sethol", (long)x, &serial) != 0) { free(l.v); return -1; }
     if (list_add(&l, serial) != 0) { free(l.v); return -1; }
   }
   list_finish(&l);
@@ -355,7 +356,7 @@ int op_workdayplus(Stack *s) {
   stack_coerce_real(s, 0);
   if (s->items[s->top].type != TYPE_REAL) return mm_error("workdayplus: the number of workdays must be a number");
   n = s->items[s->top].real;
-  if (n != floor(n) || fabs(n) > 1000000) return mm_error("workdayplus: the number of workdays must be a whole number");
+  if (!whole_in(n, -1000000, 1000000)) return mm_error("workdayplus: the number of workdays must be a whole number");
   long d;
   if (cal_elem_to_serial(&s->items[s->top - 1], "workdayplus", &d) != 0) return -1;
   if (ensure_calendar() != 0) return -1;

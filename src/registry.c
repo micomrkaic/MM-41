@@ -154,7 +154,7 @@ int autoload_shared_modules(void) {
   struct dirent *e;
   while ((e = readdir(d)) != NULL && n < MAX_MODULES) {
     size_t l = strlen(e->d_name);
-    if (l > 3 && strcmp(e->d_name + l - 3, ".so") == 0) names[n++] = strdup(e->d_name);
+    if (l > 3 && strcmp(e->d_name + l - 3, ".so") == 0) names[n++] = xstrdup(e->d_name);
   }
   closedir(d);
   qsort(names, (size_t)n, sizeof names[0], cmp_str);

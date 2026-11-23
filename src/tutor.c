@@ -54,8 +54,8 @@ char tutor_progress[32] = "";
 
 static void add_step(char **prose, char **cmd, char *want) {
   if (n_chapters == 0) { free(*prose); free(*cmd); *prose = *cmd = NULL; return; }
-  if (n_steps == cap_steps) { cap_steps = cap_steps ? 2 * cap_steps : 64; steps = realloc(steps, (size_t)cap_steps * sizeof *steps); }
-  char *pr = *prose ? *prose : strdup("");
+  if (n_steps == cap_steps) { cap_steps = cap_steps ? 2 * cap_steps : 64; steps = xrealloc(steps, (size_t)cap_steps * sizeof *steps); }
+  char *pr = *prose ? *prose : xstrdup("");
   { size_t k = 0; while (pr[k] == '\n') k++; if (k) memmove(pr, pr + k, strlen(pr + k) + 1); }
   for (size_t n = strlen(pr); n > 1 && pr[n - 1] == '\n' && pr[n - 2] == '\n'; n--) pr[n - 1] = '\0';
   steps[n_steps].prose = pr;
@@ -68,7 +68,7 @@ static void add_step(char **prose, char **cmd, char *want) {
 
 static void append_line(char **buf, const char *line) {
   size_t have = *buf ? strlen(*buf) : 0, add = strlen(line);
-  *buf = realloc(*buf, have + add + 2);
+  *buf = xrealloc(*buf, have + add + 2);
   memcpy(*buf + have, line, add);
   (*buf)[have + add] = '\n';
   (*buf)[have + add + 1] = '\0';
@@ -80,20 +80,20 @@ static void parse(const char *text) {
   while (*p) {
     const char *e = strchr(p, '\n');
     size_t len = e ? (size_t)(e - p) : strlen(p);
-    char *line = malloc(len + 1);
+    char *line = xmalloc(len + 1);
     memcpy(line, p, len); line[len] = '\0';
     p = e ? e + 1 : p + len;
     if (line[0] == '=' && line[1] == ' ') {
       free(prose); free(cmd); prose = cmd = NULL;
-      if (n_chapters == cap_chapters) { cap_chapters = cap_chapters ? 2 * cap_chapters : 16; chapters = realloc(chapters, (size_t)cap_chapters * sizeof *chapters); }
-      chapters[n_chapters].title = strdup(line + 2);
+      if (n_chapters == cap_chapters) { cap_chapters = cap_chapters ? 2 * cap_chapters : 16; chapters = xrealloc(chapters, (size_t)cap_chapters * sizeof *chapters); }
+      chapters[n_chapters].title = xstrdup(line + 2);
       chapters[n_chapters].first = n_steps;
       chapters[n_chapters].n = 0;
       n_chapters++;
     } else if (line[0] == '>' && (line[1] == ' ' || line[1] == '\0')) {
-      free(cmd); cmd = strdup(line[1] ? line + 2 : "");
+      free(cmd); cmd = xstrdup(line[1] ? line + 2 : "");
     } else if (line[0] == '?' && (line[1] == ' ' || line[1] == '\0')) {
-      add_step(&prose, &cmd, strdup(line[1] ? line + 2 : "any"));
+      add_step(&prose, &cmd, xstrdup(line[1] ? line + 2 : "any"));
     } else if (line[0] == ';' && line[1] == ';') {
       /* a comment for the lesson writer */
     } else {
@@ -112,7 +112,7 @@ static void load_book(void) {
     FILE *f = fopen(env, "r");
     if (f) {
       char *buf = NULL; size_t cap = 0, n = 0; int c;
-      while ((c = fgetc(f)) != EOF) { if (n + 2 > cap) { cap = cap ? 2 * cap : 4096; buf = realloc(buf, cap); } buf[n++] = (char)c; }
+      while ((c = fgetc(f)) != EOF) { if (n + 2 > cap) { cap = cap ? 2 * cap : 4096; buf = xrealloc(buf, cap); } buf[n++] = (char)c; }
       fclose(f);
       if (buf) { buf[n] = '\0'; parse(buf); free(buf); return; }
     }
@@ -426,7 +426,7 @@ int tutor_titles(char **out, int cap) {
     if (w != buf) memmove(buf, w, strlen(w) + 1);
     bool dup = false;
     for (int k = 0; k < n; k++) if (strcmp(out[k], buf) == 0) dup = true;
-    if (!dup) out[n++] = strdup(buf);
+    if (!dup) out[n++] = xstrdup(buf);
   }
   return n;
 }
