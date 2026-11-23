@@ -44,8 +44,8 @@ jobs:
           . "$RUNNER_TEMP/emsdk/emsdk_env.sh"
           echo "$RUNNER_TEMP/emsdk" >> "$GITHUB_PATH"
           echo "$RUNNER_TEMP/emsdk/upstream/emscripten" >> "$GITHUB_PATH"
-          echo "EMSDK=$EMSDK" >> "$GITHUB_ENV"
-          echo "EM_CONFIG=$EM_CONFIG" >> "$GITHUB_ENV"
+          echo "EMSDK=$RUNNER_TEMP/emsdk" >> "$GITHUB_ENV"
+          echo "EM_CONFIG=$RUNNER_TEMP/emsdk/.emscripten" >> "$GITHUB_ENV"
           emcc --version
       - name: native build (generates the sources the web build shares)
         run: make -j4
