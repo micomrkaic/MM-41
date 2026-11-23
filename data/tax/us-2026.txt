@@ -1,0 +1,85 @@
+# MM-41 tax schedule: United States, federal, tax year 2026
+#
+# What it covers: wages of an employee who takes the standard deduction --
+# federal income tax, Social Security and Medicare, and the Child Tax
+# Credit. What it leaves out: state and local taxes, itemized deductions,
+# pre-tax benefits (401(k), health premiums), the extra deductions for age
+# and blindness, other credits, the alternative minimum tax.
+#
+# Sources: Rev. Proc. 2025-32 (brackets and standard deduction as amended
+# by the One Big Beautiful Bill Act), SSA (wage base), IRS Topics 560, 751
+# and 759. The figures were collected in November 2026 from published
+# summaries of those documents; check them against irs.gov before relying
+# on a result. To change one, see "help usetax".
+#
+# The format: one item a line, amounts per year.
+#   levy "name" rate [from x] [to y] [deductible]   paid by the employee, percent of pay
+#   employer "name" rate [from x] [to y]            paid by the employer on top of pay
+#   status name "description"                       a filing status; what follows belongs to it
+#     deduction x                                   subtracted from pay before the brackets
+#     bracket from rate                             rate percent on taxable income above from
+#   child-credit amount refundable floor percent    per child; the part that can be paid out
+#     child-credit-less from step amount            less amount for each step (or part) of pay above from
+
+title    United States (federal)
+year     2026
+currency USD
+period   year
+
+levy     "Social Security"      6.2   to 184500
+levy     "Medicare"             1.45
+employer "Social Security"      6.2   to 184500
+employer "Medicare"             1.45
+employer "FUTA"                 0.6   to 7000
+
+# 2200 a child under 17; up to 1700 of it is paid out even when no tax is
+# due, limited to 15% of pay above 2500
+child-credit 2200 1700 2500 15
+
+status single "single"
+  deduction 16100
+  bracket      0  10
+  bracket  12400  12
+  bracket  50400  22
+  bracket 105700  24
+  bracket 201775  32
+  bracket 256225  35
+  bracket 640600  37
+  levy "Additional Medicare" 0.9 from 200000
+  child-credit-less 200000 1000 50
+
+status mfj "married filing jointly"
+  deduction 32200
+  bracket      0  10
+  bracket  24800  12
+  bracket 100800  22
+  bracket 211400  24
+  bracket 403550  32
+  bracket 512450  35
+  bracket 768700  37
+  levy "Additional Medicare" 0.9 from 250000
+  child-credit-less 400000 1000 50
+
+status mfs "married filing separately"
+  deduction 16100
+  bracket      0  10
+  bracket  12400  12
+  bracket  50400  22
+  bracket 105700  24
+  bracket 201775  32
+  bracket 256225  35
+  bracket 384350  37
+  levy "Additional Medicare" 0.9 from 125000
+  child-credit-less 200000 1000 50
+
+status hoh "head of household"
+  deduction 24150
+  bracket      0  10
+  bracket  17700  12
+  bracket  67450  22
+  bracket 105700  24
+  bracket 201750  32
+  bracket 256200  35
+  bracket 640600  37
+  levy "Additional Medicare" 0.9 from 200000
+  child-credit-less 200000 1000 50

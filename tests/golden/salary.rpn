@@ -1,0 +1,55 @@
+# gross and net pay: the reference cases, then errors (the stack is left alone)
+2 setprec
+2000 net
+clst
+
+# Slovenia 2026, per month. 2,000 -> 1310.30 and the minimum wage -> 998.20
+# agree with published calculators; 4,000 -> 2435.03 by hand from the scale.
+"si" usetax
+2000 net . 4000 net . 1481.88 net .
+2000 payslip
+1481.88 payslip
+1000 payslip
+1310.30 gross . 1310.31 gross . 0 gross . 0 net .
+2000 tax . 2000 contrib . 2000 cost . 2000 wedge . 2000 atr . 2000 mtr .
+2 children 1 dependants 3000 payslip
+7 children 0 dependants 9000 tax .
+0 children
+peryear 24000 net . 24000 tax . permonth
+[1 4 $ 1500 2500 4000 8000] dup net print gross print
+clst
+"si-2025" usetax 2000 net . 4000 net .
+taxinfo
+
+# the United States 2026, per year
+"us" usetax
+60000 tax . 60000 net . 150000 net . 250000 net . 250000 contrib .
+60000 payslip
+"mfj" filing 2 children 90000 payslip
+450000 tax . 450000 mtr .
+20000 tax .
+"hoh" filing 1 children 30000 payslip
+"mfs" filing 0 children 400000 tax .
+"single" filing permonth 5000 payslip
+peryear taxinfo
+"us-2025" usetax 60000 tax . 150000 tax .
+
+# any scale
+30000 [3 2 $ 0 10 10000 20 25000 40] btax .
+5000 [1 2 $ 0 15] btax .
+
+# errors
+"zz" usetax
+"married" filing
+-5 net
+"abc" net
+1e13 net
+40 children
+2.5 children
+30000 [2 2 $ 10 10 5 20] btax
+30000 [1 3 $ 0 10 20] btax
+"zz" taxfile
+depth .
+clst
+clrtax
+100 net

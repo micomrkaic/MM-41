@@ -305,6 +305,26 @@ xyield for dated cash flows and bonds (Excel's conventions). 12% nominal, monthl
 > clst 12 12 nom>eff
 ? 12.6825
 
+Gross and net pay. "si" usetax selects Slovenia's schedule for the year, "us" usetax the
+federal one of the United States; the choice is remembered. Amounts are per month for
+Slovenia and per year for the United States (permonth and peryear change that). What is
+left of 2,000 gross a month in Slovenia:
+> clst "si" usetax 2000 net
+? 1310.30
+
+payslip prints the way there, contribution by contribution; gross goes the other way,
+from the net pay you want to the gross pay that gives it; cost is what the employer
+pays, wedge the part of that which never reaches you, mtr what is taken from one more
+euro. The gross pay for 1,500 net:
+> clst 1500 gross
+? 2333.35
+
+Circumstances: n children and n dependants (allowances in Slovenia, the child credit in
+the United States), and for the United States "mfj" filing and the other statuses.
+taxinfo shows every figure in force. The federal tax of a single filer on 60,000:
+> clst "us" usetax "single" filing 0 children 60000 tax
+? 5020
+
 = Dates and workdays
 Dates are strings d.m.yyyy. ddays counts the days between two, dateplus adds days, dow
 names the weekday, today is today. Days from New Year to Christmas 2026:

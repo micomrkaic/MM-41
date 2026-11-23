@@ -70,6 +70,28 @@ clrtvm 25 n 4 i% 2 g% -30000 pmt 0 fv ?pv    \ 576871.69  25 years of 30000 inde
 20080215 20171115 5.75 6.5 100 2 0 xprice     \ 94.6344
 ```
 
+## Gross and net pay (finance; decimal, to the cent)
+
+`"us" usetax` (United States, federal) or `"si" usetax` (Slovenia) selects the
+schedule of the newest year built in, `"us-2025" usetax` a given one; the
+choice is kept in config.txt. Amounts are per year for the US and per month
+for Slovenia: `permonth peryear`. Circumstances: `"single" filing` (`mfj mfs
+hoh`), `n children`, `n dependants`.
+`gross net` · `net gross` (the inverse) · `gross tax` · `gross contrib` ·
+`gross cost` (to the employer) · `gross wedge` · `gross atr` · `gross mtr`
+(percent) — all elementwise on a real matrix · `gross payslip` (prints) ·
+`taxinfo` · `"si-2026" taxfile` (writes the schedule to `tax/` in the
+configuration directory to be edited) · `clrtax` · `x M btax` (tax on x by
+any scale, M rows of from, rate%).
+
+```
+"si" usetax 2000 net                 \ 1310.30   of 2,000 gross a month
+1500 gross                           \ 2333.35   the gross pay for 1,500 net
+2000 wedge                           \ 44.05     percent of the employer's cost
+"us" usetax "mfj" filing 2 children 90000 net     \ 81075.00
+0 5000 200000 rrange dup mtr plot    \ the marginal rate against pay
+```
+
 ## Matrices
 
 `eye ones zeroes rand randn` · `start step end rrange` · `tran '` · `minv pinv

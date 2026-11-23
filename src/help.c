@@ -54,6 +54,9 @@ void help_menu(void) {
   subtitle("Finance (all decimal; rates in percent per period; cash received +)");
   printf("    n i%% pv pmt fv  ?n ?i%% ?pv ?pmt ?fv  beg end clrtvm tvm  amort amortm   cf rate npv  cf irr\n");
   printf("    nom>eff eff>nom  sl soyd db  bprice byield   xnpv xirr xprice xyield xaccr yearfrac  date>ymd ymd>date\n");
+  subtitle("Gross and net pay (\"us\" usetax or \"si\" usetax first; help salary)");
+  printf("    gross net  net gross  gross tax contrib cost wedge atr mtr  gross payslip   \"mfj\" filing  n children  n dependants\n");
+  printf("    permonth peryear  taxinfo  \"si-2026\" taxfile  clrtax   x M btax (any scale: rows of from, rate%%)\n");
   subtitle("Statistics, random draws, differential equations (vectors are N x 1 or 1 x N matrices)");
   printf("    v mean sd sem median skew kurt  v p quantile  x y cov corr  v n movavg  v k hist   x y linfit expfit logfit powfit\n");
   printf("    X y ols olstab   tcdf tinv chi2cdf chi2inv fcdf finv binompdf binomcdf poispdf poiscdf\n");
@@ -366,7 +369,8 @@ static void describe_own_word(const Op *op) {
 
 /* Examples with side effects on the session are shown but not run. */
 static bool example_is_safe(const Op *op, const Module *m) {
-  static const char *cats[] = { "Session", "Registers", "Programs", "Words", "Modules", "Display" };
+  static const char *cats[] = { "Session", "Registers", "Programs", "Words", "Modules", "Display",
+                                "Salary" };          /* every example there begins by choosing a tax schedule */
   static const char *names[] = { "n", "i%", "pv", "pmt", "fv", "?n", "?i%", "?pv", "?pmt", "?fv", "beg", "end",
                                  "clrtvm", "tvm", "amort", "amortm", "decimal", "binary", "setprec", "seed",
                                  "savestack", "loadstack", "eval", "exec", "run", "batch", "today", "now",

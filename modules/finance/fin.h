@@ -71,4 +71,13 @@ int fin_xaccrued(long settle, long maturity, const mm_dec *ratepct, int freq, in
 int  fin_year_frac(long s1, long s2, int basis, mm_dec *out);
 int  fin_coupon_geometry(const char *what, long settle, long maturity, int freq, int basis, int *N, long *A, long *E);
 
+/* ---- gross and net pay under a tax schedule (salary.c) ---- */
+#include "stack.h"
+int fin_op_usetax(Stack *s);   int fin_op_clrtax(Stack *s);   int fin_op_taxinfo(Stack *s);  int fin_op_taxfile(Stack *s);
+int fin_op_filing(Stack *s);   int fin_op_children(Stack *s); int fin_op_dependants(Stack *s);
+int fin_op_permonth(Stack *s); int fin_op_peryear(Stack *s);
+int fin_op_net(Stack *s);      int fin_op_gross(Stack *s);    int fin_op_tax(Stack *s);      int fin_op_contrib(Stack *s);
+int fin_op_cost(Stack *s);     int fin_op_wedge(Stack *s);    int fin_op_atr(Stack *s);      int fin_op_mtr(Stack *s);
+int fin_op_payslip(Stack *s);  int fin_op_btax(Stack *s);
+
 #endif

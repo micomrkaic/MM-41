@@ -8,7 +8,8 @@ complex and exact decimal scalars, strings, and real and complex matrices**; it
 is programmable with user-defined words (conditionals, loops, recursion),
 numerical methods that take any word as the function, and HP-41 style programs;
 it has a full **finance module** (time value of money, amortisation, NPV/IRR,
-bonds, depreciation, day counts) computing in 34-digit decimals; and, like the
+bonds, depreciation, day counts, gross and net pay under US and Slovenian
+tax rules) computing in 34-digit decimals; and, like the
 HP-41 it is named after, it is built from **modules** you can add to.
 
 It unifies the earlier MM-11, MM-14, MM-15 and MM-B1 calculators.
@@ -30,9 +31,9 @@ MM-41>> 2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
 [5] 𝔻 : -1798.65
 MM-41>> modules
 module       version  words  summary
-core         2.2.1       91  arithmetic, functions, logic, the stack, words and the session
+core         2.3         91  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
-finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
+finance      1.2         54  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts, gross and net pay
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
 special      1.1         24  gamma, beta, the normal distribution, error, Bessel, Airy, elliptic, zeta and more
 stat         1.0         27  descriptive statistics, curve fitting, regression, t/chi-square/F/binomial/Poisson distributions
@@ -113,6 +114,12 @@ loads. `"name" usage` tells you which module a command comes from.
   over cash-flow vectors; `nom>eff`, `eff>nom`; `sl`, `soyd`, `db`; `bprice`,
   `byield`; dated `xnpv`, `xirr`, `xprice`, `xyield`, `xaccr`, `yearfrac` with
   Excel's five day-count bases.
+- **Gross and net pay** under a tax schedule, to the cent: `"si" usetax 2000
+  net` (Slovenia, per month) or `"us" usetax "mfj" filing 2 children 90000
+  net` (United States, federal, per year); `gross` for the inverse, `tax`,
+  `contrib`, `cost` to the employer, `wedge`, `atr`, `mtr`, a printed
+  `payslip`. Schedules for 2025 and 2026 are built in and are text files you
+  can edit (`"si-2026" taxfile`) when a rate changes.
 - **Matrices** via GSL: products, elementwise operators, inverse, pseudoinverse,
   determinant, eigen-, Cholesky and singular value decompositions, Kronecker
   product, reshaping and joining, column/row statistics, polynomial roots and

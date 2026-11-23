@@ -220,7 +220,8 @@ SETUP = ['1 2.5 (1,2) "str" [2 2 $ 1 2 3 4] [1 2 $ (1,1) (2,2)] 0.1d -7', "saves
          "saveregs", ": sq dup * ;", ": cube dup dup * * ;", ": hyp dup * swap dup * + sqrt ;", "savewords"]
 RELOAD = ["loadstack", "print", "depth", "clst", "loadregs", "0 rcl", "1 rcl", "2 rcl", "3 rcl", "4 rcl", "clst", "loadwords", "listwords",
           "3 sq", "2 cube", "3 4 hyp", "clst", '"prog.prg" run', "clst", '"table.txt" readmat', '"table.txt" readvec', '"table.txt" 1 readcol',
-          '[2,2,"table.txt"]', "clst", '"script.rpn" load', '"xx" usehol', "20260101 20260201 workdays", "savestack", "saveregs", "savewords"]
+          '[2,2,"table.txt"]', "clst", '"script.rpn" load', '"xx" usehol', "20260101 20260201 workdays",
+          '"xx" usetax', "taxinfo", "2000 payslip", "2 children 3000 net 1500 gross 60000 mtr", "clst", "savestack", "saveregs", "savewords"]
 TABLE = "# a table\nage lx dx\n0 100000 500\n1 99500 40\n2 99460 30\n3 99430 25\n"
 ABSURD = [b"1e999", b"-1e999", b"nan", b"-1", b"0", b"99999999999999999999", b"4294967296", b"-2147483649", b"1e-999", b"0x7fffffff", b"\x00", b""]
 
@@ -267,9 +268,11 @@ def files_prepare(seed):
         (tmp / "table.txt").write_text(TABLE)
         (tmp / "script.rpn").write_text("1 2 +\n: dbl 2 * ;\n5 dbl\n")
         (cfg / "holidays" / "xx.txt").write_text("# test holidays\n2026-01-01 New Year\n2026-01-19\n20260704\n")
+        (cfg / "tax").mkdir(parents=True, exist_ok=True)
+        shutil.copy(ROOT / "data" / "tax" / rng.choice(["si-2026.txt", "us-2026.txt"]), cfg / "tax" / "xx.txt")
         targets = [cfg / "stack_backup.dat", cfg / "registers.txt", cfg / "user_words.txt", cfg / "config.txt", tmp / "prog.prg",
-                   tmp / "table.txt", tmp / "script.rpn", cfg / "holidays" / "xx.txt"]
-        for victim in rng.sample(targets, rng.choice([1, 1, 1, 2])):
+                   tmp / "table.txt", tmp / "script.rpn", cfg / "holidays" / "xx.txt", cfg / "tax" / "xx.txt", cfg / "tax" / "xx.txt"]
+        for victim in set(rng.sample(targets, rng.choice([1, 1, 1, 2]))):
             victim.write_bytes(damage(victim.read_bytes() if victim.exists() else b"", rng))
             (tmp / "damaged").mkdir(exist_ok=True)
             shutil.copy(victim, tmp / "damaged" / victim.name)

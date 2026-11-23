@@ -1,4 +1,4 @@
-.TH MM41 1 "November 2026" "MM-41 2.2.1" "User Commands"
+.TH MM41 1 "November 2026" "MM-41 2.3" "User Commands"
 .SH NAME
 mm41 \- programmable RPN calculator for real, complex and decimal scalars, strings and matrices
 .SH SYNOPSIS
@@ -287,6 +287,47 @@ clrtvm 12 n 1 i% 10000 pv 0 fv ?pmt      \-888.49
 [6 1 $ \-1000 300 300 300 300 300] 10 npv  137.24
 20080215 20171115 5.75 6.5 100 2 0 xprice 94.6344
 .fi
+.SS Gross and net pay
+.B """si"" usetax"
+(Slovenia) or
+.B """us"" usetax"
+(United States, federal) selects the tax schedule of the newest year built
+in, and the choice is kept in config.txt;
+.B """us-2025"" usetax"
+selects a given year. Amounts are per month for Slovenia and per year for the
+United States
+.RB ( permonth ,
+.BR peryear ).
+.B "gross net"
+is the net pay,
+.B "net gross"
+the gross pay that leaves it;
+.BR tax ,
+.BR contrib ,
+.B cost
+(to the employer),
+.BR wedge ,
+.B atr
+and
+.B mtr
+(average and marginal rates in percent) take a gross pay too, each
+elementwise on a real matrix;
+.B payslip
+prints the calculation and
+.B taxinfo
+the schedule.
+.BR """mfj"" filing" ,
+.B "n children"
+and
+.B "n dependants"
+set the taxpayer's circumstances.
+.B """si-2026"" taxfile"
+writes the built-in schedule to
+.I tax/si-2026.txt
+in the configuration directory, where an edited copy is read in preference
+to the built-in one.
+.B "x M btax"
+is the tax on x by any scale (rows of from, rate in percent).
 .SS Words
 .nf
 : name body ;        \e" one line; redefinition replaces
@@ -522,8 +563,12 @@ which defaults to
 .IR ~/.config/mm41/ :
 .TP
 .I config.txt
-print precision, fixed/scientific, number mode, holiday calendar,
+print precision, fixed/scientific, number mode, holiday calendar, tax schedule,
 tolerance; written at exit.
+.TP
+.I tax/*.txt
+tax schedules of your own, or edited copies of the built-in ones (see
+.BR taxfile ).
 .TP
 .I holidays/*.txt
 holiday calendars; the shipped

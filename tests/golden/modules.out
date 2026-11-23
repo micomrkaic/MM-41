@@ -1,7 +1,7 @@
 module       version  words  summary
-core         2.2.1       91  arithmetic, functions, logic, the stack, words and the session
+core         2.3         91  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
-finance      1.1         35  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts
+finance      1.2         54  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts, gross and net pay
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
 special      1.1         24  gamma, beta, the normal distribution, error, Bessel, Airy, elliptic, zeta and more
 stat         1.0         27  descriptive statistics, curve fitting, regression, t/chi-square/F/binomial/Poisson distributions

@@ -36,6 +36,7 @@ bool print_top_mode = false;
 int  exit_status = -1;
 int print_precision = 6;
 char holiday_calendar[64] = "";
+char tax_setting[96] = "";
 char path_to_data_and_programs[MAX_PATH];
 
 #include "globals.h"
@@ -119,6 +120,7 @@ void save_config(const char* filename) {
   fprintf(f, "tol = %g\n", num_tol);
   fprintf(f, "number_mode = %s\n", decimal_mode ? "decimal" : "binary");
   if (holiday_calendar[0]) fprintf(f, "holidays = %s\n", holiday_calendar);
+  if (tax_setting[0]) fprintf(f, "tax = %s\n", tax_setting);
   if (skin != SKIN_PLAIN) fprintf(f, "skin = %s\n", skin_name(skin));
   if (tutor_progress[0]) fprintf(f, "tutor = %s\n", tutor_progress);
 
@@ -166,6 +168,8 @@ int load_config(const char* filename) {
       decimal_mode = strcmp(value, "decimal") == 0;
     } else if (strcmp(key, "holidays") == 0) {
       snprintf(holiday_calendar, sizeof holiday_calendar, "%s", value);
+    } else if (strcmp(key, "tax") == 0) {
+      snprintf(tax_setting, sizeof tax_setting, "%s", value);
     } else if (strcmp(key, "tutor") == 0) {
       snprintf(tutor_progress, sizeof tutor_progress, "%s", value);
     } else if (strcmp(key, "skin") == 0) {

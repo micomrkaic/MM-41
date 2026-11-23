@@ -1,0 +1,44 @@
+# MM-41 tax schedule: Slovenia, 2025 (plača: bruto - neto)
+#
+# As si-2026 (see the notes there), with the figures in force in the
+# second half of 2025: the long-term care contribution began with the pay
+# for July 2025, and the OZP was 37.17 from the pay for March 2025 (35.00
+# before). Source: the rules on allowances and the scale for 2025, as
+# published by FURS.
+
+title    Slovenia
+year     2025
+currency EUR
+period   month
+method   period
+
+levy     "pension and disability" 15.50 deductible
+levy     "health"                  6.36 deductible
+levy     "unemployment"            0.14 deductible
+levy     "parental care"           0.10 deductible
+levy     "long-term care"          1.00 deductible
+
+employer "pension and disability"  8.85
+employer "health"                  6.56
+employer "unemployment"            0.06
+employer "parental care"           0.10
+employer "injury at work"          0.53
+employer "long-term care"          1.00
+
+# 1,436.95 a month for payments from March 2025
+minimum-base 17243.40
+
+fixed    "OZP" 37.17 deductible
+
+allowance     5260.00
+allowance-low 16832.00 19736.99 1.17259
+
+child     2838.30 3085.52 5146.39 7207.26 9268.12 more 2060.87
+dependant 2838.30
+
+status all "resident"
+  bracket      0.00  16
+  bracket   9210.26  26
+  bracket  27089.00  33
+  bracket  54178.00  39
+  bracket  78016.32  50

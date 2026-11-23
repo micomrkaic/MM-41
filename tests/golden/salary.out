@@ -1,0 +1,243 @@
+Error: net: no tax schedule is selected; "us" usetax or "si" usetax first (help usetax)
+1310.30
+2435.03
+998.20
+  Slovenia 2026; EUR a month
+  ----------------------------------------------------------------------
+  gross pay                                                      2000.00
+  pension and disability     15.50%                              -310.00
+  health                     6.36%                               -127.20
+  unemployment               0.14%                                 -2.80
+  parental care              0.10%                                 -2.00
+  long-term care             1.00%                                -20.00
+  OZP                                                             -39.36
+  contributions                                                  -501.36
+    general allowance                462.66
+    taxable                         1035.98
+  income tax                 129.62 + 26% over 810.12            -188.34
+  ----------------------------------------------------------------------
+  net pay                    65.5% of gross                      1310.30
+
+  employer's contributions                                        342.00
+  cost to the employer                                           2342.00
+  average rate 34.5%, marginal rate 43.1%, tax wedge 44.1%
+  Slovenia 2026; EUR a month
+  ----------------------------------------------------------------------
+  gross pay                                                      1481.88
+  pension and disability     15.50%                              -229.69
+  health                     6.36%                                -94.25
+  unemployment               0.14%                                 -2.07
+  parental care              0.10%                                 -1.48
+  long-term care             1.00%                                -14.82
+  OZP                                                             -39.36
+  contributions                                                  -381.67
+    general allowance                462.66
+    taxable                          637.55
+  income tax                 16%                                 -102.01
+  ----------------------------------------------------------------------
+  net pay                    67.4% of gross                       998.20
+
+  employer's contributions                                        253.40
+    up to the minimum base                                         15.98
+  cost to the employer                                           1751.26
+  average rate 32.6%, marginal rate 35.4%, tax wedge 43.0%
+  Slovenia 2026; EUR a month
+  ----------------------------------------------------------------------
+  gross pay                                                      1000.00
+  pension and disability     15.50%                              -155.00
+  health                     6.36%                                -63.60
+  unemployment               0.14%                                 -1.40
+  parental care              0.10%                                 -1.00
+  long-term care             1.00%                                -10.00
+  OZP                                                             -39.36
+  contributions                                                  -270.36
+    general allowance                462.66
+    increase for low pay             563.44
+    taxable                            0.00
+  income tax                 16%                                    0.00
+  ----------------------------------------------------------------------
+  net pay                    73.0% of gross                       729.64
+
+  employer's contributions                                        171.00
+    up to the minimum base                                        209.69
+  cost to the employer                                           1380.69
+  average rate 27.0%, marginal rate 23.1%, tax wedge 47.2%
+2000.00
+2000.02
+0.00
+0.00
+188.34
+501.36
+2342.00
+44.05
+34.48
+43.09
+  Slovenia 2026, 2 children, 1 other dependant; EUR a month
+  ----------------------------------------------------------------------
+  gross pay                                                      3000.00
+  pension and disability     15.50%                              -465.00
+  health                     6.36%                               -190.80
+  unemployment               0.14%                                 -4.20
+  parental care              0.10%                                 -3.00
+  long-term care             1.00%                                -30.00
+  OZP                                                             -39.36
+  contributions                                                  -732.36
+    general allowance                462.66
+    for dependants                   770.70
+    taxable                         1034.28
+  income tax                 129.62 + 26% over 810.12            -187.90
+  ----------------------------------------------------------------------
+  net pay                    69.3% of gross                      2079.74
+
+  employer's contributions                                        513.00
+  cost to the employer                                           3513.00
+  average rate 30.7%, marginal rate 43.1%, tax wedge 40.8%
+392.68
+15723.57
+2260.11
+[1] Mℝ: 1 x 4 matrix
+| 1009.9000 1594.8300 2435.0300 4442.8800 |
+[1] Mℝ: 1 x 4 matrix
+| 1500 2500 4000 8000 |
+1301.34
+2415.43
+  Slovenia 2025; EUR a month
+  schedule si-2025 (built-in si-2025); amounts below are per year
+  the employee pays
+    pension and disability       15.50%  (before income tax)
+    health                        6.36%  (before income tax)
+    unemployment                  0.14%  (before income tax)
+    parental care                 0.10%  (before income tax)
+    long-term care                1.00%  (before income tax)
+    OZP                           37.17 a month  (before income tax)
+  the employer pays
+    pension and disability        8.85%
+    health                        6.56%
+    unemployment                  0.06%
+    parental care                 0.10%
+    injury at work                0.53%
+    long-term care                1.00%
+    and both shares on what the pay falls short of 17243.40
+  free of income tax
+    general allowance                 5260.00
+    for pay up to 16832.00, also 19736.99 - 1.17259 x pay
+    for children: 2838.30 3085.52 5146.39 7207.26 9268.12, then 2060.87 more each
+    for another dependant             2838.30
+  income tax on the rest
+         16%  from           0.00
+         26%  from        9210.26
+         33%  from       27089.00
+         39%  from       54178.00
+         50%  from       78016.32
+5020.00
+50390.00
+113791.00
+183182.00
+15514.00
+  United States (federal) 2026, single; USD a year
+  ----------------------------------------------------------------------
+  gross pay                                                     60000.00
+  Social Security            6.2%                               -3720.00
+  Medicare                   1.45%                               -870.00
+  contributions                                                 -4590.00
+    standard deduction             16100.00
+    taxable                        43900.00
+  income tax                 1240.00 + 12% over 12400.00        -5020.00
+  ----------------------------------------------------------------------
+  net pay                    84.0% of gross                     50390.00
+
+  employer's contributions                                       4632.00
+  cost to the employer                                          64632.00
+  average rate 16.0%, marginal rate 19.6%, tax wedge 22.0%
+  United States (federal) 2026, married filing jointly, 2 children; USD a year
+  ----------------------------------------------------------------------
+  gross pay                                                     90000.00
+  Social Security            6.2%                               -5580.00
+  Medicare                   1.45%                              -1305.00
+  contributions                                                 -6885.00
+    standard deduction             32200.00
+    taxable                        57800.00
+  income tax                 2480.00 + 12% over 24800.00        -6440.00
+  credit for children                                            4400.00
+  ----------------------------------------------------------------------
+  net pay                    90.1% of gross                     81075.00
+
+  employer's contributions                                       6927.00
+  cost to the employer                                          96927.00
+  average rate 9.9%, marginal rate 19.6%, tax wedge 16.4%
+84708.00
+39.35
+-2625.00
+  United States (federal) 2026, head of household, 1 child; USD a year
+  ----------------------------------------------------------------------
+  gross pay                                                     30000.00
+  Social Security            6.2%                               -1860.00
+  Medicare                   1.45%                               -435.00
+  contributions                                                 -2295.00
+    standard deduction             24150.00
+    taxable                         5850.00
+  income tax                 10%                                 -585.00
+  credit for children                                            2200.00
+  ----------------------------------------------------------------------
+  net pay                    97.7% of gross                     29320.00
+
+  employer's contributions                                       2337.00
+  cost to the employer                                          32337.00
+  average rate 2.3%, marginal rate 17.6%, tax wedge 9.3%
+103134.25
+  United States (federal) 2026, single; USD a month
+  ----------------------------------------------------------------------
+  gross pay                                                      5000.00
+  Social Security            6.2%                                -310.00
+  Medicare                   1.45%                                -72.50
+  contributions                                                  -382.50
+    standard deduction              1341.67
+    taxable                         3658.33
+  income tax                 103.33 + 12% over 1033.33           -418.33
+  ----------------------------------------------------------------------
+  net pay                    84.0% of gross                      4199.17
+
+  employer's contributions                                        386.00
+  cost to the employer                                           5386.00
+  average rate 16.0%, marginal rate 19.6%, tax wedge 22.0%
+  United States (federal) 2026, single; USD a year
+  schedule us-2026 (built-in us-2026); amounts below are per year
+  filing statuses: single* mfj mfs hoh
+  the employee pays
+    Social Security                6.2%  on pay up to 184500.00
+    Medicare                      1.45%
+    Additional Medicare            0.9%  on pay above 200000.00
+  the employer pays
+    Social Security                6.2%  on pay up to 184500.00
+    Medicare                      1.45%
+    FUTA                           0.6%  on pay up to 7000.00
+  free of income tax
+    standard deduction               16100.00
+  income tax on the rest
+         10%  from           0.00
+         12%  from       12400.00
+         22%  from       50400.00
+         24%  from      105700.00
+         32%  from      201775.00
+         35%  from      256225.00
+         37%  from      640600.00
+  credit of 2200.00 a child (up to 1700.00 of it paid out), shrinking for pay above 200000.00
+5071.50
+25067.00
+6000.00
+750.00
+Error: usetax: no tax schedule 'zz' (no tax/zz.txt in the configuration directory; built in are si-2025, si-2026, us-2025, us-2026)
+Error: filing: United States (federal) 2025 has no status 'married' (it has: single, mfj, mfs, hoh)
+Error: net: pay must be between 0 and 1e12
+Error: net: needs an amount of pay (a number, or a real matrix of them)
+Error: net: pay must be between 0 and 1e12
+Error: children: needs a whole number from 0 to 30
+Error: children: needs a whole number from 0 to 30
+Error: btax: the brackets must be finite and go upwards
+Error: btax: needs an amount and a matrix with two columns: from, rate in percent
+Error: taxfile: there is no built-in tax schedule 'zz'
+12.00
+Error: net: no tax schedule is selected; "us" usetax or "si" usetax first (help usetax)
+
+[0] ℝ : 100.00
+[exit 1]

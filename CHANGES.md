@@ -1,5 +1,41 @@
 # MM-41 changes
 
+## MM-41 2.3
+
+- **Gross and net pay.** The finance module works out a payslip under the
+  tax rules of the United States (federal) and Slovenia, for 2025 and
+  2026. `"si" usetax 2000 net` is what is left of 2,000 gross a month
+  (1310.30); `gross` goes the other way, to the cent; `tax`, `contrib`,
+  `cost` (to the employer), `wedge`, `atr` and `mtr` (average and marginal
+  rates) are the other answers, each elementwise on a matrix, so that
+  `0 250 8000 rrange dup mtr plot` draws the marginal rate; `payslip`
+  prints the whole calculation and `taxinfo` the schedule.
+  - United States: the standard deduction and brackets of each filing
+    status (`"mfj" filing`; `single mfj mfs hoh`), Social Security up to
+    the wage base, Medicare and the Additional Medicare Tax, the Child Tax
+    Credit with its refundable part and phase-out (`2 children`); the
+    employer's side with FUTA. Not state taxes, itemized deductions or
+    pre-tax benefits.
+  - Slovenia: the contributions (23.10% with long-term care), the OZP,
+    the general allowance and its increase for low pay, the allowances
+    for children and other dependants (`2 children`, `1 dependants`), the
+    advance payment of income tax by the monthly scale as FURS makes it;
+    for the employer the 17.10% and the contributions due on the minimum
+    base. Checked to the cent against two independent calculators.
+  - Amounts are per month for Slovenia and per year for the United
+    States; `permonth` and `peryear` change that. Everything is computed
+    in decimals and rounded half-up to cents where payrolls round.
+  - A schedule is a text file. `"si-2026" taxfile` writes the built-in one
+    to `tax/` in the configuration directory, where an edited copy takes
+    precedence: a changed rate does not need a new release. The built-in
+    figures come from published summaries of the official sources; the
+    files name them.
+  - `x M btax` is the tax on x by any scale, M being rows of (from,
+    rate %).
+- The choice of schedule, filing status, children, dependants and period
+  is kept in config.txt (`tax = ...`); `usetax si`, `filing mfj` and
+  `taxfile si-2026` work as bare lines and TAB completes the names.
+
 ## MM-41 2.2.1
 
 A robustness release: no new commands. The calculator was run through

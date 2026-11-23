@@ -1,0 +1,67 @@
+# MM-41 tax schedule: Slovenia, 2026 (plača: bruto - neto)
+#
+# What it covers: the pay of an employee -- social security contributions,
+# the obligatory health contribution (OZP), the general allowance with its
+# increase for low pay, allowances for dependent family members, and the
+# advance payment of income tax (akontacija dohodnine) by the scale. What
+# it leaves out: reimbursements of meals and travel, the holiday allowance
+# (regres) and bonuses, the allowance for a child who needs special care
+# (10,856.24 a year), and the allowances for the young, for students and
+# for voluntary pension insurance.
+#
+# Sources: the rules on allowances and the scale for 2026 (Uradni list RS
+# 104/25) as published by FURS; contribution rates from the FURS brochure
+# on social security contributions; OZP from Uradni list RS 16/2026. The
+# figures were collected in November 2026 from published summaries of
+# those documents; check them against fu.gov.si before relying on a
+# result. To change one, see "help usetax".
+#
+# Amounts are per year. "method period" says that the tax is worked out
+# for the pay period on the schedule divided by the number of periods and
+# rounded to cents, which is how the monthly scale of FURS is made.
+
+title    Slovenia
+year     2026
+currency EUR
+period   month
+method   period
+
+# the employee's contributions; all of them reduce the tax base
+levy     "pension and disability" 15.50 deductible
+levy     "health"                  6.36 deductible
+levy     "unemployment"            0.14 deductible
+levy     "parental care"           0.10 deductible
+levy     "long-term care"          1.00 deductible
+
+employer "pension and disability"  8.85
+employer "health"                  6.56
+employer "unemployment"            0.06
+employer "parental care"           0.10
+employer "injury at work"          0.53
+employer "long-term care"          1.00
+
+# Contributions are due on at least 60% of the average wage (1,521.62 a
+# month for payments from March 2026). On pay below that the employer
+# pays both shares on the difference.
+minimum-base 18259.44
+
+# The obligatory health contribution, a month: 39.36 from the pay for
+# March 2026 (37.17 for January and February). It reduces the tax base.
+fixed    "OZP" 39.36 deductible
+
+# The general allowance, and its increase for pay up to 17,766.18 a year:
+# 20,832.39 - 1.17259 x pay
+allowance     5551.93
+allowance-low 17766.18 20832.39 1.17259
+
+# Dependent children: the first, second, ... fifth; each further one
+# 2,175.25 more than the one before. Any other dependent family member.
+child     2995.83 3256.77 5432.02 7607.27 9782.51 more 2175.25
+dependant 2995.83
+
+status all "resident"
+  bracket      0.00  16
+  bracket   9721.43  26
+  bracket  28592.44  33
+  bracket  57184.88  39
+  bracket  82346.23  50

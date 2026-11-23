@@ -1,4 +1,4 @@
-MM-41 USER MANUAL, version 2.2.1
+MM-41 USER MANUAL, version 2.3
 
 Type  manual <chapter or word>  at the prompt to open this file there; in the pager, n finds the next match, q returns.
 
@@ -79,6 +79,7 @@ CONTENTS
   18.5  Bonds
   18.6  Dates in the finance module
   18.7  Dated cash flows: XNPV and XIRR
+  18.8  Gross and net pay
   19  PROGRAMS
   20  MODULES
   20.1  Built-in modules
@@ -1619,7 +1620,8 @@ is sorted, so hol is also a tidy way to look at a calendar.
 
 The finance module is MM-B1, the decimal business calculator, rebuilt as a module: the
 time value of money, amortisation, cash flows, interest-rate conversions, depreciation,
-bonds and day counts. Three conventions hold throughout.
+bonds and day counts, and gross and net pay under the tax rules of the United States and
+Slovenia (section 18.8). Three conventions hold throughout.
 
 -   Everything is decimal. Every finance word computes in 34-digit decimals and leaves a
     decimal, whatever it was given; a real argument is converted on the way in. You can
@@ -1806,6 +1808,128 @@ A matrix literal is binary, so the amounts are converted on the way in like ever
 real argument; dates that you hold as strings go through date>ymd first. The matrix can
 also be built up with join_v from 1 × 2 rows, or read from a file with
 [4, 2, "flows.txt"].
+
+18.8  Gross and net pay
+-----------------------
+
+The salary words answer the questions of a payslip: what is left of a gross pay, what
+gross pay leaves a given net, what the employer pays on top, and how much of one more
+unit of pay is taken. They work from a tax schedule, a description of one country’s
+rules for one year: the employee’s and the employer’s social security contributions, the
+allowances, and the income tax scale. Two are built in for 2025 and 2026: the United
+States (federal taxes only) and Slovenia.
+
+    "si" usetax          \ Slovenia, the newest year built in ("si-2025": that year)
+    2000 net             \ 1310.30   of 2,000 gross a month
+    1310.30 gross        \ 2000.00   and back
+    2000 cost            \ 2342.00   what it costs the employer
+    2000 payslip
+
+usetax is remembered in config.txt, like the holiday calendar. payslip prints the
+calculation:
+
+      Slovenia 2026; EUR a month
+      ----------------------------------------------------------------------
+      gross pay                                                      2000.00
+      pension and disability     15.50%                              -310.00
+      health                     6.36%                               -127.20
+      unemployment               0.14%                                 -2.80
+      parental care              0.10%                                 -2.00
+      long-term care             1.00%                                -20.00
+      OZP                                                             -39.36
+      contributions                                                  -501.36
+        general allowance                462.66
+        taxable                         1035.98
+      income tax                 129.62 + 26% over 810.12            -188.34
+      ----------------------------------------------------------------------
+      net pay                    65.5% of gross                      1310.30
+
+      employer's contributions                                        342.00
+      cost to the employer                                           2342.00
+      average rate 34.5%, marginal rate 43.1%, tax wedge 44.1%
+
+Amounts are decimals, rounded half-up to cents where a payroll rounds them, so the
+result agrees with a payslip to the cent.
+
+  --------------- -----------------------------------------------------------------------
+  gross net       net pay: gross less the employee’s contributions and income tax
+  net gross       the least gross pay, to the cent, that leaves that net pay
+  gross tax       income tax, after allowances and credits
+  gross contrib   the employee’s contributions, flat charges included
+  gross cost      the pay and the employer’s contributions
+  gross wedge     the tax wedge, percent: (cost−net)/cost
+  gross atr       average rate, percent: (gross−net)/gross
+  gross mtr       marginal rate, percent: what is taken from one more unit of gross pay
+  --------------- -----------------------------------------------------------------------
+
+Each of these also works element by element on a real matrix, which makes a table or a
+graph one line:
+
+    0 250 8000 rrange dup mtr plot     \ the marginal rate against monthly pay
+    [1 4 $ 1500 2500 4000 8000] wedge  \ 42.79  45.52  48.01  52.57
+
+The pay period.
+
+Amounts are per month for Slovenia and per year for the United States, which is how each
+country speaks of pay; permonth and peryear change it. The two countries also differ in
+what a monthly figure means. In the United States the tax is a yearly one: a monthly
+amount is multiplied by twelve, the yearly schedule applied, and the results divided by
+twelve. In Slovenia the employer withholds an advance payment each month by a monthly
+scale that is the yearly one divided by twelve and rounded to cents, and that is what
+MM-41 computes; with peryear it applies the yearly scale to a yearly amount, which is
+the final assessment for someone with twelve equal salaries and nothing else.
+
+Circumstances.
+
+"mfj" filing chooses the filing status in the United States: single, mfj (married filing
+jointly), mfs (separately), hoh (head of household); each has its own standard
+deduction, brackets and Additional Medicare threshold. n children sets the number of
+dependent children: in Slovenia an allowance for each, larger for each further child; in
+the United States the Child Tax Credit, including the part that is paid out when there
+is no tax to set it against and the reduction at high incomes. n dependants is the
+number of other dependent family members (Slovenia). The circumstances are remembered
+with the schedule.
+
+    "us" usetax "mfj" filing 2 children
+    90000 net            \ 81075.00
+    90000 payslip
+    0 children "single" filing
+
+What is and is not included.
+
+taxinfo prints every figure of the schedule in use and where it was read from. The
+United States schedule covers federal income tax with the standard deduction, Social
+Security, Medicare and the Additional Medicare Tax, and the Child Tax Credit; it leaves
+out state and local taxes, itemized deductions, pre-tax benefits and other credits. The
+Slovenian one covers the contributions (including the one for long-term care), the
+obligatory health contribution (OZP), the general allowance with its increase for low
+pay, the allowances for dependants, and the scale; for the employer also the
+contributions due on the minimum base when the pay is below it. It leaves out the
+reimbursements of meals and travel, the holiday allowance and the special allowances.
+For the minimum wage and for other figures that changed during a year the comments in
+the schedule say which value is used.
+
+Changing a figure.
+
+Rates and thresholds change every year, some of them in the middle of one, and the
+built-in schedules will age. A schedule is a short text file, and a file tax/NAME.txt in
+the configuration directory is read in preference to the built-in of that name:
+
+    "si-2026" taxfile    \ writes ~/.config/mm41/tax/si-2026.txt and prints the path
+
+Edit the file (the format is explained in its first lines), and "si-2026" usetax reads
+it; "si" usetax reads the built-in of the newest year. A copy under another name, say
+tax/si-2027.txt, is a schedule of your own: "si-2027" usetax. The figures built in were
+collected in November 2026 from published summaries of the official sources named in
+each file; check a schedule against the tax authority before relying on a result for a
+decision.
+
+Any scale.
+
+btax applies a progressive scale given on the stack, a matrix with a row for each
+bracket: the amount it starts from and its rate in percent.
+
+    30000 [3 2 $ 0 10  10000 20  25000 40] btax   \ 6000 = 1000 + 3000 + 2000
 
 ========================================================================================
 19  PROGRAMS

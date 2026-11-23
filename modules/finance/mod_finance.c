@@ -434,9 +434,28 @@ static const Op table[] = {
   { "yearfrac", 3, op_yearfrac, "Finance", "d1 d2 basis -- f", "year fraction between two dates; basis 0 = 30/360 US, 1 = actual/actual, 2 = actual/360, 3 = actual/365, 4 = 30E/360", "\"1.1.2007\" \"1.1.2008\" 3 yearfrac" },
   { "date>ymd", 1, op_date_to_ymd, "Finance", "date -- yyyymmdd", "a date string d.m.yyyy as the integer YYYYMMDD (for cash-flow matrices)", "\"15.3.2026\" date>ymd" },
   { "ymd>date", 1, op_ymd_to_date, "Finance", "yyyymmdd -- date", "an integer YYYYMMDD as the date string d.m.yyyy of the dates module", "20260315 ymd>date" },
+  { "usetax",   1, fin_op_usetax,   "Salary", "\"name\" --", "select the tax schedule for the salary words and remember it in config.txt: \"us\" (United States, federal) or \"si\" (Slovenia) for the newest year built in, \"us-2025\" for a given one, or your own tax/NAME.txt in the configuration directory, which is read in preference to a built-in of that name (taxfile writes one to edit; taxinfo shows what is in force)", "\"si\" usetax" },
+  { "clrtax",   0, fin_op_clrtax,   "Salary", "--", "forget the tax schedule and the filing status, children and dependants", "clrtax" },
+  { "taxinfo",  0, fin_op_taxinfo,  "Salary", "--", "print the tax schedule in use: contributions, allowances, brackets, and where it was read from", "\"us\" usetax taxinfo" },
+  { "taxfile",  1, fin_op_taxfile,  "Salary", "\"name\" --", "write a built-in tax schedule to tax/NAME.txt in the configuration directory and print the path: edit the file to change a rate or a threshold, and usetax reads it from then on", "\"si-2026\" taxfile" },
+  { "filing",   1, fin_op_filing,   "Salary", "\"status\" --", "choose the filing status of the schedule in use; the United States: single, mfj (married filing jointly), mfs (married filing separately), hoh (head of household)", "\"us\" usetax \"mfj\" filing" },
+  { "children", 1, fin_op_children, "Salary", "n --", "the number of dependent children: allowances in Slovenia (rising with each child), the Child Tax Credit in the United States", "\"si\" usetax 2 children" },
+  { "dependants", 1, fin_op_dependants, "Salary", "n --", "the number of other dependent family members (an allowance each in Slovenia)", "\"si\" usetax 1 dependants" },
+  { "permonth", 0, fin_op_permonth, "Salary", "--", "amounts of pay are per month from now on (the default for Slovenia)", "\"us\" usetax permonth" },
+  { "peryear",  0, fin_op_peryear,  "Salary", "--", "amounts of pay are per year from now on (the default for the United States)", "\"si\" usetax peryear" },
+  { "net",      1, fin_op_net,      "Salary", "gross -- net", "net pay for a gross pay under the tax schedule in use: gross less the employee's contributions and income tax; a decimal, exact to the cent; elementwise on a real matrix", "\"si\" usetax 2000 net" },
+  { "gross",    1, fin_op_gross,    "Salary", "net -- gross", "the gross pay, to the cent, that leaves the given net pay (the least such, found by bisection); elementwise on a real matrix", "\"si\" usetax 1310.30 gross" },
+  { "tax",      1, fin_op_tax,      "Salary", "gross -- tax", "income tax on a gross pay, after allowances and credits (negative when a credit is paid out)", "\"us\" usetax 60000 tax" },
+  { "contrib",  1, fin_op_contrib,  "Salary", "gross -- c", "the employee's social security contributions on a gross pay, flat charges included", "\"us\" usetax 60000 contrib" },
+  { "cost",     1, fin_op_cost,     "Salary", "gross -- cost", "what a gross pay costs the employer: the pay and the employer's contributions", "\"si\" usetax 2000 cost" },
+  { "wedge",    1, fin_op_wedge,    "Salary", "gross -- w", "the tax wedge in percent: the part of the employer's cost that does not reach the employee, (cost - net) / cost", "\"si\" usetax 2000 wedge" },
+  { "atr",      1, fin_op_atr,      "Salary", "gross -- r", "average rate in percent: income tax and the employee's contributions as a share of gross pay", "\"us\" usetax 60000 atr" },
+  { "mtr",      1, fin_op_mtr,      "Salary", "gross -- r", "marginal rate in percent: the part of one more unit of gross pay that tax and contributions take", "\"us\" usetax 60000 mtr" },
+  { "payslip",  1, fin_op_payslip,  "Salary", "gross --", "print the way from gross to net pay: each contribution, the allowances, the taxable income, the tax by the scale, the net pay, the employer's cost, and the average and marginal rates and the tax wedge", "\"si\" usetax 2000 payslip" },
+  { "btax",     2, fin_op_btax,     "Finance", "x M -- t", "tax on the amount x by any scale: M has a row for each bracket, the amount it starts from and its rate in percent", "30000 [3 2 $ 0 10 10000 20 25000 40] btax" },
 };
 
 const Module mm41_mod_finance = {
-  "finance", "1.1", "time value of money (level or growing payments), cash flows, depreciation, bonds, day counts",
+  "finance", "1.2", "time value of money (level or growing payments), cash flows, depreciation, bonds, day counts, gross and net pay",
   table, (int)(sizeof table / sizeof table[0]), init, NULL, 0
 };

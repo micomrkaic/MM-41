@@ -115,6 +115,17 @@ static char **argument_completion(const char *word, size_t wl, const char *text,
     names[n_names++] = xstrdup("us"); names[n_names++] = xstrdup("si");
     for (int i = 0; i < nf; i++) names[n_names++] = f[i];
     free(f);
+  } else if ((!strncmp(word, "usetax", wl) && wl == 6) || (!strncmp(word, "taxfile", wl) && wl == 7)) {
+    extern const char *const mm41_tax_builtin[][2];     /* the schedules compiled in (salary.c) */
+    if (wl == 6) {
+      add_name("us"); add_name("si");
+      int nf; char **f = dir_names("tax", ".txt", &nf);
+      for (int i = 0; i < nf; i++) { add_name(f[i]); free(f[i]); }
+      free(f);
+    }
+    for (int i = 0; mm41_tax_builtin[i][0]; i++) add_name(mm41_tax_builtin[i][0]);
+  } else if (!strncmp(word, "filing", wl) && wl == 6) {
+    add_name("single"); add_name("mfj"); add_name("mfs"); add_name("hoh");
   } else if ((!strncmp(word, "load", wl) && wl == 4) || (!strncmp(word, "run", wl) && wl == 3) ||
              (!strncmp(word, "batch", wl) && wl == 5)) {
     rl_attempted_completion_over = 0;                   /* let readline complete a file name */

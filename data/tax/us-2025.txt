@@ -1,0 +1,65 @@
+# MM-41 tax schedule: United States, federal, tax year 2025
+#
+# As us-2026 (see the notes there). Sources: Rev. Proc. 2024-40, with the
+# standard deduction as raised by the One Big Beautiful Bill Act; SSA.
+
+title    United States (federal)
+year     2025
+currency USD
+period   year
+
+levy     "Social Security"      6.2   to 176100
+levy     "Medicare"             1.45
+employer "Social Security"      6.2   to 176100
+employer "Medicare"             1.45
+employer "FUTA"                 0.6   to 7000
+
+child-credit 2200 1700 2500 15
+
+status single "single"
+  deduction 15750
+  bracket      0  10
+  bracket  11925  12
+  bracket  48475  22
+  bracket 103350  24
+  bracket 197300  32
+  bracket 250525  35
+  bracket 626350  37
+  levy "Additional Medicare" 0.9 from 200000
+  child-credit-less 200000 1000 50
+
+status mfj "married filing jointly"
+  deduction 31500
+  bracket      0  10
+  bracket  23850  12
+  bracket  96950  22
+  bracket 206700  24
+  bracket 394600  32
+  bracket 501050  35
+  bracket 751600  37
+  levy "Additional Medicare" 0.9 from 250000
+  child-credit-less 400000 1000 50
+
+status mfs "married filing separately"
+  deduction 15750
+  bracket      0  10
+  bracket  11925  12
+  bracket  48475  22
+  bracket 103350  24
+  bracket 197300  32
+  bracket 250525  35
+  bracket 375800  37
+  levy "Additional Medicare" 0.9 from 125000
+  child-credit-less 200000 1000 50
+
+status hoh "head of household"
+  deduction 23625
+  bracket      0  10
+  bracket  17000  12
+  bracket  64850  22
+  bracket 103350  24
+  bracket 197300  32
+  bracket 250500  35
+  bracket 626350  37
+  levy "Additional Medicare" 0.9 from 200000
+  child-credit-less 200000 1000 50

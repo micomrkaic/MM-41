@@ -1,0 +1,916 @@
+/*
+ * This file is part of MM-41
+ *
+ * MM-41 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version. See <https://www.gnu.org/licenses/>.
+ */
+
+/* Gross and net pay.
+ *
+ * A tax schedule says what is taken from an employee's pay: contributions
+ * (a percentage of pay, some of them only up to or above an amount, some of
+ * them subtracted before income tax), flat charges, allowances, and income
+ * tax by brackets, possibly different for each filing status, less a credit
+ * for children. From it the words here give the net pay for a gross one,
+ * the gross for a net, the tax, the contributions, what the pay costs the
+ * employer, and the average and marginal rates.
+ *
+ * Schedules are text files (data/tax/NAME.txt; the format is described at
+ * the top of us-2026.txt and si-2026.txt). Those shipped are compiled into
+ * the binary; a file tax/NAME.txt in the configuration directory is read in
+ * preference to a built-in of the same name, which is how a figure is
+ * changed without waiting for a release: `"si-2026" taxfile` writes the
+ * built-in there to be edited. `"si" usetax` selects the newest "si-YEAR".
+ *
+ * All amounts are 34-digit decimals, rounded half-up to cents wherever a
+ * payroll rounds them, so a result agrees with a payslip to the cent.
+ *
+ * Two ways of handling the pay period. By default the pay is brought to a
+ * year, the schedule applied, and the results divided by the number of
+ * periods: right for the United States, where the tax is a yearly one and
+ * the Social Security ceiling is a yearly ceiling. With `method period`
+ * the schedule itself is divided by the number of periods and rounded to
+ * cents, and applied to the pay of one period: this is Slovenia's advance
+ * payment of income tax, whose monthly scale is made exactly so. */
+
+#include "fin.h"
+#include "decimal.h"
+#include "errors.h"
+#include "globals.h"
+#include "ops.h"
+#include "stack.h"
+#include <gsl/gsl_matrix.h>
+#include <ctype.h>
+#include <errno.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+
+#define MAXBR    12
+#define MAXLEVY  10
+#define MAXSLEVY 4
+#define MAXST    8
+#define MAXCHILD 8
+#define MAXFIXED 4
+
+typedef struct { mm_dec from, rate; } Bracket;
+typedef struct { char name[40]; mm_dec rate, from, to; bool capped, deductible; } Levy;
+typedef struct { char name[40]; mm_dec amount; bool deductible; } Fixed;
+
+typedef struct {
+  char name[16], label[48];
+  mm_dec deduction;
+  Bracket br[MAXBR]; int nbr;
+  Levy levy[MAXSLEVY]; int nlevy;
+  bool has_less; mm_dec less_from, less_step, less_amount;       /* the child credit shrinks above less_from */
+} Status;
+
+typedef struct {
+  char key[48], origin[300], title[80], currency[8];
+  int year, period;                 /* period: 1 or 12, how amounts at the prompt are read by default */
+  bool per_period;                  /* method period (see the top of the file) */
+  Status st[MAXST]; int nst;
+  Levy levy[MAXLEVY]; int nlevy;
+  Levy emp[MAXLEVY]; int nemp;
+  Fixed fixed[MAXFIXED]; int nfixed;
+  bool has_floor; mm_dec floor;     /* minimum base for contributions */
+  mm_dec allowance;
+  bool has_low; mm_dec low_limit, low_a, low_b;
+  mm_dec child[MAXCHILD]; int nchild; mm_dec child_more;
+  mm_dec dependant;
+  bool has_credit; mm_dec cr_amount, cr_refundable, cr_floor, cr_pct;
+} TaxSystem;
+
+/* ---- decimals by value: the arithmetic here is all sums and products of
+   moderate numbers, which cannot fail ---- */
+
+static mm_dec DL(long v) { mm_dec d; dec_from_long(&d, v); return d; }
+static mm_dec from_cents(long long c) {              /* not through long, which is 32 bits on some machines */
+  char b[40];
+  mm_dec d;
+  snprintf(b, sizeof b, "%lld.%02lld", c / 100, c % 100);
+  dec_from_string(&d, b);
+  return d;
+}
+static mm_dec add(mm_dec a, mm_dec b) { mm_dec r; dec_add(&r, &a, &b); return r; }
+static mm_dec sub(mm_dec a, mm_dec b) { mm_dec r; dec_sub(&r, &a, &b); return r; }
+static mm_dec mul(mm_dec a, mm_dec b) { mm_dec r; dec_mul(&r, &a, &b); return r; }
+static mm_dec quo(mm_dec a, mm_dec b) { mm_dec r; dec_div(&r, &a, &b); return r; }
+static int    cmp(mm_dec a, mm_dec b) { return dec_compare(&a, &b); }
+static mm_dec dmin(mm_dec a, mm_dec b) { return cmp(a, b) <= 0 ? a : b; }
+static mm_dec dmax(mm_dec a, mm_dec b) { return cmp(a, b) >= 0 ? a : b; }
+static mm_dec pct(mm_dec x, mm_dec rate) { return quo(mul(x, rate), DL(100)); }
+
+/* to cents, half up: what payrolls and tax tables do */
+static mm_dec cents(mm_dec a) {
+  decContext c = dec_ctx;
+  c.round = DEC_ROUND_HALF_UP;
+  mm_dec q, r;
+  decNumberFromString(&q, "0.01", &c);
+  decNumberQuantize(&r, &a, &q, &c);
+  return r;
+}
+
+static void money(mm_dec a, char *buf, size_t n) { mm_dec c = cents(a); dec_to_fixed(&c, 2, buf, n); }
+
+/* ---- the schedules compiled in (generated by the Makefile from data/tax) ---- */
+
+extern const char *const mm41_tax_builtin[][2];        /* { name, text }, ..., { NULL, NULL } */
+
+/* ---- reading a schedule ---- */
+
+/* Split a line into words; "quoted words" are one, # starts a comment. */
+static int split(char *line, char **tok, int max) {
+  int n = 0;
+  char *p = line;
+  while (n < max) {
+    while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') p++;
+    if (*p == '\0' || *p == '#') break;
+    if (*p == '"') {
+      tok[n++] = ++p;
+      while (*p && *p != '"') p++;
+    } else {
+      tok[n++] = p;
+      while (*p && !isspace((unsigned char)*p)) p++;
+    }
+    if (*p) *p++ = '\0';
+  }
+  return n;
+}
+
+static int number(const char *s, mm_dec *out) {
+  if (dec_from_string(out, s) != 0) return -1;
+  return 0;
+}
+
+#define BAD(...) do { mm_error(__VA_ARGS__); return -1; } while (0)
+
+static int read_levy(char **tok, int n, Levy *l, const char *origin, int lineno) {
+  memset(l, 0, sizeof *l);
+  l->from = DL(0); l->to = DL(0);
+  if (n < 3) BAD("%s line %d: %s needs a name and a rate", origin, lineno, tok[0]);
+  snprintf(l->name, sizeof l->name, "%s", tok[1]);
+  if (number(tok[2], &l->rate) != 0 || dec_is_neg(&l->rate) || cmp(l->rate, DL(100)) > 0)
+    BAD("%s line %d: '%s' is not a rate in percent", origin, lineno, tok[2]);
+  for (int i = 3; i < n; i++) {
+    if (!strcmp(tok[i], "deductible")) l->deductible = true;
+    else if (!strcmp(tok[i], "from") && i + 1 < n && number(tok[i + 1], &l->from) == 0 && !dec_is_neg(&l->from)) i++;
+    else if (!strcmp(tok[i], "to") && i + 1 < n && number(tok[i + 1], &l->to) == 0 && !dec_is_neg(&l->to)) { l->capped = true; i++; }
+    else BAD("%s line %d: '%s' is not understood after a rate (from x, to y, deductible)", origin, lineno, tok[i]);
+  }
+  if (l->capped && cmp(l->to, l->from) < 0) BAD("%s line %d: 'to' is below 'from'", origin, lineno);
+  return 0;
+}
+
+/* The amounts a directive needs: tok[first..first+k-1] as non-negative numbers. */
+static int amounts(char **tok, int n, int first, int k, mm_dec *out, const char *origin, int lineno) {
+  if (n < first + k) BAD("%s line %d: %s needs %d number%s", origin, lineno, tok[0], k, k == 1 ? "" : "s");
+  for (int i = 0; i < k; i++)
+    if (number(tok[first + i], &out[i]) != 0 || dec_is_neg(&out[i]))
+      BAD("%s line %d: '%s' is not an amount", origin, lineno, tok[first + i]);
+  return 0;
+}
+
+static int parse_system(const char *text, const char *origin, TaxSystem *sys) {
+  memset(sys, 0, sizeof *sys);
+  snprintf(sys->origin, sizeof sys->origin, "%s", origin);
+  snprintf(sys->currency, sizeof sys->currency, "%s", "");
+  sys->period = 1;
+  sys->allowance = sys->dependant = sys->child_more = DL(0);
+  Status *st = NULL;
+  int lineno = 0;
+  const char *p = text;
+  while (*p) {
+    char line[512];
+    size_t len = strcspn(p, "\n");
+    snprintf(line, sizeof line, "%.*s", (int)(len < sizeof line - 1 ? len : sizeof line - 1), p);
+    p += len + (p[len] == '\n');
+    lineno++;
+    char *tok[24];
+    int n = split(line, tok, 24);
+    if (n == 0) continue;
+    const char *k = tok[0];
+    mm_dec a[8];
+    if (!strcmp(k, "title")) {
+      sys->title[0] = '\0';
+      for (int i = 1; i < n; i++) snprintf(sys->title + strlen(sys->title), sizeof sys->title - strlen(sys->title), "%s%s", i > 1 ? " " : "", tok[i]);
+    } else if (!strcmp(k, "year") && n == 2) {
+      sys->year = atoi(tok[1]);
+    } else if (!strcmp(k, "currency") && n == 2) {
+      snprintf(sys->currency, sizeof sys->currency, "%s", tok[1]);
+    } else if (!strcmp(k, "period") && n == 2 && (!strcmp(tok[1], "year") || !strcmp(tok[1], "month"))) {
+      sys->period = tok[1][0] == 'y' ? 1 : 12;
+    } else if (!strcmp(k, "method") && n == 2 && (!strcmp(tok[1], "year") || !strcmp(tok[1], "period"))) {
+      sys->per_period = tok[1][0] == 'p';
+    } else if (!strcmp(k, "levy")) {
+      Levy l;
+      if (read_levy(tok, n, &l, origin, lineno) != 0) return -1;
+      if (st) {
+        if (st->nlevy == MAXSLEVY) BAD("%s line %d: too many levies in one status (the limit is %d)", origin, lineno, MAXSLEVY);
+        st->levy[st->nlevy++] = l;
+      } else {
+        if (sys->nlevy == MAXLEVY) BAD("%s line %d: too many levies (the limit is %d)", origin, lineno, MAXLEVY);
+        sys->levy[sys->nlevy++] = l;
+      }
+    } else if (!strcmp(k, "employer")) {
+      if (sys->nemp == MAXLEVY) BAD("%s line %d: too many employer levies (the limit is %d)", origin, lineno, MAXLEVY);
+      if (read_levy(tok, n, &sys->emp[sys->nemp], origin, lineno) != 0) return -1;
+      sys->nemp++;
+    } else if (!strcmp(k, "fixed")) {
+      if (sys->nfixed == MAXFIXED) BAD("%s line %d: too many fixed charges (the limit is %d)", origin, lineno, MAXFIXED);
+      if (n < 3) BAD("%s line %d: fixed needs a name and a monthly amount", origin, lineno);
+      Fixed *f = &sys->fixed[sys->nfixed];
+      snprintf(f->name, sizeof f->name, "%s", tok[1]);
+      if (amounts(tok, n, 2, 1, &f->amount, origin, lineno) != 0) return -1;
+      f->deductible = n > 3 && !strcmp(tok[3], "deductible");
+      if (n > 4 || (n == 4 && !f->deductible)) BAD("%s line %d: '%s' is not understood after the amount", origin, lineno, tok[3]);
+      sys->nfixed++;
+    } else if (!strcmp(k, "minimum-base")) {
+      if (amounts(tok, n, 1, 1, &sys->floor, origin, lineno) != 0) return -1;
+      sys->has_floor = true;
+    } else if (!strcmp(k, "allowance")) {
+      if (amounts(tok, n, 1, 1, &sys->allowance, origin, lineno) != 0) return -1;
+    } else if (!strcmp(k, "allowance-low")) {
+      if (amounts(tok, n, 1, 3, a, origin, lineno) != 0) return -1;
+      sys->has_low = true; sys->low_limit = a[0]; sys->low_a = a[1]; sys->low_b = a[2];
+    } else if (!strcmp(k, "child")) {
+      sys->nchild = 0;
+      int i = 1;
+      for (; i < n && strcmp(tok[i], "more") != 0; i++) {
+        if (sys->nchild == MAXCHILD) BAD("%s line %d: too many child amounts (the limit is %d, then 'more x')", origin, lineno, MAXCHILD);
+        if (amounts(tok, n, i, 1, &sys->child[sys->nchild], origin, lineno) != 0) return -1;
+        sys->nchild++;
+      }
+      if (i < n && amounts(tok, n, i + 1, 1, &sys->child_more, origin, lineno) != 0) return -1;
+      if (sys->nchild == 0) BAD("%s line %d: child needs at least one amount", origin, lineno);
+    } else if (!strcmp(k, "dependant")) {
+      if (amounts(tok, n, 1, 1, &sys->dependant, origin, lineno) != 0) return -1;
+    } else if (!strcmp(k, "child-credit")) {
+      if (amounts(tok, n, 1, 4, a, origin, lineno) != 0) return -1;
+      sys->has_credit = true; sys->cr_amount = a[0]; sys->cr_refundable = a[1]; sys->cr_floor = a[2]; sys->cr_pct = a[3];
+    } else if (!strcmp(k, "status")) {
+      if (n < 2) BAD("%s line %d: status needs a name", origin, lineno);
+      if (sys->nst == MAXST) BAD("%s line %d: too many statuses (the limit is %d)", origin, lineno, MAXST);
+      st = &sys->st[sys->nst++];
+      memset(st, 0, sizeof *st);
+      st->deduction = DL(0);
+      snprintf(st->name, sizeof st->name, "%s", tok[1]);
+      snprintf(st->label, sizeof st->label, "%s", n > 2 ? tok[2] : tok[1]);
+    } else if (!strcmp(k, "deduction") || !strcmp(k, "bracket") || !strcmp(k, "child-credit-less")) {
+      if (!st) BAD("%s line %d: %s comes before any status line", origin, lineno, k);
+      if (k[0] == 'd') {
+        if (amounts(tok, n, 1, 1, &st->deduction, origin, lineno) != 0) return -1;
+      } else if (k[0] == 'b') {
+        if (st->nbr == MAXBR) BAD("%s line %d: too many brackets (the limit is %d)", origin, lineno, MAXBR);
+        if (amounts(tok, n, 1, 2, a, origin, lineno) != 0) return -1;
+        if (cmp(a[1], DL(100)) > 0) BAD("%s line %d: a rate of more than 100 percent", origin, lineno);
+        if (st->nbr == 0 ? !dec_is_zero(&a[0]) : cmp(a[0], st->br[st->nbr - 1].from) <= 0)
+          BAD("%s line %d: brackets start at 0 and go upwards", origin, lineno);
+        st->br[st->nbr].from = a[0]; st->br[st->nbr].rate = a[1]; st->nbr++;
+      } else {
+        if (amounts(tok, n, 1, 3, a, origin, lineno) != 0) return -1;
+        if (dec_is_zero(&a[1])) BAD("%s line %d: the step of child-credit-less cannot be 0", origin, lineno);
+        st->has_less = true; st->less_from = a[0]; st->less_step = a[1]; st->less_amount = a[2];
+      }
+    } else {
+      BAD("%s line %d: '%s' is not understood here", origin, lineno, k);
+    }
+  }
+  if (sys->nst == 0) BAD("%s: no status with brackets in it", origin);
+  for (int i = 0; i < sys->nst; i++)
+    if (sys->st[i].nbr == 0) BAD("%s: status %s has no brackets", origin, sys->st[i].name);
+  return 0;
+}
+
+/* ---- finding a schedule by name ---- */
+
+static char *slurp(const char *path) {
+  FILE *f = fopen(path, "r");
+  if (!f) return NULL;
+  size_t cap = 65536, n = 0;
+  char *buf = xmalloc(cap + 1);
+  n = fread(buf, 1, cap, f);
+  fclose(f);
+  buf[n] = '\0';
+  return buf;
+}
+
+static bool safe_name(const char *name) {
+  if (!*name || strlen(name) > 40) return false;
+  for (const char *p = name; *p; p++) if (!isalnum((unsigned char)*p) && *p != '-' && *p != '_') return false;
+  return true;
+}
+
+/* The built-in called name, or the newest one called name-YEAR; NULL if none. */
+static const char *builtin(const char *name, const char **resolved) {
+  int best = -1;
+  size_t l = strlen(name);
+  for (int i = 0; mm41_tax_builtin[i][0]; i++) {
+    const char *b = mm41_tax_builtin[i][0];
+    if (!strcmp(b, name)) { *resolved = b; return mm41_tax_builtin[i][1]; }
+    if (!strncmp(b, name, l) && b[l] == '-' && (best < 0 || strcmp(b, mm41_tax_builtin[best][0]) > 0)) best = i;
+  }
+  if (best < 0) return NULL;
+  *resolved = mm41_tax_builtin[best][0];
+  return mm41_tax_builtin[best][1];
+}
+
+static int load_named(const char *name, const char *what, TaxSystem *sys) {
+  char origin[300], *text = NULL;
+  const char *resolved = name;
+  int rc;
+  if (strchr(name, '/') || strstr(name, ".txt")) {                 /* a path as given */
+    text = slurp(name);
+    if (!text) return mm_error("%s: cannot read %s: %s", what, name, strerror(errno));
+    snprintf(origin, sizeof origin, "%s", name);
+  } else {
+    if (!safe_name(name)) return mm_error("%s: '%s' is not the name of a tax schedule", what, name);
+    char rel[64];
+    snprintf(rel, sizeof rel, "tax/%s.txt", name);
+    const char *path = app_path(rel);
+    text = slurp(path);
+    if (text) snprintf(origin, sizeof origin, "%s", path);
+  }
+  if (text) {
+    rc = parse_system(text, origin, sys);
+    free(text);
+  } else {
+    const char *b = builtin(name, &resolved);
+    if (!b) {
+      char have[200] = "";
+      for (int i = 0; mm41_tax_builtin[i][0]; i++)
+        snprintf(have + strlen(have), sizeof have - strlen(have), "%s%s", i ? ", " : "", mm41_tax_builtin[i][0]);
+      return mm_error("%s: no tax schedule '%s' (no tax/%s.txt in the configuration directory; built in are %s)", what, name, name, have);
+    }
+    snprintf(origin, sizeof origin, "built-in %s", resolved);
+    rc = parse_system(b, origin, sys);
+  }
+  if (rc != 0) return -1;
+  snprintf(sys->key, sizeof sys->key, "%s", resolved);
+  return 0;
+}
+
+/* ---- the schedule in use and the taxpayer's circumstances ---- */
+
+static TaxSystem cur;
+static bool have = false, tried = false;
+static char asked[48];             /* the name as the user gave it ("si"), which is what config.txt keeps */
+static int  status = 0;
+static long children = 0, dependants = 0;
+static int  periods = 1;           /* pay periods a year: amounts at the prompt are for one of them */
+
+static void remember(void) {
+  if (!have) { tax_setting[0] = '\0'; return; }
+  snprintf(tax_setting, sizeof tax_setting, "%s %s %ld %ld %d", asked, cur.st[status].name, children, dependants, periods);
+}
+
+static int find_status(const TaxSystem *sys, const char *name) {
+  for (int i = 0; i < sys->nst; i++) if (!strcmp(sys->st[i].name, name)) return i;
+  return -1;
+}
+
+/* The schedule named in config.txt, on first use. */
+static int ensure(const char *what) {
+  if (have) return 0;
+  if (!tried && tax_setting[0]) {
+    tried = true;
+    char name[48] = "", st[16] = "";
+    long k = 0, d = 0; int p = 0;
+    int got = sscanf(tax_setting, "%47s %15s %ld %ld %d", name, st, &k, &d, &p);
+    if (got >= 1 && load_named(name, what, &cur) == 0) {
+      have = true;
+      snprintf(asked, sizeof asked, "%s", name);
+      int i = got >= 2 ? find_status(&cur, st) : -1;
+      status = i < 0 ? 0 : i;
+      children = got >= 3 && k >= 0 && k <= 30 ? k : 0;
+      dependants = got >= 4 && d >= 0 && d <= 30 ? d : 0;
+      periods = got >= 5 && (p == 1 || p == 12) ? p : cur.period;
+      return 0;
+    }
+    return mm_error("%s: config.txt names the tax schedule '%s', which cannot be used; \"us\" usetax or \"si\" usetax", what, name);
+  }
+  return mm_error("%s: no tax schedule is selected; \"us\" usetax or \"si\" usetax first (help usetax)", what);
+}
+
+/* ---- the calculation ---- */
+
+typedef struct {
+  mm_dec gross;
+  int nlevy; const Levy *levy[MAXLEVY + MAXSLEVY]; mm_dec levy_amt[MAXLEVY + MAXSLEVY];
+  int nfixed; mm_dec fixed_amt[MAXFIXED];
+  mm_dec deduction, allow_general, allow_low, allow_family;        /* what is subtracted before the brackets */
+  mm_dec taxable;
+  int bracket; mm_dec br_from, br_base, br_rate;                    /* the bracket the taxable income ends in */
+  mm_dec tax_scale, credit, tax;
+  int nemp; mm_dec emp_amt[MAXLEVY]; mm_dec emp_floor;
+  /* sums */
+  mm_dec contrib, fixed, net, employer, cost;
+} Pay;
+
+/* A schedule amount for the period the tax is worked out on. */
+static mm_dec per(mm_dec x, int div) { return div == 1 ? x : cents(quo(x, DL(div))); }
+
+static mm_dec levy_on(const Levy *l, mm_dec pay, int div, bool exact) {
+  mm_dec top = l->capped ? dmin(pay, per(l->to, div)) : pay;
+  mm_dec base = dmax(DL(0), sub(top, per(l->from, div)));
+  mm_dec a = pct(base, l->rate);
+  return exact ? a : cents(a);
+}
+
+static void totals(Pay *pay) {
+  pay->contrib = pay->fixed = pay->employer = DL(0);
+  for (int i = 0; i < pay->nlevy; i++) pay->contrib = add(pay->contrib, pay->levy_amt[i]);
+  for (int i = 0; i < pay->nfixed; i++) pay->fixed = add(pay->fixed, pay->fixed_amt[i]);
+  for (int i = 0; i < pay->nemp; i++) pay->employer = add(pay->employer, pay->emp_amt[i]);
+  pay->employer = add(pay->employer, pay->emp_floor);
+  pay->net = sub(sub(sub(pay->gross, pay->contrib), pay->fixed), pay->tax);
+  pay->cost = add(pay->gross, pay->employer);
+}
+
+/* g is the gross pay of one period. With exact, nothing is rounded to
+   cents and the child credit shrinks smoothly: for the marginal rate. */
+static void compute(const TaxSystem *sys, const Status *st, long kids, long deps, int p, mm_dec g, bool exact, Pay *pay) {
+  memset(pay, 0, sizeof *pay);
+  int div = sys->per_period ? p : 1;                 /* the schedule is divided by this ... */
+  int mult = sys->per_period ? 1 : p;                /* ... or the pay multiplied by this */
+  mm_dec G = mul(g, DL(mult));
+  mm_dec zero = DL(0);
+  bool paid = cmp(G, zero) > 0;
+#define RND(x) (exact ? (x) : cents(x))
+
+  /* contributions */
+  mm_dec before_tax = zero, rate_sum = zero;
+  for (int i = 0; i < sys->nlevy + st->nlevy; i++) {
+    const Levy *l = i < sys->nlevy ? &sys->levy[i] : &st->levy[i - sys->nlevy];
+    pay->levy[pay->nlevy] = l;
+    pay->levy_amt[pay->nlevy] = levy_on(l, G, div, exact);
+    if (l->deductible) before_tax = add(before_tax, pay->levy_amt[pay->nlevy]);
+    if (!l->capped && dec_is_zero(&l->from)) rate_sum = add(rate_sum, l->rate);
+    pay->nlevy++;
+  }
+  mm_dec room = zero;
+  for (int i = 0; i < pay->nlevy; i++) room = add(room, pay->levy_amt[i]);
+  room = dmax(zero, sub(G, room));                   /* a flat charge cannot take more than is left */
+  pay->nfixed = sys->nfixed;
+  for (int i = 0; i < sys->nfixed; i++) {
+    mm_dec a = paid ? RND(quo(mul(sys->fixed[i].amount, DL(12)), DL(sys->per_period ? p : 1))) : zero;
+    a = dmin(a, room);
+    room = sub(room, a);
+    pay->fixed_amt[i] = a;
+    if (sys->fixed[i].deductible) before_tax = add(before_tax, a);
+  }
+
+  /* the employer's side */
+  pay->nemp = sys->nemp;
+  for (int i = 0; i < sys->nemp; i++) {
+    pay->emp_amt[i] = levy_on(&sys->emp[i], G, div, exact);
+    if (!sys->emp[i].capped && dec_is_zero(&sys->emp[i].from)) rate_sum = add(rate_sum, sys->emp[i].rate);
+  }
+  pay->emp_floor = zero;
+  if (sys->has_floor && paid && cmp(G, per(sys->floor, div)) < 0)
+    pay->emp_floor = RND(pct(sub(per(sys->floor, div), G), rate_sum));
+
+  /* what is free of income tax */
+  pay->deduction = per(st->deduction, div);
+  pay->allow_general = per(sys->allowance, div);
+  pay->allow_low = zero;
+  if (sys->has_low && cmp(G, per(sys->low_limit, div)) <= 0)
+    pay->allow_low = dmax(zero, RND(sub(per(sys->low_a, div), mul(sys->low_b, G))));
+  pay->allow_family = zero;
+  if (sys->nchild > 0) {
+    mm_dec a = zero;
+    for (long i = 0; i < kids; i++) {
+      a = i < sys->nchild ? sys->child[i] : add(a, sys->child_more);
+      pay->allow_family = add(pay->allow_family, per(a, div));
+    }
+  }
+  pay->allow_family = add(pay->allow_family, mul(per(sys->dependant, div), DL(deps)));
+  mm_dec free_of_tax = add(add(pay->deduction, pay->allow_general), add(pay->allow_low, pay->allow_family));
+  pay->taxable = dmax(zero, sub(sub(G, before_tax), free_of_tax));
+
+  /* the scale: the tax at the foot of each bracket is rounded to cents, as
+     the published scales are, and the monthly one is a twelfth of the yearly */
+  mm_dec foot = zero;                                /* yearly tax at the foot of bracket i */
+  for (int i = 0; i < st->nbr; i++) {
+    mm_dec from = per(st->br[i].from, div);
+    if (cmp(pay->taxable, from) < 0) break;
+    pay->bracket = i; pay->br_from = from; pay->br_rate = st->br[i].rate;
+    pay->br_base = exact && div == 1 ? foot : per(foot, div);
+    if (i + 1 < st->nbr) {
+      foot = add(foot, pct(sub(st->br[i + 1].from, st->br[i].from), st->br[i].rate));
+      if (!exact) foot = cents(foot);
+    }
+  }
+  pay->tax_scale = RND(add(pay->br_base, pct(sub(pay->taxable, pay->br_from), pay->br_rate)));
+
+  /* the credit for children: against the tax first, then the part that is paid out */
+  pay->credit = zero;
+  if (sys->has_credit && kids > 0) {
+    mm_dec c = mul(per(sys->cr_amount, div), DL(kids));
+    if (st->has_less && cmp(G, per(st->less_from, div)) > 0) {
+      mm_dec steps = quo(sub(G, per(st->less_from, div)), per(st->less_step, div));
+      if (!exact) {                                  /* each step or part of one */
+        mm_dec whole; dec_intg(&whole, &steps);
+        steps = cmp(whole, steps) < 0 ? add(whole, DL(1)) : whole;
+      }
+      c = dmax(zero, sub(c, mul(steps, per(st->less_amount, div))));
+    }
+    mm_dec against = dmin(c, pay->tax_scale);
+    mm_dec earned = dmax(zero, pct(sub(G, per(sys->cr_floor, div)), sys->cr_pct));
+    mm_dec paid_out = dmin(dmin(sub(c, against), mul(per(sys->cr_refundable, div), DL(kids))), earned);
+    pay->credit = RND(add(against, paid_out));
+  }
+  pay->tax = sub(pay->tax_scale, pay->credit);
+  pay->gross = G;
+
+  /* a yearly calculation shown for one period */
+  if (mult != 1) {
+    mm_dec m = DL(mult);
+#define DIV(x) (x) = RND(quo((x), m))
+    for (int i = 0; i < pay->nlevy; i++) DIV(pay->levy_amt[i]);
+    for (int i = 0; i < pay->nfixed; i++) DIV(pay->fixed_amt[i]);
+    for (int i = 0; i < pay->nemp; i++) DIV(pay->emp_amt[i]);
+    DIV(pay->emp_floor); DIV(pay->deduction); DIV(pay->allow_general); DIV(pay->allow_low); DIV(pay->allow_family);
+    DIV(pay->taxable); DIV(pay->br_from); DIV(pay->br_base); DIV(pay->tax_scale); DIV(pay->credit); DIV(pay->tax);
+#undef DIV
+    pay->gross = g;
+  }
+#undef RND
+  totals(pay);
+}
+
+static void pay_for(mm_dec g, bool exact, Pay *pay) {
+  compute(&cur, &cur.st[status], children, dependants, periods, g, exact, pay);
+}
+
+/* The gross pay, to the cent, whose net pay is at least target: net pay
+   rises with gross pay, so bisection on whole cents finds it. */
+static int gross_for(mm_dec target, mm_dec *out) {
+  Pay pay;
+  long long lo = 0, hi = 100;
+  for (;;) {
+    mm_dec g = from_cents(hi);
+    pay_for(g, false, &pay);
+    if (cmp(pay.net, target) >= 0) break;
+    lo = hi;
+    hi *= 4;
+    if (hi > 400000000000000LL) return mm_error("gross: no gross pay gives that net pay");
+  }
+  while (lo < hi) {
+    long long mid = lo + (hi - lo) / 2;
+    pay_for(from_cents(mid), false, &pay);
+    if (cmp(pay.net, target) >= 0) hi = mid; else lo = mid + 1;
+  }
+  *out = from_cents(lo);
+  return 0;
+}
+
+enum { W_NET, W_GROSS, W_TAX, W_CONTRIB, W_COST, W_WEDGE, W_ATR, W_MTR };
+
+static int value_of(int which, mm_dec x, mm_dec *out) {
+  Pay pay;
+  mm_dec zero = DL(0), hundred = DL(100);
+  if (which == W_GROSS) return gross_for(x, out);
+  if (which == W_MTR) {                              /* what is kept of one more unit of pay, unrounded */
+    Pay more;
+    pay_for(x, true, &pay);
+    pay_for(add(x, DL(1)), true, &more);
+    *out = mul(hundred, sub(DL(1), sub(more.net, pay.net)));
+    dec_round(out, out, 6);
+    return 0;
+  }
+  pay_for(x, false, &pay);
+  switch (which) {
+  case W_NET:     *out = pay.net; break;
+  case W_TAX:     *out = pay.tax; break;
+  case W_CONTRIB: *out = add(pay.contrib, pay.fixed); break;
+  case W_COST:    *out = pay.cost; break;
+  case W_WEDGE:   *out = cmp(pay.cost, zero) > 0 ? quo(mul(hundred, sub(pay.cost, pay.net)), pay.cost) : zero; dec_round(out, out, 6); break;
+  case W_ATR:     *out = cmp(pay.gross, zero) > 0 ? quo(mul(hundred, sub(pay.gross, pay.net)), pay.gross) : zero; dec_round(out, out, 6); break;
+  }
+  return 0;
+}
+
+static int amount_ok(const char *what, const mm_dec *x) {
+  mm_dec top; dec_from_string(&top, "1e12");
+  if (dec_is_neg(x) || dec_compare(x, &top) > 0) return mm_error("%s: pay must be between 0 and 1e12", what);
+  return 0;
+}
+
+/* x -- f(x) for a number (the result is a decimal) or, element by
+   element, for a real matrix. An error leaves the stack alone. */
+static int map(Stack *s, const char *what, int which) {
+  const stack_element *e = &s->items[s->top];
+  if (e->type != TYPE_REAL && e->type != TYPE_DECIMAL && e->type != TYPE_MATRIX_REAL)
+    return mm_error("%s: needs an amount of pay (a number, or a real matrix of them)", what);
+  if (ensure(what) != 0) return -1;
+  if (e->type == TYPE_MATRIX_REAL) {
+    const gsl_matrix *m = e->matrix_real;
+    gsl_matrix *r = gsl_matrix_alloc(m->size1, m->size2);
+    if (!r) return mm_error("%s: out of memory", what);
+    for (size_t i = 0; i < m->size1; i++)
+      for (size_t j = 0; j < m->size2; j++) {
+        double v = gsl_matrix_get(m, i, j);
+        mm_dec x, y;
+        if (!isfinite(v)) { gsl_matrix_free(r); return mm_error("%s: pay must be between 0 and 1e12", what); }
+        dec_from_double(&x, v);
+        if (amount_ok(what, &x) != 0 || value_of(which, x, &y) != 0) { gsl_matrix_free(r); return -1; }
+        gsl_matrix_set(r, i, j, dec_to_double(&y));
+      }
+    stack_element old = pop(s);
+    stack_element_free(&old);
+    push_matrix_real(s, r);
+    return 0;
+  }
+  mm_dec x, y;
+  if (e->type == TYPE_DECIMAL) x = e->dec;
+  else {
+    if (!isfinite(e->real)) return mm_error("%s: pay must be between 0 and 1e12", what);
+    dec_from_double(&x, e->real);
+  }
+  if (amount_ok(what, &x) != 0 || value_of(which, x, &y) != 0) return -1;
+  pop(s);
+  push_decimal(s, &y);
+  return 0;
+}
+
+int fin_op_net(Stack *s)     { return map(s, "net", W_NET); }
+int fin_op_gross(Stack *s)   { return map(s, "gross", W_GROSS); }
+int fin_op_tax(Stack *s)     { return map(s, "tax", W_TAX); }
+int fin_op_contrib(Stack *s) { return map(s, "contrib", W_CONTRIB); }
+int fin_op_cost(Stack *s)    { return map(s, "cost", W_COST); }
+int fin_op_wedge(Stack *s)   { return map(s, "wedge", W_WEDGE); }
+int fin_op_atr(Stack *s)     { return map(s, "atr", W_ATR); }
+int fin_op_mtr(Stack *s)     { return map(s, "mtr", W_MTR); }
+
+/* ---- the payslip ---- */
+
+static void row(const char *label, const char *note, mm_dec amount, int sign) {
+  char b[64];
+  money(sign < 0 ? sub(DL(0), amount) : amount, b, sizeof b);
+  printf("  %-26s %-30s %12s\n", label, note, b);
+}
+
+static void rate_text(mm_dec rate, char *buf, size_t n) {
+  char r[48];
+  dec_to_string(&rate, r, sizeof r);
+  snprintf(buf, n, "%s%%", r);
+}
+
+static const char *period_name(void) { return periods == 12 ? "month" : "year"; }
+
+static void heading(void) {
+  printf("  %s %d", cur.title, cur.year);
+  if (cur.nst > 1) printf(", %s", cur.st[status].label);
+  if (children) printf(", %ld child%s", children, children == 1 ? "" : "ren");
+  if (dependants) printf(", %ld other dependant%s", dependants, dependants == 1 ? "" : "s");
+  printf("; %s a %s\n", cur.currency[0] ? cur.currency : "amounts", period_name());
+}
+
+int fin_op_payslip(Stack *s) {
+  const stack_element *e = &s->items[s->top];
+  if (e->type != TYPE_REAL && e->type != TYPE_DECIMAL) return mm_error("payslip: needs the gross pay (a number)");
+  if (ensure("payslip") != 0) return -1;
+  mm_dec g, zero = DL(0);
+  if (e->type == TYPE_DECIMAL) g = e->dec;
+  else {
+    if (!isfinite(e->real)) return mm_error("payslip: pay must be between 0 and 1e12");
+    dec_from_double(&g, e->real);
+  }
+  if (amount_ok("payslip", &g) != 0) return -1;
+  Pay pay;
+  pay_for(g, false, &pay);
+  char note[96], a[64], b[64];
+  const char *rule = "  ----------------------------------------------------------------------";
+
+  heading();
+  puts(rule);
+  row("gross pay", "", pay.gross, 1);
+  for (int i = 0; i < pay.nlevy; i++) {
+    if (dec_is_zero(&pay.levy_amt[i]) && (pay.levy[i]->capped || !dec_is_zero(&pay.levy[i]->from))) continue;
+    rate_text(pay.levy[i]->rate, note, sizeof note);
+    row(pay.levy[i]->name, note, pay.levy_amt[i], -1);
+  }
+  for (int i = 0; i < pay.nfixed; i++) row(cur.fixed[i].name, "", pay.fixed_amt[i], -1);
+  if (pay.nlevy + pay.nfixed > 1) row("contributions", "", add(pay.contrib, pay.fixed), -1);
+
+  mm_dec free_of_tax = add(add(pay.deduction, pay.allow_general), add(pay.allow_low, pay.allow_family));
+  if (cmp(pay.deduction, zero) > 0) { money(pay.deduction, a, sizeof a); printf("  %-26s %14s\n", "  standard deduction", a); }
+  if (cmp(pay.allow_general, zero) > 0) { money(pay.allow_general, a, sizeof a); printf("  %-26s %14s\n", "  general allowance", a); }
+  if (cmp(pay.allow_low, zero) > 0) { money(pay.allow_low, a, sizeof a); printf("  %-26s %14s\n", "  increase for low pay", a); }
+  if (cmp(pay.allow_family, zero) > 0) { money(pay.allow_family, a, sizeof a); printf("  %-26s %14s\n", "  for dependants", a); }
+  (void)free_of_tax;
+  money(pay.taxable, a, sizeof a);
+  printf("  %-26s %14s\n", "  taxable", a);
+
+  rate_text(pay.br_rate, note, sizeof note);
+  money(pay.br_base, a, sizeof a); money(pay.br_from, b, sizeof b);
+  char how[240];
+  if (dec_is_zero(&pay.br_from)) snprintf(how, sizeof how, "%s", note);
+  else snprintf(how, sizeof how, "%s + %s over %s", a, note, b);
+  row("income tax", how, pay.tax_scale, -1);
+  if (cmp(pay.credit, zero) > 0) row("credit for children", "", pay.credit, 1);
+  puts(rule);
+  if (cmp(pay.gross, zero) > 0) {
+    mm_dec share = quo(mul(DL(100), pay.net), pay.gross);
+    dec_to_fixed(&share, 1, a, sizeof a);
+    snprintf(note, sizeof note, "%s%% of gross", a);
+  } else note[0] = '\0';
+  row("net pay", note, pay.net, 1);
+  puts("");
+  if (cmp(pay.employer, zero) > 0) {
+    row("employer's contributions", "", sub(pay.employer, pay.emp_floor), 1);
+    if (cmp(pay.emp_floor, zero) > 0) row("  up to the minimum base", "", pay.emp_floor, 1);
+    row("cost to the employer", "", pay.cost, 1);
+  }
+  mm_dec atr, mtr, wedge;
+  value_of(W_ATR, g, &atr); value_of(W_MTR, g, &mtr); value_of(W_WEDGE, g, &wedge);
+  char c[64];
+  dec_to_fixed(&atr, 1, a, sizeof a); dec_to_fixed(&mtr, 1, b, sizeof b); dec_to_fixed(&wedge, 1, c, sizeof c);
+  printf("  average rate %s%%, marginal rate %s%%, tax wedge %s%%\n", a, b, c);
+
+  pop(s);
+  return 0;
+}
+
+/* ---- choosing the schedule and the circumstances ---- */
+
+int fin_op_usetax(Stack *s) {
+  char *name;
+  if (pop_string_arg(s, "usetax", &name) != 0) return -1;
+  TaxSystem *sys = xmalloc(sizeof *sys);
+  if (load_named(name, "usetax", sys) != 0) { free(sys); push_string(s, name); free(name); return -1; }
+  /* the filing status carries over when the new schedule has one of that name */
+  int keep = have ? find_status(sys, cur.st[status].name) : -1;
+  cur = *sys;
+  free(sys);
+  if (!have || strcmp(asked, name) != 0) periods = cur.period;
+  snprintf(asked, sizeof asked, "%s", name);
+  free(name);
+  have = true; tried = true;
+  status = keep < 0 ? 0 : keep;
+  remember();
+  return 0;
+}
+
+int fin_op_clrtax(Stack *s) {
+  (void)s;
+  have = false; tried = true;
+  status = 0; children = dependants = 0; periods = 1;
+  remember();
+  return 0;
+}
+
+int fin_op_filing(Stack *s) {
+  const stack_element *e = &s->items[s->top];
+  if (e->type != TYPE_STRING) return mm_error("filing: needs the name of a filing status (a string)");
+  if (ensure("filing") != 0) return -1;
+  int i = find_status(&cur, e->string);
+  if (i < 0) {
+    char names[160] = "";
+    for (int k = 0; k < cur.nst; k++) snprintf(names + strlen(names), sizeof names - strlen(names), "%s%s", k ? ", " : "", cur.st[k].name);
+    return mm_error("filing: %s %d has no status '%s' (it has: %s)", cur.title, cur.year, e->string, names);
+  }
+  status = i;
+  stack_element old = pop(s);
+  stack_element_free(&old);
+  remember();
+  return 0;
+}
+
+static int set_count(Stack *s, const char *what, long *which) {
+  const stack_element *e = &s->items[s->top];
+  double x = e->type == TYPE_REAL ? e->real : e->type == TYPE_DECIMAL ? dec_to_double(&e->dec) : NAN;
+  if (!whole_in(x, 0, 30)) return mm_error("%s: needs a whole number from 0 to 30", what);
+  if (ensure(what) != 0) return -1;
+  *which = (long)x;
+  pop(s);
+  remember();
+  return 0;
+}
+int fin_op_children(Stack *s)   { return set_count(s, "children", &children); }
+int fin_op_dependants(Stack *s) { return set_count(s, "dependants", &dependants); }
+
+int fin_op_permonth(Stack *s) { (void)s; if (ensure("permonth") != 0) return -1; periods = 12; remember(); return 0; }
+int fin_op_peryear(Stack *s)  { (void)s; if (ensure("peryear") != 0) return -1; periods = 1; remember(); return 0; }
+
+static void levy_line(const Levy *l) {
+  char r[48], a[64];
+  rate_text(l->rate, r, sizeof r);
+  printf("    %-26s %8s", l->name, r);
+  if (!dec_is_zero(&l->from)) { money(l->from, a, sizeof a); printf("  on pay above %s", a); }
+  if (l->capped) { money(l->to, a, sizeof a); printf("  on pay up to %s", a); }
+  if (l->deductible) printf("  (before income tax)");
+  puts("");
+}
+
+int fin_op_taxinfo(Stack *s) {
+  (void)s;
+  if (ensure("taxinfo") != 0) return -1;
+  const Status *st = &cur.st[status];
+  char a[64], b[64];
+  heading();
+  printf("  schedule %s (%s); amounts below are per year\n", cur.key, cur.origin);
+  if (cur.nst > 1) {
+    printf("  filing statuses:");
+    for (int i = 0; i < cur.nst; i++) printf(" %s%s", cur.st[i].name, i == status ? "*" : "");
+    puts("");
+  }
+  puts("  the employee pays");
+  for (int i = 0; i < cur.nlevy; i++) levy_line(&cur.levy[i]);
+  for (int i = 0; i < st->nlevy; i++) levy_line(&st->levy[i]);
+  for (int i = 0; i < cur.nfixed; i++) {
+    money(cur.fixed[i].amount, a, sizeof a);
+    printf("    %-26s %8s a month%s\n", cur.fixed[i].name, a, cur.fixed[i].deductible ? "  (before income tax)" : "");
+  }
+  if (cur.nemp) puts("  the employer pays");
+  for (int i = 0; i < cur.nemp; i++) levy_line(&cur.emp[i]);
+  if (cur.has_floor) { money(cur.floor, a, sizeof a); printf("    and both shares on what the pay falls short of %s\n", a); }
+  puts("  free of income tax");
+  if (!dec_is_zero(&st->deduction)) { money(st->deduction, a, sizeof a); printf("    %-26s %14s\n", "standard deduction", a); }
+  if (!dec_is_zero(&cur.allowance)) { money(cur.allowance, a, sizeof a); printf("    %-26s %14s\n", "general allowance", a); }
+  if (cur.has_low) {
+    char c[64];
+    money(cur.low_limit, a, sizeof a); money(cur.low_a, b, sizeof b); dec_to_string(&cur.low_b, c, sizeof c);
+    printf("    for pay up to %s, also %s - %s x pay\n", a, b, c);
+  }
+  if (cur.nchild) {
+    printf("    for children:");
+    for (int i = 0; i < cur.nchild; i++) { money(cur.child[i], a, sizeof a); printf(" %s", a); }
+    if (!dec_is_zero(&cur.child_more)) { money(cur.child_more, a, sizeof a); printf(", then %s more each", a); }
+    puts("");
+  }
+  if (!dec_is_zero(&cur.dependant)) { money(cur.dependant, a, sizeof a); printf("    %-26s %14s\n", "for another dependant", a); }
+  puts("  income tax on the rest");
+  for (int i = 0; i < st->nbr; i++) {
+    char r[48];
+    rate_text(st->br[i].rate, r, sizeof r);
+    money(st->br[i].from, a, sizeof a);
+    printf("    %8s  from %14s\n", r, a);
+  }
+  if (cur.has_credit) {
+    money(cur.cr_amount, a, sizeof a); money(cur.cr_refundable, b, sizeof b);
+    printf("  credit of %s a child (up to %s of it paid out)", a, b);
+    if (st->has_less) { money(st->less_from, a, sizeof a); printf(", shrinking for pay above %s", a); }
+    puts("");
+  }
+  return 0;
+}
+
+/* "name" -- : write the built-in schedule to the configuration directory, to be edited */
+int fin_op_taxfile(Stack *s) {
+  const stack_element *e = &s->items[s->top];
+  if (e->type != TYPE_STRING) return mm_error("taxfile: needs the name of a built-in tax schedule (a string)");
+  if (!safe_name(e->string)) return mm_error("taxfile: '%s' is not the name of a tax schedule", e->string);
+  const char *resolved = NULL;
+  const char *text = builtin(e->string, &resolved);
+  if (!text) return mm_error("taxfile: there is no built-in tax schedule '%s'", e->string);
+  if (mkdir(app_path("tax"), 0700) != 0 && errno != EEXIST) return mm_error("taxfile: cannot create %s: %s", app_path("tax"), strerror(errno));
+  char rel[64];
+  snprintf(rel, sizeof rel, "tax/%s.txt", resolved);
+  const char *path = app_path(rel);
+  FILE *f = fopen(path, "r");
+  if (f) { fclose(f); return mm_error("taxfile: %s is already there (it is what \"%s\" usetax reads)", path, resolved); }
+  f = fopen(path, "w");
+  if (!f) return mm_error("taxfile: cannot write %s: %s", path, strerror(errno));
+  fputs(text, f);
+  fclose(f);
+  printf("%s\n  edit it, then \"%s\" usetax; delete it to return to the built-in schedule\n", path, resolved);
+  stack_element old = pop(s);
+  stack_element_free(&old);
+  return 0;
+}
+
+/* ---- x M -- t : tax on x by any scale, M being rows of (from, rate in percent) ---- */
+
+int fin_op_btax(Stack *s) {
+  const stack_element *me = &s->items[s->top], *xe = &s->items[s->top - 1];
+  if (me->type != TYPE_MATRIX_REAL || me->matrix_real->size2 != 2)
+    return mm_error("btax: needs an amount and a matrix with two columns: from, rate in percent");
+  if (xe->type != TYPE_REAL && xe->type != TYPE_DECIMAL) return mm_error("btax: the amount must be a number");
+  const gsl_matrix *m = me->matrix_real;
+  mm_dec x, tax = DL(0);
+  if (xe->type == TYPE_DECIMAL) x = xe->dec;
+  else {
+    if (!isfinite(xe->real)) return mm_error("btax: the amount must be finite");
+    dec_from_double(&x, xe->real);
+  }
+  for (size_t i = 0; i < m->size1; i++) {
+    double from = gsl_matrix_get(m, i, 0), rate = gsl_matrix_get(m, i, 1);
+    if (!isfinite(from) || !isfinite(rate) || (i > 0 && from <= gsl_matrix_get(m, i - 1, 0)))
+      return mm_error("btax: the brackets must be finite and go upwards");
+    mm_dec f, r, top = x;
+    dec_from_double(&f, from); dec_from_double(&r, rate);
+    if (i + 1 < m->size1) { mm_dec next; dec_from_double(&next, gsl_matrix_get(m, i + 1, 0)); top = dmin(x, next); }
+    if (cmp(top, f) > 0) tax = add(tax, pct(sub(top, f), r));
+  }
+  stack_element old = pop(s);
+  stack_element_free(&old);
+  pop(s);
+  push_decimal(s, &tax);
+  return 0;
+}

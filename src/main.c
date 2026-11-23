@@ -179,7 +179,7 @@ static void shutdown(Stack *stack, Stack *old_stack) {
    one bare name is rewritten, so the name is not looked up as a word.
    Anything else -- a quoted name, more tokens, the word inside a definition
    -- is evaluated as written. */
-static const char *const bare_name_words[] = { "use", "unuse", "load", "run", "batch", "usehol", "skin", NULL };
+static const char *const bare_name_words[] = { "use", "unuse", "load", "run", "batch", "usehol", "usetax", "taxfile", "filing", "skin", NULL };
 
 static const char *bare_name_form(const char *line, char *out, size_t cap) {
   const char *p = line;
