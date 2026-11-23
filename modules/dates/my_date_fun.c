@@ -577,8 +577,17 @@ int push_now_time(Stack* stack) {
  * UTC broken-down times rather than reading tm_gmtoff, which is a BSD/
  * glibc extension not visible under _POSIX_C_SOURCE.
  * ------------------------------------------------------------------- */
+#ifdef __EMSCRIPTEN__
+/* A browser has no /usr/share/zoneinfo, but it has the time zone database:
+   the page's side of this is in web/mm41_web.c. */
+int mm41_web_zone_offset(const char *zone, int d, int m, int y, double *hours_out);
+#endif
+
 int zone_offset_hours(const char *zone, int d, int m, int y, double *hours_out) {
   if (!zone || !*zone || !hours_out) return 0;
+#ifdef __EMSCRIPTEN__
+  return mm41_web_zone_offset(zone, d, m, y, hours_out);
+#endif
 
   /* libc silently treats an unknown TZ as UTC, so validate against the
    * zoneinfo directory ourselves.  Also refuse anything that could walk

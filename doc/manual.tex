@@ -57,7 +57,7 @@
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 
-\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 2.3}
+\title{\sffamily\Huge MM-41\\[0.3em]\Large A modular programmable RPN calculator for real, complex and decimal\\scalars, strings and matrices\\[1em]\large User Manual, version 2.4}
 \author{Mico Mrkaic}
 \date{November 2026}
 
@@ -124,6 +124,10 @@ make test         # 21 unit cases + golden files + the tutorial, under AddressSa
 make install      # into ~/.local: bin/mm41, the man page, this manual, and docs
 \end{shell}
 \code{make install} also seeds \code{\textasciitilde/.config/mm41/} with the default configuration (kept if you already have one) and the shipped word modules (always replaced, so they match the program). \code{PREFIX=/usr/local make install} installs system-wide; \code{make uninstall} removes exactly what was installed. Make sure \code{\textasciitilde/.local/bin} is on your \code{PATH}.
+
+\subsection{In a browser}
+
+The calculator also runs on a web page, \url{https://micomrkaic.github.io/mm-41/}: the same program compiled to WebAssembly, with every module. The page keeps the history of lines, completes with TAB, and stores saved words, registers and settings in the browser. Compiled modules and shell commands are the two things it cannot do; \code{web/README.md} in the source has the details, and \code{make web} builds it.
 
 \subsection{A first session}
 

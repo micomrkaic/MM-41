@@ -1,4 +1,4 @@
-MM-41 USER MANUAL, version 2.3
+MM-41 USER MANUAL, version 2.4
 
 Type  manual <chapter or word>  at the prompt to open this file there; in the pager, n finds the next match, q returns.
 
@@ -8,10 +8,11 @@ CONTENTS
   1.1  Notation used in this manual
   2  GETTING STARTED
   2.1  Building and installing
-  2.2  A first session
-  2.3  Line forms: help npv, use const
-  2.4  The tutorial
-  2.5  Getting help inside the calculator
+  2.2  In a browser
+  2.3  A first session
+  2.4  Line forms: help npv, use const
+  2.5  The tutorial
+  2.6  Getting help inside the calculator
   3  ENTERING DATA
   3.1  Numbers
   3.2  Complex numbers
@@ -174,7 +175,16 @@ already have one) and the shipped word modules (always replaced, so they match t
 program). PREFIX=/usr/local make install installs system-wide; make uninstall removes
 exactly what was installed. Make sure ~/.local/bin is on your PATH.
 
-2.2  A first session
+2.2  In a browser
+-----------------
+
+The calculator also runs on a web page, https://micomrkaic.github.io/mm-41/: the same
+program compiled to WebAssembly, with every module. The page keeps the history of lines,
+completes with TAB, and stores saved words, registers and settings in the browser.
+Compiled modules and shell commands are the two things it cannot do; web/README.md in
+the source has the details, and make web builds it.
+
+2.3  A first session
 --------------------
 
     $ mm41
@@ -198,7 +208,7 @@ module, topic and category names; after use, unuse and usehol, the names of the 
 and calendars they can take; after load, run and batch, file names. q exits, saving the
 configuration; undo restores the stack as it was before the previous line.
 
-2.3  Line forms: help npv, use const
+2.4  Line forms: help npv, use const
 ------------------------------------
 
 Everything in MM-41 is postfix: a command takes its arguments from the stack, so a
@@ -207,7 +217,7 @@ everywhere, inside a word definition included. At the prompt, though, such comma
 typed far more often than they are programmed, and for them the line as a whole is read
 first:
 
-describes name instead of executing it (section 2.5).
+describes name instead of executing it (section 2.6).
 
 and likewise unuse, load, run, batch and usehol: a line that is exactly one of these
 commands followed by one bare name is read as "name" command: use const is "const" use,
@@ -220,7 +230,7 @@ what it says and use const c is still three tokens (and an error, since use find
 string on the stack). The rewriting is a convenience of the prompt and of batch files,
 which go through the same reader, not a change to the language.
 
-2.4  The tutorial
+2.5  The tutorial
 -----------------
 
 MM-41 has grown a lot of corners, and a tour is the quickest way to see what is in them.
@@ -260,10 +270,10 @@ type, ? expectation ends a step (a number, a string, matrix 2x2, word name, empt
 …)—so chapters of your own are a text file away: MM41_TUTOR=mybook.txt mm41 reads
 another book.
 
-2.5  Getting help inside the calculator
+2.6  Getting help inside the calculator
 ---------------------------------------
 
-the tutorial and its cookbook (section 2.4).
+the tutorial and its cookbook (section 2.5).
 
 a one-screen summary of the input syntax and the command families.
 

@@ -46,6 +46,7 @@
 #include "manual.h"              // for help_topic
 #include "tutor.h"
 #include "ops.h"               // for print_ops_markdown
+#include "session.h"
 #include "globals.h"           // for CONFIG_PATH, HISTORY_PATH, completed_...
 #include "print_fun.h"         // for print_stack
 #include "module.h"
@@ -260,33 +261,52 @@ static bool check_line(Stack *stack, char *line) {
   return handle_line(stack, &old, line);
 }
 
-int repl(void) {
-  Stack stack, old_stack;
+/* The interactive session in steps, so that something other than readline
+   can drive it: the browser build reads its lines from the page (web/). */
+static Stack session, session_old;
+
+void mm41_session_start(void) {
   splash_screen();
-  startup(&stack, &old_stack);
+  startup(&session, &session_old);
   if (verbose_mode) list_macros();
+}
+
+const char *mm41_session_prompt(void) {
+  const char *tp = tutor_prompt();
+  return tp ? tp : decimal_mode ? "MM-41[dec]>> " : "MM-41>> ";
+}
+
+/* One line: run it, show the stack, let the tutor comment. False on "q". */
+bool mm41_session_line(char *line) {
+  if (!handle_line(&session, &session_old, line)) return false;
+  if (completed_batch)
+    completed_batch = false;
+  else if (!skip_stack_printing)
+    print_stack_display(&session);
+  skip_stack_printing = false;
+  tutor_after(&session);
+  return true;
+}
+
+void mm41_session_end(void) { shutdown(&session, &session_old); }
+
+int repl(void) {
+  mm41_session_start();
   read_history(HISTORY_PATH);
   stifle_history(1000); // Keep only the last 1000 commands
   rl_attempted_completion_function = function_name_completion;
 
   while (1) {
-    const char *tp = tutor_prompt();
-    char *line = readline(tp ? tp : decimal_mode ? "MM-41[dec]>> " : "MM-41>> ");
+    char *line = readline(mm41_session_prompt());
     if (!line) { putchar('\n'); break; }
     if (*line) add_history(line);
-    bool go_on = handle_line(&stack, &old_stack, line);
+    bool go_on = mm41_session_line(line);
     free(line);
     if (!go_on) break;
-    if (completed_batch)
-      completed_batch = false;
-    else if (!skip_stack_printing)
-      print_stack_display(&stack);
-    skip_stack_printing = false;
-    tutor_after(&stack);
   }
 
   write_history(HISTORY_PATH);
-  shutdown(&stack, &old_stack);
+  mm41_session_end();
   return 0;
 }
 

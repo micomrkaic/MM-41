@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MM-41 — a programmable RPN calculator</title>
+<meta name="description" content="MM-41, a programmable RPN calculator for real, complex and decimal numbers, strings and matrices, running in your browser.">
+<meta name="color-scheme" content="light dark">
+<link rel="preload" href="fonts/DejaVuSansMono.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <h1><span class="mark">MM-41</span> <span class="version" id="version"></span></h1>
+    <p class="tag">A programmable RPN calculator: real, complex and decimal numbers, strings, matrices.</p>
+  </div>
+  <nav class="links" aria-label="Documentation">
+    <a href="mm41-manual.pdf" target="_blank" rel="noopener">Manual</a>
+    <a href="https://github.com/micomrkaic/mm-41/blob/main/COMMANDS.md" target="_blank" rel="noopener">Commands</a>
+    <a href="https://github.com/micomrkaic/mm-41" target="_blank" rel="noopener">Source</a>
+    <button type="button" id="toggle-side" class="quiet" aria-expanded="true" aria-controls="side">Examples</button>
+  </nav>
+</header>
+
+<main class="layout">
+  <section class="terminal" id="terminal" aria-label="Calculator">
+    <div class="screen" id="screen" role="log" aria-live="polite" aria-label="What the calculator printed" tabindex="0"></div>
+    <form class="entry" id="entry" autocomplete="off">
+      <label class="prompt" id="prompt" for="line">MM-41&gt;&gt;</label>
+      <input id="line" name="line" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off"
+             aria-describedby="keys" disabled>
+      <button type="submit" class="go" id="go" disabled>Enter</button>
+    </form>
+    <p class="keys" id="keys">Enter runs the line · ↑ ↓ earlier lines · Tab completes · Ctrl+L clears the screen · drop a file here to give it to the calculator</p>
+  </section>
+
+  <aside class="side" id="side" aria-label="Examples and files">
+    <div class="side-inner">
+      <h2>Try it</h2>
+      <p class="hint">Numbers go on the stack; a command takes what it needs from the top and leaves its result there. Click a line to run it.</p>
+      <div id="examples"></div>
+
+      <h2>Files</h2>
+      <p class="hint">Files you add are in the calculator's directory: <code>"table.txt" readmat</code>, <code>"prog.rpn" load</code>. Files it writes appear here.</p>
+      <p><label class="filebutton">Add a file<input type="file" id="file" multiple hidden></label></p>
+      <ul class="files" id="files"></ul>
+
+      <h2>This page</h2>
+      <p class="hint">The calculator runs in your browser; nothing you type leaves it. Your words, registers and settings are kept in this browser's storage.</p>
+      <p><button type="button" class="quiet" id="reset">Forget everything saved here</button></p>
+    </div>
+  </aside>
+</main>
+
+<noscript><p class="noscript">MM-41 runs here as a WebAssembly program and needs JavaScript.</p></noscript>
+<script src="build.js"></script>
+<script src="mm41.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -167,6 +167,17 @@ examples/modules/hello/hello.so: examples/modules/hello/hello.c include/module.h
 	$(MAKE) --no-print-directory shared-module DIR=examples/modules/hello
 
 # -------- Rules --------
+# The calculator for the browser: docs/mm41.js and docs/mm41.wasm, which with
+# docs/index.html are the page (see web/README.md). Needs Emscripten; GSL is
+# compiled for it the first time.
+.PHONY: web web-test
+web: $(MODULE_TABLE) $(OBJ_DIR)/tutor_text.c $(OBJ_DIR)/tax_text.c $(GIT_HEADER)
+	sh web/build.sh $(MODULE_TABLE) $(OBJ_DIR)/tutor_text.c $(OBJ_DIR)/tax_text.c $(GIT_HEADER)
+
+web-test:
+	node web/test.mjs
+	node web/page.test.mjs
+
 # The slower checks, not part of `make test` (see tests/README.md):
 #   make fuzz    random sessions and damaged files under the sanitizers
 #   make nomem   every command with its allocations failed one at a time

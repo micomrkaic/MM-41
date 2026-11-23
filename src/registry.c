@@ -127,6 +127,10 @@ int load_shared_module(const char *path) {
      differs between glibc and macOS and is kept for the other failures. */
   if (strchr(path, '/') && access(path, F_OK) != 0)
     return mm_error("load: %s: no such file", path);
+#ifdef __EMSCRIPTEN__
+  /* the browser build is one WebAssembly module: nothing can be linked into it */
+  return mm_error("load: %s: compiled modules cannot be loaded in the browser (word modules can: \"name\" use)", path);
+#endif
   void *h = dlopen(path, RTLD_NOW | RTLD_LOCAL);
   if (!h) return mm_error("load: %s", dlerror());
   const Module *(*entry)(void) = (const Module *(*)(void))(uintptr_t)dlsym(h, "mm41_module");

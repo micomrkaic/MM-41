@@ -23,6 +23,27 @@ jobs:
       - name: out of memory (every command, each allocation failed in turn)
         run: make nomem
 
+  # The browser build: MM-41 and GSL compiled to WebAssembly with the
+  # distribution's Emscripten, the golden files run through it under node,
+  # and the page driven in Chromium.
+  web:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: deps
+        run: sudo apt-get update && sudo apt-get install -y libgsl-dev libreadline-dev emscripten
+      - name: native build (generates the sources the web build shares)
+        run: make -j4
+      - name: web build
+        run: make web
+      - name: golden files through the WebAssembly build
+        run: node web/test.mjs
+      - name: the page in a browser
+        run: |
+          npm install --no-save --prefix "$RUNNER_TEMP/pw" playwright
+          NODE_PATH="$RUNNER_TEMP/pw/node_modules" npx --prefix "$RUNNER_TEMP/pw" playwright install --with-deps chromium
+          MM41_REQUIRE_BROWSER=1 NODE_PATH="$RUNNER_TEMP/pw/node_modules" node web/page.test.mjs
+
   # The golden transcripts are not run here yet: three of them (income, ode,
   # survival) differ from the Linux output in the last printed digits.
   macos:

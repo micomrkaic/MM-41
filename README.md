@@ -14,6 +14,10 @@ HP-41 it is named after, it is built from **modules** you can add to.
 
 It unifies the earlier MM-11, MM-14, MM-15 and MM-B1 calculators.
 
+**[Try it in your browser](https://micomrkaic.github.io/mm-41/)**: the same
+program, compiled to WebAssembly. Nothing to install, and nothing you type
+leaves the page.
+
 ```text
 $ mm41
 MM-41>> 2 3 + 4 *
@@ -31,7 +35,7 @@ MM-41>> 2 setprec clrtvm 360 n 0.5 i% 300000 pv 0 fv ?pmt
 [5] 𝔻 : -1798.65
 MM-41>> modules
 module       version  words  summary
-core         2.3         91  arithmetic, functions, logic, the stack, words and the session
+core         2.4         91  arithmetic, functions, logic, the stack, words and the session
 decimal      1.0          7  decimal numbers for money: number mode, conversions, rounding
 finance      1.2         54  time value of money (level or growing payments), cash flows, depreciation, bonds, day counts, gross and net pay
 complex      1.0          7  complex numbers: parts, argument, conjugate, construction
@@ -219,6 +223,8 @@ Requires a C17 compiler, GNU make, GNU Readline and GSL
 make                 # release build in bin/release/
 make test            # .t cases + golden files, under AddressSanitizer
 make fuzz            # random sessions and damaged files under the sanitizers (FUZZ_N=2000)
+make web             # the browser build, docs/mm41.wasm (needs Emscripten; see web/README.md)
+make web-test        # the golden files through it, and the page in a browser
 make nomem           # every command with its allocations failed one at a time
 make install         # ~/.local: bin/mm41, man page, manual, docs; modules into ~/.config/mm41
 make uninstall
@@ -245,5 +251,6 @@ words, modules and registers live in `$XDG_CONFIG_HOME/mm41` (default
 | `doc/manual.tex` → `doc/mm41-manual.pdf` | the user manual |
 | `mm41.1`, `MANUAL.md`, `COMMANDS.md`, `CHANGES.md` | man page, quick reference, generated command list, changelog |
 | `tests/` | unit cases, golden files, the fuzzer and the out-of-memory test |
+| `web/`, `docs/` | the browser build and the page it runs in (`docs/` is what GitHub Pages serves; the manual is in `doc/`) |
 
 MM-41 is free software under the GNU GPL, version 3 or later.

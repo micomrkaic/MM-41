@@ -1,5 +1,27 @@
 # MM-41 changes
 
+## MM-41 2.4
+
+- **In the browser.** <https://micomrkaic.github.io/mm-41/> is the
+  calculator on a web page: the same C program compiled to WebAssembly,
+  with GSL, the decimals and every module, and the page in the place of the
+  terminal. It keeps a history of lines (↑ ↓), completes with Tab from the
+  calculator's own completion code, shows the plots in colour, and has a
+  panel of examples to click. Saved words, registers, settings and files
+  you add are kept in the browser's storage; nothing is sent anywhere. The
+  tutor works there too.
+- `make web` builds it (Emscripten; GSL is compiled for WebAssembly the
+  first time, Readline is replaced by a ten-name shim), `make web-test`
+  runs the golden files through the WebAssembly build -- they print what
+  the native build prints, to the character -- and drives the page in a
+  browser. `web/README.md` has the details and the few differences from
+  the terminal (no compiled modules, no shell).
+- The interactive session can be driven a line at a time
+  (`include/session.h`); `repl()` is that around readline.
+- Running out of memory is survivable in the browser as well: with the
+  2 GB a page may use filled with matrices, the next command is abandoned
+  with an error and `clst` makes room again.
+
 ## MM-41 2.3
 
 - **Gross and net pay.** The finance module works out a payslip under the
